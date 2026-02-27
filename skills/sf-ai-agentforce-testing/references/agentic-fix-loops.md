@@ -9,7 +9,6 @@ Agentic fix loops enable automated test-fix cycles: when agent tests fail, the s
 
 **Related Documentation:**
 - [SKILL.md](../SKILL.md) - Main skill documentation
-- [references/agentic-fix-loop.md](../references/agentic-fix-loop.md) - Comprehensive fix loop guide
 - [test-spec-reference.md](./test-spec-reference.md) - Test spec format
 
 ---
@@ -782,10 +781,73 @@ sf agent preview --api-name MyAgent --output-dir ./transcripts --target-org dev
 
 ---
 
+## Configuration
+
+### Max Attempts
+
+Default: 3 attempts per failure
+
+Rationale:
+- 1st attempt: Initial fix based on error analysis
+- 2nd attempt: Refined fix with additional context
+- 3rd attempt: Alternative approach
+
+If still failing after 3 attempts, escalate to human review.
+
+### Cross-Skill Delegation
+
+| Failure Type | Delegate To |
+|--------------|-------------|
+| Agent script issues | sf-ai-agentscript |
+| Flow execution errors | sf-flow |
+| Apex exceptions | sf-apex |
+| Debug log analysis | sf-debug |
+| Test data issues | sf-data |
+
+---
+
+## Troubleshooting
+
+### Fix not working after 3 attempts
+
+**Possible causes:**
+- Root cause misidentified
+- Multiple overlapping issues
+- Fundamental design problem
+
+**Solution:**
+1. Run interactive preview to observe behavior
+2. Check debug logs for additional errors
+3. Consider redesigning topic/action structure
+4. Manual review of agent script
+
+### Fix breaks other tests
+
+**Possible causes:**
+- Overly broad fix
+- Overlapping topic/action descriptions
+
+**Solution:**
+1. Run full test suite after each fix
+2. Use more specific keywords
+3. Add `available when` conditions
+
+### Loop runs indefinitely
+
+**Possible causes:**
+- Max attempts not enforced
+- Same error recurring
+
+**Solution:**
+1. Verify attempt counter increments
+2. Check if fix is actually being applied
+3. Validate agent is being republished
+
+---
+
 ## Related Resources
 
 - [SKILL.md](../SKILL.md) - Main skill documentation
 - [test-spec-reference.md](./test-spec-reference.md) - Test spec format
-- [references/agentic-fix-loop.md](../references/agentic-fix-loop.md) - Comprehensive guide
-- [references/coverage-analysis.md](../references/coverage-analysis.md) - Coverage metrics
+- [coverage-analysis.md](../references/coverage-analysis.md) - Coverage metrics
 - [assets/](../assets/) - Test spec examples

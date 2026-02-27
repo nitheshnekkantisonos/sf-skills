@@ -82,13 +82,13 @@ subjectName: My_Agent
 2. Skip custom evaluations until platform patch
 3. Use `expectedOutcome` (LLM-as-judge) for response validation instead
 
-**Tracking**: Discovered 2026-02-09 on DevInt sandbox (Spring '26). TODO: Retest after platform patch.
+**Tracking**: Discovered 2026-02-09 on sandbox (Spring '26). TODO: Retest after platform patch.
 
 ## MEDIUM: `conciseness` Metric Returns Score=0
 
 **Status**: 🟡 Platform bug — metric evaluation appears non-functional
 
-**Issue**: The `conciseness` metric consistently returns `score: 0` with an empty `metricExplainability` field across all test cases tested on DevInt (Spring '26).
+**Issue**: The `conciseness` metric consistently returns `score: 0` with an empty `metricExplainability` field across all test cases (Spring '26).
 
 **Workaround**: Skip `conciseness` in metrics lists until platform patch.
 
@@ -112,7 +112,7 @@ subjectName: My_Agent
 
 **Note**: This is a **different bug** from the threshold mismatch above. The threshold bug affects score interpretation; this bug blocks the entire UI from loading.
 
-**Discovered**: 2026-02-11 on DevInt sandbox (Spring '26).
+**Discovered**: 2026-02-11 on sandbox (Spring '26).
 
 ## MEDIUM: Topic Hash Drift on Agent Republish
 

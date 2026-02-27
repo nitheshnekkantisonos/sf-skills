@@ -105,15 +105,27 @@ ContactHelper           30     15       15          50.0% ❌
 
 When tests fail, the agentic loop: parses failures → reads source → identifies root cause → invokes sf-apex to fix → re-runs (max 3 attempts). Key error types: AssertException, NullPointerException, DmlException, LimitException, QueryException.
 
-### Cross-Skill: Flow Testing
+### Cross-Skill: Flow Testing (GA)
 
-For Flow-specific tests (not Apex), use `sf flow run test`:
+Flow tests are now GA and run separately from Apex tests:
+
 ```bash
-sf flow run test --test-names FlowTest1,FlowTest2 --target-org [alias]
-sf flow get test --test-run-id <id> --target-org [alias]
+# Run specific flow tests
+sf flow run test --test-names FlowTest1,FlowTest2 --target-org [alias] --json
+
+# Run all flow tests
+sf flow run test --target-org [alias] --json
+
+# Get results for an async flow test run
+sf flow get test --test-run-id <id> --target-org [alias] --json
 ```
 
-> **Unified Test Runner [Beta]**: `sf logic run test --test-level RunLocalTests --code-coverage --target-org [alias]` (v2.107.6+). For production, prefer separate `sf apex run test` and `sf flow run test`.
+**Key flags:**
+- `--test-names` — comma-separated Flow test names
+- `--wait <minutes>` — wait for completion (default: async)
+- `--json` — structured output
+
+> **Unified Test Runner [Beta]**: `sf logic run test --test-level RunLocalTests --code-coverage --target-org [alias]` (v2.107.6+). Runs both Apex and Flow tests together. For production, prefer separate `sf apex run test` and `sf flow run test`.
 
 ### Phase 5: Coverage Improvement
 
@@ -186,7 +198,27 @@ Additional templates: `assets/dml-mock.cls` (35x faster tests), `assets/stub-pro
 | `sf apex list log` | List debug logs | `--target-org alias` |
 | `sf apex tail log` | Stream logs real-time | `--target-org alias` |
 
-**Key flags**: `--code-coverage`, `--detailed-coverage`, `--result-format json`, `--output-dir`, `--test-level RunLocalTests`, `--concise`
+**Key flags**: `--code-coverage`, `--detailed-coverage`, `--result-format json`, `--output-dir`, `--test-level RunLocalTests`, `--concise`, `--poll-interval <seconds>` (v2.116.6+)
+
+### Spring '26 Apex Test Annotations
+
+| Annotation | Purpose | Example |
+|------------|---------|---------|
+| `@isTest(testFor=ClassName.class)` | Explicit test-to-source linking — ties test class to production class for coverage tracking | `@isTest(testFor=AccountService.class)` |
+| `@isTest(isCritical=true)` | Marks tests that always run, even in `RunRelevantTests` mode — use for smoke tests and critical paths | `@isTest(isCritical=true)` |
+
+```apex
+// Spring '26: Link test to source class
+@isTest(testFor=AccountService.class)
+private class AccountServiceTest {
+
+    // Spring '26: Always run this test, even in RunRelevantTests mode
+    @isTest(isCritical=true)
+    static void testCriticalPath() {
+        // ...
+    }
+}
+```
 
 ---
 

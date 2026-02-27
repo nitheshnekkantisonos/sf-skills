@@ -238,7 +238,7 @@
 - **Resolution**: Use `connection messaging:` as a standalone block (no wrapper). Both minimal form (`adaptive_response_allowed` only) and full form (with `outbound_route_type`, `outbound_route_name`, `escalation_message`) are validated.
 - **CRITICAL**: `outbound_route_name` requires `flow://` prefix — bare API name causes `ERROR_HTTP_404` on publish. Correct format: `"flow://My_Flow_Name"`.
 - **All-or-nothing rule**: When `outbound_route_type` is present, all three route properties are required.
-- **Validated on**: Vivint-DevInt (Automated_Virtual_Assistant_BETA), 2026-02-16
+- **Validated on**: YourOrg (Your_Agent_Name), 2026-02-16
 
 ---
 
@@ -275,7 +275,7 @@
       <callRecordingAllowed>false</callRecordingAllowed>
       <outboundRouteConfigs>
           <escalationMessage>One moment while I connect you with a support specialist.</escalationMessage>
-          <outboundRouteName>Route_from_Vivint_Virtual_Support</outboundRouteName>
+          <outboundRouteName>Route_from_Your_Agent</outboundRouteName>
           <outboundRouteType>OmniChannelFlow</outboundRouteType>
       </outboundRouteConfigs>
       <surface>SurfaceAction__CustomerWebClient</surface>
@@ -283,7 +283,7 @@
   </plannerSurfaces>
   ```
 - **Note**: The `outboundRouteConfigs` should mirror the Messaging surface config. If no routing is configured, omit `outboundRouteConfigs`.
-- **Validated on**: Vivint-DevInt (Automated_Virtual_Assistant_BETA v22), 2026-02-17
+- **Validated on**: YourOrg (Your_Agent_Name v22), 2026-02-17
 
 ---
 

@@ -63,6 +63,38 @@ private class AccountServiceTest {
 
 ---
 
+## Spring '26 Test Annotations
+
+### `@isTest(testFor=ClassName.class)` — Test-to-Source Linking
+
+Explicitly links a test class to the production class it covers. Improves coverage attribution and supports `RunRelevantTests` deployment mode.
+
+```apex
+@isTest(testFor=AccountService.class)
+private class AccountServiceTest {
+    // All test methods here count toward AccountService coverage
+}
+```
+
+### `@isTest(isCritical=true)` — Always-Run Tests
+
+Marks tests that must always execute, even when using `RunRelevantTests` test level. Use for smoke tests, critical business logic, and integration test entry points.
+
+```apex
+@isTest(isCritical=true)
+private class PaymentProcessorTest {
+    // Runs even in RunRelevantTests mode
+}
+```
+
+Can combine with `testFor`:
+```apex
+@isTest(testFor=PaymentProcessor.class, isCritical=true)
+private class PaymentProcessorTest { }
+```
+
+---
+
 ## Assert Class (Winter '23+)
 
 ### Preferred Assert Methods

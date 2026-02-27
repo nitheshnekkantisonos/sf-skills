@@ -87,7 +87,7 @@ sf-connected-apps/
 ├── references/
 │   └── example-usage.md
 ├── references/
-│   ├── oauth-flows.md
+│   ├── oauth-flows-reference.md
 │   ├── security-checklist.md
 │   └── migration-guide.md
 └── README.md

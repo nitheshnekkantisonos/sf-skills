@@ -123,7 +123,7 @@ The execution user's permissions determine what the API can access:
 
 ### Test Token Request
 
-> **NEVER use `curl` for OAuth token validation.** Domains containing `--` (e.g., `my-org--devint.sandbox.my.salesforce.com`) cause shell expansion failures with curl's `--` argument parsing. Use the credential manager script instead.
+> **NEVER use `curl` for OAuth token validation.** Domains containing `--` (e.g., `my-org--sandbox.example.my.salesforce.com`) cause shell expansion failures with curl's `--` argument parsing. Use the credential manager script instead.
 
 ```bash
 # Validate credentials via credential_manager.py (handles OAuth internally)
@@ -214,4 +214,4 @@ Once ECA is configured, the testing skill uses it as follows:
 |----------|------|
 | Agent Runtime API | [agent-api-reference.md](agent-api-reference.md) |
 | Connected App Setup (Web OAuth) | [connected-app-setup.md](connected-app-setup.md) |
-| Multi-Turn Testing Guide | [multi-turn-testing-guide.md](multi-turn-testing-guide.md) |
+| Multi-Turn Testing | [multi-turn-testing.md](multi-turn-testing.md) |

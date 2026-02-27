@@ -156,7 +156,7 @@ Or delegate to `sf-metadata` for more complex generation.
 
 ## SOQL Reference
 
-> See [references/permission-soql-queries.md](references/permission-soql-queries.md) for the complete query catalog: Permission Set/Group queries, object permissions, field permissions, setup entity access (Apex, VF, Flows, Custom Permissions).
+> See [references/soql-reference.md](references/soql-reference.md) for the complete query catalog: Permission Set/Group queries, object permissions, field permissions, setup entity access (Apex, VF, Flows, Custom Permissions).
 
 **Quick queries:**
 ```sql

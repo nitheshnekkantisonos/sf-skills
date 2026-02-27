@@ -11,7 +11,7 @@ Claude generates a terminal-friendly results report:
 ════════════════════════════════════════════════════════════════
 
 Agent: Customer_Support_Agent
-Org: vivint-DevInt
+Org: your-org
 Mode: Agent Runtime API (multi-turn)
 
 SCENARIO RESULTS
@@ -71,7 +71,7 @@ Parse test results JSON and display formatted summary:
 ════════════════════════════════════════════════════════════════
 
 Agent: Customer_Support_Agent
-Org: vivint-DevInt
+Org: your-org
 Duration: 45.2s
 Mode: Simulated
 

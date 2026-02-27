@@ -337,7 +337,7 @@ sf project deploy start --source-dir force-app/main/default/connectedApps --targ
   - Named Credentials integration
 
 ### Documentation
-- **OAuth Flow Diagrams**: [references/oauth-flows.md](references/oauth-flows.md)
+- **OAuth Flow Diagrams**: [references/oauth-flows-reference.md](references/oauth-flows-reference.md)
 - **Security Review**: [references/security-checklist.md](references/security-checklist.md)
 - **Migration Guide**: [references/migration-guide.md](references/migration-guide.md)
 - **Testing & Validation**: [references/testing-validation-guide.md](references/testing-validation-guide.md)

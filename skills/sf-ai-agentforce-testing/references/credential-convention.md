@@ -9,7 +9,7 @@ Persistent ECA credential storage managed by `hooks/scripts/credential_manager.p
 ```
 ~/.sfagent/
 ├── .gitignore          ("*" — auto-created, prevents accidental commits)
-├── {Org-Alias}/        (org alias — case-sensitive, e.g. Vivint-DevInt)
+├── {Org-Alias}/        (org alias — case-sensitive, e.g. MyOrg-Sandbox)
 │   └── {ECA-Name}/     (ECA app name — use `discover` to find actual name)
 │       └── credentials.env
 └── Other-Org/
@@ -42,7 +42,7 @@ export SF_CONSUMER_SECRET=ABC123...
 ```bash
 # Discover orgs and ECAs
 python3 {SKILL_PATH}/hooks/scripts/credential_manager.py discover
-python3 {SKILL_PATH}/hooks/scripts/credential_manager.py discover --org-alias Vivint-DevInt
+python3 {SKILL_PATH}/hooks/scripts/credential_manager.py discover --org-alias YourOrg
 
 # Load credentials (secrets masked in output)
 python3 {SKILL_PATH}/hooks/scripts/credential_manager.py load --org-alias {org} --eca-name {eca}

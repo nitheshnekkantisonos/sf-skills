@@ -37,7 +37,7 @@ https://api.salesforce.com/einstein/ai-agent/v1
 
 The Agent Runtime API requires an **OAuth 2.0 access token** obtained via **Client Credentials flow** from an External Client App (ECA).
 
-> **NEVER use `curl` for OAuth token validation.** Domains containing `--` (e.g., `my-org--devint.sandbox.my.salesforce.com`) cause shell expansion failures. The `agent_api_client.py` handles OAuth internally.
+> **NEVER use `curl` for OAuth token validation.** Domains containing `--` (e.g., `my-org--sandbox.example.my.salesforce.com`) cause shell expansion failures. The `agent_api_client.py` handles OAuth internally.
 
 ```bash
 # Verify credentials work (credential_manager.py handles OAuth internally)
@@ -477,5 +477,4 @@ When analyzing multi-turn responses, check these indicators:
 | Resource | Link |
 |----------|------|
 | ECA Setup | [eca-setup-guide.md](eca-setup-guide.md) |
-| Multi-Turn Testing Guide | [multi-turn-testing-guide.md](multi-turn-testing-guide.md) |
-| Test Patterns | [multi-turn-test-patterns.md](../references/multi-turn-test-patterns.md) |
+| Multi-Turn Testing | [multi-turn-testing.md](multi-turn-testing.md) |

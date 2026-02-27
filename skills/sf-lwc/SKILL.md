@@ -188,14 +188,15 @@ WCAG compliance is mandatory for all components.
 
 | Command | Purpose |
 |---------|---------|
-| `sf lightning generate component --type lwc` | Create new LWC |
+| `sf template generate lightning component --type lwc` | Create new LWC |
+| `sf template generate flexipage --name MyPage --page-type AppPage` | Generate FlexiPage metadata (AppPage, HomePage, RecordPage) |
 | `sf lightning lwc test run` | Run Jest tests |
 | `sf lightning lwc test run --watch` | Watch mode |
 | `sf project deploy start -m LightningComponentBundle` | Deploy LWC |
 
 ```bash
 # Generate new component
-sf lightning generate component \
+sf template generate lightning component \
   --name accountDashboard \
   --type lwc \
   --output-dir force-app/main/default/lwc

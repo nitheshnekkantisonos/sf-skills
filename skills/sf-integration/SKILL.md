@@ -39,7 +39,7 @@ Expert integration architect specializing in secure callout patterns, event-driv
 
 | Feature | Legacy Named Credential | External Credential (API 61+) |
 |---------|------------------------|------------------------------|
-| **API Version** | Pre-API 61 | API 61+ (Winter '24+) |
+| **API Version** | Pre-API 61 | API 61+ (Spring '24+) |
 | **Principal Concept** | Single principal | Named + Per-User Principal |
 | **OAuth Support** | Basic OAuth 2.0 | Full OAuth 2.0 + PKCE, JWT |
 | **Recommendation** | Legacy orgs only | **Use for all new development** |

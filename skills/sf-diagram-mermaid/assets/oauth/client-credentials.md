@@ -150,7 +150,7 @@ instance_url = token_data['instance_url']
 # Make API call
 headers = {'Authorization': f'Bearer {access_token}'}
 api_response = requests.get(
-    f'{instance_url}/services/data/v59.0/sobjects/Account',
+    f'{instance_url}/services/data/v62.0/sobjects/Account',
     headers=headers
 )
 ```
@@ -172,7 +172,7 @@ const { access_token, instance_url } = response.data;
 
 // Make API call
 const apiResponse = await axios.get(
-  `${instance_url}/services/data/v59.0/sobjects/Account`,
+  `${instance_url}/services/data/v62.0/sobjects/Account`,
   { headers: { Authorization: `Bearer ${access_token}` } }
 );
 ```

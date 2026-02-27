@@ -913,7 +913,7 @@ These fields are NOT part of the CLI YAML schema and will be silently ignored or
 2. Skip custom evaluations until platform patch
 3. Use `expectedOutcome` (LLM-as-judge) for response validation instead
 
-**Tracking**: Discovered 2026-02-09 on DevInt sandbox (Spring '26). TODO: Retest after platform patch.
+**Tracking**: Discovered 2026-02-09 on sandbox (Spring '26). TODO: Retest after platform patch.
 
 ### MEDIUM: `conciseness` Metric Returns Score=0
 

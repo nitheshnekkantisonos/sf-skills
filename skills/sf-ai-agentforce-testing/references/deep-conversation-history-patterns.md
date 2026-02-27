@@ -274,8 +274,7 @@ expectedOutcome: "Agent confirms the payment is being processed and provides a c
 
 | Resource | Link |
 |----------|------|
-| Test Spec Guide | [test-spec-guide.md](test-spec-guide.md) |
 | Test Spec Reference | [test-spec-reference.md](../references/test-spec-reference.md) |
-| Multi-Turn Testing Guide | [multi-turn-testing-guide.md](multi-turn-testing-guide.md) |
+| Multi-Turn Testing | [multi-turn-testing.md](multi-turn-testing.md) |
 | CLI Deep History Template | [cli-deep-history-tests.yaml](../assets/cli-deep-history-tests.yaml) |
 | Topic Name Resolution | [topic-name-resolution.md](topic-name-resolution.md) |

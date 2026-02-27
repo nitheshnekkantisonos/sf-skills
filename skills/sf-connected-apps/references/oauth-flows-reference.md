@@ -3,8 +3,6 @@
 
 Detailed OAuth flow patterns, configuration examples, and implementation guidance for the sf-connected-apps skill.
 
-> **Related**: For flow diagrams and curl examples, see [references/oauth-flows.md](../references/oauth-flows.md)
-
 ---
 
 ## Flow Selection Decision Tree
@@ -476,6 +474,31 @@ HttpResponse res = http.send(req);
 
 ---
 
+## Token Introspection
+
+**Use**: Validate token status and metadata
+
+```bash
+curl -X POST https://login.salesforce.com/services/oauth2/introspect \
+  -d "token=<ACCESS_TOKEN>" \
+  -d "client_id=<CONSUMER_KEY>" \
+  -d "client_secret=<CONSUMER_SECRET>" \
+  -d "token_type_hint=access_token"
+```
+
+---
+
+## Token Revocation
+
+**Use**: Invalidate tokens on logout
+
+```bash
+curl -X POST https://login.salesforce.com/services/oauth2/revoke \
+  -d "token=<TOKEN>"
+```
+
+---
+
 ## Error Handling Patterns
 
 ### OAuth Error Response Structure
@@ -631,7 +654,7 @@ Grep: pattern="<oauthConfig>" path="force-app/main/default/connectedApps/"
 
 ## Related Resources
 
-- **Flow Diagrams**: [references/oauth-flows.md](../references/oauth-flows.md)
+- **Flow Diagrams**: Included above (Authorization Code, JWT Bearer, Device Authorization)
 - **Security Checklist**: [references/security-checklist.md](../references/security-checklist.md)
 - **Migration Guide**: [references/migration-guide.md](../references/migration-guide.md)
 - **Main Skill**: [SKILL.md](../SKILL.md)

@@ -332,7 +332,6 @@ testCases:
 ## Related Resources
 
 - [SKILL.md](../SKILL.md) — Main skill documentation (Phase B: Agent Script section)
-- [test-spec-guide.md](test-spec-guide.md) — Complete test spec guide
-- [test-spec-reference.md](../references/test-spec-reference.md) — YAML schema reference
+- [test-spec-reference.md](../references/test-spec-reference.md) — Complete YAML schema reference and test spec guide
 - [topic-name-resolution.md](topic-name-resolution.md) — Topic name format rules
 - [agentscript-test-spec.yaml](../assets/agentscript-test-spec.yaml) — Template with all 5 patterns

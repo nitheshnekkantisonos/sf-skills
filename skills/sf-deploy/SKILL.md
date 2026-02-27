@@ -97,10 +97,11 @@ After deploying custom objects/fields:
 
 **This skill uses `sf` CLI (v2.x), NOT legacy `sfdx` (v1.x)**
 
-| Legacy sfdx (v1) | Modern sf (v2) |
-|-----------------|----------------|
-| `--checkonly` / `--check-only` | `--dry-run` |
-| `sfdx force:source:deploy` | `sf project deploy start` |
+**Note**: Legacy `sfdx` (v1) is fully retired. Use `sf` (v2) exclusively.
+
+> **⚠️ Source tracking requirement (Dec 2025+)**: `sf project deploy start` and `sf project retrieve start` now REQUIRE `--source-dir`, `--metadata`, or `--manifest` on non-source-tracking orgs (production, full sandboxes). Without a scope flag, the command fails.
+
+> **⚠️ `sf org open --url-only`**: URLs generated with `--url-only` are single-use and expire after 60 seconds.
 
 ## Prerequisites
 
@@ -136,8 +137,8 @@ sf project deploy start --dry-run --test-level RunLocalTests --target-org <alias
 
 **Commands by scope**:
 ```bash
-# Full metadata
-sf project deploy start --target-org <alias> --wait 30 --json
+# Full metadata (--source-dir required on non-source-tracking orgs since Dec 2025)
+sf project deploy start --source-dir force-app --target-org <alias> --wait 30 --json
 
 # Specific components
 sf project deploy start --source-dir force-app/main/default/classes --target-org <alias> --json
@@ -228,13 +229,36 @@ Triggers require special deployment care: deactivation before modification, prop
 Standard pipeline workflow:
 1. Authenticate (JWT/auth URL)
 2. Validate metadata
-3. Static analysis (PMD, ESLint)
+3. Static analysis via Code Analyzer v5
 4. Dry-run deployment
 5. Run tests + coverage check
 6. Deploy if validation passes
 7. Notify
 
-See [references/deployment-workflows.md](references/deployment-workflows.md) for scripts.
+### Static Analysis: Code Analyzer v5
+
+`sf code-analyzer` (v5) replaced the retired `sf scanner` (Aug 2025). It bundles ESLint, PMD, RetireJS, and Salesforce-specific rules.
+
+```bash
+# Install plugin (one-time)
+sf plugins install @salesforce/plugin-code-analyzer
+
+# Run scan on source directory
+sf code-analyzer run --workspace force-app --output-format csv --output-file scan-results.csv
+
+# Run with specific rule categories
+sf code-analyzer run --workspace force-app --rule-selector "Category:Security,Best Practices"
+
+# List available rules
+sf code-analyzer rules --output-format csv
+
+# Generate config file for customization
+sf code-analyzer config --output-file code-analyzer.yaml
+```
+
+> **Migration from sf scanner**: v5 uses `--workspace` (not `--target`), `--output-format` (not `--format`), `--output-file` (not `--outfile`), and `--rule-selector` (not `--engine`/`--category`).
+
+See [references/deployment-workflows.md](references/deployment-workflows.md) for full pipeline scripts.
 
 ## Edge Cases
 
@@ -400,6 +424,7 @@ sf agent activate --api-name [AgentName] --target-org target-org
 | `sf package push-upgrade list` | List push upgrade requests |
 | `sf package push-upgrade report --package-push-request-id <id>` | Get push upgrade status |
 | `sf package version retrieve --package <package-id> --output-dir <dir>` | Retrieve 2GP package metadata (GA, v2.111.7+) |
+| `sf package version create --generate-pkg-zip --package <name>` | Generate installable .zip alongside version (v2.123.1+) |
 
 ## Deployment Script Template
 

@@ -5,7 +5,8 @@
 
 | Task | Command |
 |------|---------|
-| Create component | `sf lightning generate component --name myComp --type lwc` |
+| Create component | `sf template generate lightning component --name myComp --type lwc` |
+| Create FlexiPage | `sf template generate flexipage --name MyPage --page-type AppPage` |
 | Run all tests | `sf lightning lwc test run` |
 | Deploy component | `sf project deploy start --source-dir force-app/.../lwc/myComp` |
 | Create message channel | Manual XML: `force-app/.../messageChannels/MyChannel.messageChannel-meta.xml` |
@@ -18,7 +19,7 @@
 
 ```bash
 # Basic component
-sf lightning generate component \
+sf template generate lightning component \
   --name accountList \
   --type lwc \
   --output-dir force-app/main/default/lwc

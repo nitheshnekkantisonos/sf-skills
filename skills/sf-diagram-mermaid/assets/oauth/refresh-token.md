@@ -166,7 +166,7 @@ class SalesforceClient:
 
     def api_request(self, endpoint, method='GET', **kwargs):
         """Make an API request with automatic token refresh."""
-        url = f"{self.instance_url}/services/data/v59.0/{endpoint}"
+        url = f"{self.instance_url}/services/data/v62.0/{endpoint}"
         headers = {
             'Authorization': f'Bearer {self.access_token}',
             'Content-Type': 'application/json'

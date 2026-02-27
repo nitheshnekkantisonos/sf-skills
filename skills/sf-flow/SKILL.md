@@ -136,7 +136,7 @@ Quick: Screen → Run + test all paths. Record-Triggered → Debug Logs + **bulk
 
 ## Best Practices & Error Patterns
 
-> See [references/best-practices.md](references/best-practices.md) for full enforcement rules: record-triggered architecture, no parent traversal, recordLookups settings, XML element ordering, variable naming prefixes, and performance patterns.
+> See [references/flow-best-practices.md](references/flow-best-practices.md) for full enforcement rules: record-triggered architecture, no parent traversal, recordLookups settings, XML element ordering, variable naming prefixes, and performance patterns.
 
 **Key rules**: Never loop over `$Record`. No DML in loops. All DML needs fault paths. No parent traversal in Get Records. XML elements grouped alphabetically.
 

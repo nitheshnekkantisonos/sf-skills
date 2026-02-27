@@ -36,7 +36,7 @@ The **Agentforce Models API** enables native LLM access directly from Apex code 
 
 ### API Version Requirement
 
-**Minimum API v61.0+ (Spring '25)** for Models API support.
+**Minimum API v61.0+ (Spring '24)** for Models API support.
 
 ```bash
 # Verify org API version

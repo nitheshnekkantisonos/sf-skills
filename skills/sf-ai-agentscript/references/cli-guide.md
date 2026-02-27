@@ -348,6 +348,9 @@ sf agent generate authoring-bundle --no-spec --name "My Agent" -o TARGET_ORG --j
 
 # With a spec file (standard flow)
 sf agent generate authoring-bundle --spec agent-spec.yaml --name "My Agent" -o TARGET_ORG --json
+
+# Overwrite existing bundle without confirmation (v2.125.1+)
+sf agent generate authoring-bundle --spec agent-spec.yaml --name "My Agent" --force-overwrite -o TARGET_ORG --json
 ```
 
 ---

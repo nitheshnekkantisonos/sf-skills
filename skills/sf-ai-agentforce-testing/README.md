@@ -112,10 +112,10 @@ When enabled, the skill will:
 ## Documentation
 
 - [CLI Commands Reference](references/cli-commands.md)
-- [Test Spec Guide](references/test-spec-guide.md)
+- [Test Spec Reference](references/test-spec-reference.md)
 - [Connected App Setup](references/connected-app-setup.md)
 - [Coverage Analysis](references/coverage-analysis.md)
-- [Agentic Fix Loop](references/agentic-fix-loop.md)
+- [Agentic Fix Loops](references/agentic-fix-loops.md)
 
 ## Requirements
 

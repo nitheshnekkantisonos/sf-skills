@@ -9,7 +9,6 @@ Test specifications define automated test cases for Agentforce agents. The YAML 
 
 **Related Documentation:**
 - [SKILL.md](../SKILL.md) - Main skill documentation
-- [references/test-spec-guide.md](../references/test-spec-guide.md) - Comprehensive test spec guide
 - [references/topic-name-resolution.md](../references/topic-name-resolution.md) - Topic name format rules
 
 ---
@@ -472,6 +471,107 @@ When `--verbose` is used, `generatedData` includes additional fields — notably
 
 ---
 
+## Agent Script Agents (AiAuthoringBundle)
+
+Agent Script agents (`.agent` files) have unique testing requirements due to their two-level action system and `start_agent` routing.
+
+### Key Differences from GenAiPlannerBundle Agents
+
+| Aspect | Agent Script | GenAiPlannerBundle |
+|--------|-------------|-------------------|
+| Single-utterance test | Captures transition action only | May capture business action |
+| Action names in results | Level 1 definition name | GenAiFunction name |
+| `subjectName` source | `config.developer_name` in `.agent` | Directory name of bundle |
+| Action test approach | Use `conversationHistory` for `apex://` | Standard single-utterance |
+
+### Routing Test (Transition Action)
+
+```yaml
+testCases:
+  - utterance: "I want to check my order status"
+    expectedTopic: order_status
+    expectedActions:
+      - go_order_status    # Transition action from start_agent
+```
+
+### Action Test (with conversationHistory)
+
+```yaml
+testCases:
+  - utterance: "The order ID is 801ak00001g59JlAAI"
+    conversationHistory:
+      - role: "user"
+        message: "I want to check my order status"
+      - role: "agent"
+        topic: "order_status"
+        message: "Could you provide the Order ID?"
+    expectedTopic: order_status
+    expectedActions:
+      - get_order_status    # Level 1 definition name, NOT check_status
+```
+
+### Permission Pre-Check
+
+If the Apex class uses `WITH USER_MODE`, the Einstein Agent User (`default_agent_user` in `.agent` config) must have read permissions on queried objects. Missing permissions cause **silent failures** (0 rows returned, no error).
+
+See [agentscript-testing-patterns.md](agentscript-testing-patterns.md) for 5 detailed test patterns and the permission pre-check workflow.
+
+---
+
+## Best Practices
+
+### Test Coverage
+
+| Aspect | Recommendation |
+|--------|----------------|
+| Topics | Test every topic with 3+ phrasings |
+| Actions | Test every action at least once |
+| Escalation | Test trigger and non-trigger scenarios |
+| Edge cases | Test typos, gibberish, long inputs |
+
+### Description Convention
+
+Since `AiEvaluationDefinition` metadata has no XML `<description>` element, document each test suite's purpose using a YAML comment at the top of the spec file:
+
+```yaml
+# Description: Validates auth-first routing for all greeting patterns
+name: "VVS Greeting Auth Tests"
+subjectType: AGENT
+subjectName: Product_Troubleshooting2
+```
+
+### Parallel Test Suites
+
+For agents with 20+ test cases, split into category-based YAML specs for parallel execution:
+
+```
+tests/
+├── agent-routing-tests.yaml      # Topic routing (8 tests)
+├── agent-guardrail-tests.yaml    # Guardrails and deflection (10 tests)
+├── agent-auth-tests.yaml         # Auth gate verification (5 tests)
+└── agent-session-tests.yaml      # Session/context tests (3 tests)
+```
+
+Each spec is deployed independently via `sf agent test create`, then executed in parallel via separate `sf agent test run` commands.
+
+### Action Name Discovery for GenAiPlannerBundle Agents
+
+For GenAiPlannerBundle agents, action names in test results include a hash suffix (e.g., `Store_Feedback_179a9701f17c194`). Short name **prefix matching** works — you can use the prefix in `expectedActions` and the CLI will match.
+
+**Discovery workflow:**
+```bash
+# Run with --verbose to see full action names
+sf agent test run --api-name Discovery --wait 10 --verbose --result-format json --json --target-org [alias]
+
+# Extract action names from results
+jq '.result.testCases[].generatedData | {topic, actionsSequence}' results.json
+
+# For detailed action input/output inspection
+jq '.result.testCases[].generatedData.invokedActions | fromjson | .[0][0].function' results.json
+```
+
+---
+
 ## Test Spec Templates
 
 | Template | Purpose | CLI Compatible |
@@ -569,7 +669,7 @@ sf agent test results --job-id <JOB_ID> --result-format json --json --target-org
 2. Skip custom evaluations until platform patch
 3. Use `expectedOutcome` (LLM-as-judge) for response validation instead
 
-**Tracking**: Discovered 2026-02-09 on DevInt sandbox (Spring '26). TODO: Retest after platform patch.
+**Tracking**: Discovered 2026-02-09 on sandbox (Spring '26). TODO: Retest after platform patch.
 
 ### MEDIUM: `conciseness` Metric Returns Score=0
 
@@ -597,14 +697,13 @@ sf agent test results --job-id <JOB_ID> --result-format json --json --target-org
 
 **Workaround**: Remove `- instruction_following` from the YAML metrics list, then redeploy via `sf agent test create --force-overwrite`.
 
-**Discovered**: 2026-02-11 on DevInt sandbox (Spring '26).
+**Discovered**: 2026-02-11 on sandbox (Spring '26).
 
 ---
 
 ## Related Resources
 
 - [SKILL.md](../SKILL.md) - Main skill documentation
-- [references/test-spec-guide.md](../references/test-spec-guide.md) - Detailed test spec guide
 - [references/topic-name-resolution.md](../references/topic-name-resolution.md) - Topic name format rules
 - [references/cli-commands.md](../references/cli-commands.md) - Complete CLI reference
 - [references/agentic-fix-loops.md](./agentic-fix-loops.md) - Auto-fix workflow

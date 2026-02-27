@@ -13,7 +13,7 @@ Each step mirrors one tab of the Salesforce Testing Center "New Test" wizard.
 |-------|--------|----------|
 | Skill Path | Auto-resolve from `${SKILL_HOOKS}` env var (strip `/hooks` suffix). If unset → hardcoded `~/.claude/skills/sf-ai-agentforce-testing`. | Hardcoded path |
 | Agent Name | User provided or auto-discover via `agent_discovery.py` | AskUserQuestion |
-| Org Alias | User provided or `sfdx-config.json` → `target-org` | AskUserQuestion |
+| Org Alias | User provided or `.sf/config.json` → `target-org` | AskUserQuestion |
 | Description | ALWAYS ask — used for test generation context | AskUserQuestion |
 | Test Type | User selects: CLI / API / Both | AskUserQuestion |
 
@@ -31,7 +31,7 @@ AskUserQuestion:
       header: "Org"
       options:
         - label: "{auto-detected org alias} (Recommended)"
-          description: "Detected from sfdx-config.json target-org"
+          description: "Detected from .sf/config.json target-org"
         - label: "Different org"
           description: "I'll provide a different org alias"
     - question: "What is this test suite validating?"

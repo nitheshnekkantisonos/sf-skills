@@ -39,14 +39,13 @@ Expert testing engineer specializing in Agentforce agent testing via **dual-trac
 |------|----------|-------------|
 | **Agent Runtime API** | [agent-api-reference.md](references/agent-api-reference.md) | REST endpoints for multi-turn testing |
 | **ECA Setup** | [eca-setup-guide.md](references/eca-setup-guide.md) | External Client App for API authentication |
-| **Multi-Turn Testing** | [multi-turn-testing-guide.md](references/multi-turn-testing-guide.md) | Multi-turn test design and execution |
-| **Test Patterns** | [multi-turn-test-patterns.md](references/multi-turn-test-patterns.md) | 6 multi-turn test patterns with examples |
+| **Multi-Turn Testing** | [multi-turn-testing.md](references/multi-turn-testing.md) | Multi-turn test design, 6 patterns, and execution |
 | **CLI commands** | [cli-commands.md](references/cli-commands.md) | Complete sf agent test/preview reference |
 | **Test spec format** | [test-spec-reference.md](references/test-spec-reference.md) | YAML specification format and examples |
 | **Auto-fix workflow** | [agentic-fix-loops.md](references/agentic-fix-loops.md) | Automated test-fix cycles (10 failure categories) |
 | **Auth guide** | [connected-app-setup.md](references/connected-app-setup.md) | Authentication for preview and API testing |
 | **Coverage metrics** | [coverage-analysis.md](references/coverage-analysis.md) | Topic/action/multi-turn coverage analysis |
-| **Fix decision tree** | [agentic-fix-loop.md](references/agentic-fix-loop.md) | Detailed fix strategies |
+| **Fix decision tree** | [agentic-fix-loops.md](references/agentic-fix-loops.md) | Detailed fix strategies + troubleshooting |
 | **Agent Script testing** | [agentscript-testing-patterns.md](references/agentscript-testing-patterns.md) | 5 patterns for testing Agent Script agents |
 | **Deep conversation history** | [deep-conversation-history-patterns.md](references/deep-conversation-history-patterns.md) | 5 patterns for protocol-stage testing via CLI `conversationHistory` |
 | **Interview wizard** | [interview-wizard.md](references/interview-wizard.md) | 4-step Testing Center wizard flow |
@@ -58,7 +57,7 @@ Expert testing engineer specializing in Agentforce agent testing via **dual-trac
 | **Results & scoring** | [results-scoring.md](references/results-scoring.md) | A5 + B3 report formats |
 | **Agent Script agents** | [agentscript-agents.md](references/agentscript-agents.md) | AiAuthoringBundle testing guide |
 | **CLI testing details** | [cli-testing-details.md](references/cli-testing-details.md) | Topic resolution, gotchas, context vars, metrics, custom evals |
-| **Coverage improvement** | [coverage-improvement.md](references/coverage-improvement.md) | Phase D coverage dimensions + thresholds |
+| **Coverage improvement** | [coverage-analysis.md](references/coverage-analysis.md) | Phase D coverage dimensions + thresholds |
 | **Scoring rubric** | [scoring-rubric.md](references/scoring-rubric.md) | 100-point scoring system |
 | **CLI commands (ref)** | [cli-commands.md](references/cli-commands.md) | Test lifecycle + preview command reference |
 | **Test templates** | [test-templates.md](references/test-templates.md) | Multi-turn + CLI template catalog |
@@ -309,9 +308,20 @@ See [Agentic Fix Loops Guide](references/agentic-fix-loops.md) for complete deci
 
 ## Phase D: Coverage Improvement
 
-> See [references/coverage-improvement.md](references/coverage-improvement.md) for the full coverage dimensions table and thresholds.
+If coverage < threshold, iterate: identify untested topics/actions/patterns → add tests (YAML for CLI, scenarios for API) → re-run → repeat until threshold met.
 
-**Quick summary:** 8 dimensions (topic selection, action invocation, re-matching, context preservation, completion, guardrails, escalation, phrasing diversity). Iterate: identify gaps → add tests → re-run → repeat until thresholds met. See [Coverage Analysis](references/coverage-analysis.md).
+| Dimension | Phase A | Phase B | Target |
+|-----------|---------|---------|--------|
+| Topic Selection | ✅ | ✅ | 100% |
+| Action Invocation | ✅ | ✅ | 100% |
+| Topic Re-matching | ✅ | ❌ | 90%+ |
+| Context Preservation | ✅ | ❌ | 95%+ |
+| Conversation Completion | ✅ | ❌ | 85%+ |
+| Guardrails | ✅ | ✅ | 100% |
+| Escalation | ✅ | ✅ | 100% |
+| Phrasing Diversity | ✅ | ✅ | 3+ per topic |
+
+See [Coverage Analysis](references/coverage-analysis.md) for complete metrics and improvement guide.
 
 ---
 
