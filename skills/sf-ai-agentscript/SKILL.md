@@ -239,8 +239,30 @@ Level 2: ACTION INVOCATION (in `reasoning.actions:` block)
 sf agent validate authoring-bundle --api-name MyAgent -o TARGET_ORG --json
 ```
 
+### Phase 3.5: Preview Smoke Test Loop (Pre-Publish)
+
+> **When**: After Phase 3 validation passes, before Phase 5 publish.
+> **Prerequisite**: Agent must be published at least once (authoring bundle exists in org).
+
+Run 3-5 smoke test utterances via `sf agent preview start --authoring-bundle AgentName` to catch topic routing and action invocation issues **without publishing**. ~15s iteration cycles.
+
+**How it works:**
+1. **Derive utterances** — One per non-start topic (from `description:` keywords), one per key action, one off-topic (guardrail test), one multi-turn pair if agent has transitions
+2. **Run preview** — `sf agent preview start --authoring-bundle` → `send` each utterance → `end` session → get traces
+3. **Analyze traces** — Read trace JSON with `jq`, checking 6 things:
+   - Topic routing (`TransitionStep.data.to` matches expected topic)
+   - Action invocation (`FunctionStep.data.function` matches expected action)
+   - Grounding (`ReasoningStep.data.groundingAssessment` != `"UNGROUNDED"`)
+   - Safety (`PlannerResponseStep.data.safetyScore.overall` >= 0.9)
+   - Tool visibility (`EnabledToolsStep.data.enabled_tools` includes expected actions)
+   - Response quality (`PlannerResponseStep.data.responseText` is relevant)
+4. **Fix loop** — If issues found → apply specific `.agent` edits → LSP auto-validates → re-run preview. **Max 3 iterations.**
+5. **Decision** — All pass → Phase 5 (publish). Still failing after 3 → Phase 5 with warnings in commit message.
+
+> 📋 **Full reference**: See [references/preview-test-loop.md](references/preview-test-loop.md) for the complete workflow, `jq` recipes, failure categories, fix strategies, and a walkthrough example.
+
 ### Phase 4: Testing (Delegate to `/sf-ai-agentforce-testing`)
-Batch testing (up to 100 cases), quality metrics (Completeness, Coherence, Topic/Action Assertions), LLM-as-Judge scoring.
+Batch testing (up to 100 cases), quality metrics (Completeness, Coherence, Topic/Action Assertions), LLM-as-Judge scoring. If Phase 3.5 smoke tests passed, basic topic routing and action invocation are pre-validated. Formal testing adds multi-turn, re-matching, context preservation, and edge case coverage.
 
 ### Phase 5: Deployment & Activation
 
@@ -379,6 +401,7 @@ sf data query -q "SELECT Username FROM User WHERE Profile.Name = 'Einstein Agent
 | Instruction resolution | [references/instruction-resolution.md](references/instruction-resolution.md) | Three-phase execution model |
 | Data & multi-agent | [references/grounding-multiagent.md](references/grounding-multiagent.md) | Retriever actions & SOMA patterns |
 | Debugging | [references/debugging-guide.md](references/debugging-guide.md) | Trace analysis & forensics |
+| Preview test loop | [references/preview-test-loop.md](references/preview-test-loop.md) | Smoke test loop before publish |
 | Testing | [references/testing-guide.md](references/testing-guide.md) | Batch testing & quality metrics |
 | Prompt template actions | [references/action-prompt-templates.md](references/action-prompt-templates.md) | `generatePromptResponse://` binding, grounded data |
 | Advanced action patterns | [references/action-patterns.md](references/action-patterns.md) | Context-aware descriptions, `{!@actions.X}` refs |
@@ -414,6 +437,7 @@ sf data query -q "SELECT Username FROM User WHERE Profile.Name = 'Einstein Agent
 | Create Flows for `flow://` targets | `/sf-flow` | Flows must exist before agent uses them |
 | Test agent routing & actions | `/sf-ai-agentforce-testing` | Specialized testing patterns |
 | Deploy agent to org | `/sf-deploy` | Proper deployment validation |
+| Smoke test (pre-publish) | **Internal** (Phase 3.5) | `sf agent preview --authoring-bundle` — no cross-skill delegation |
 
 ### Integration Patterns
 | From | To | Pattern |

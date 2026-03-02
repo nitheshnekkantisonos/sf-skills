@@ -112,6 +112,8 @@ All Python scripts live at absolute paths under `{SKILL_PATH}/hooks/scripts/`. *
 
 ## Architecture: Dual-Track Testing Workflow
 
+> **Note:** `sf-ai-agentscript` has its own **Phase 3.5 inner loop** for pre-publish smoke testing using `sf agent preview --authoring-bundle`. This covers basic topic routing and action invocation with 3-5 utterances. Formal testing (this skill) adds multi-turn, re-matching, context preservation, and edge case coverage AFTER publish + activate.
+
 ```
 4-Step Interview (mirrors Testing Center wizard)
     │  Step 1: Basic Info → Step 2: Conditions → Step 3: Test Data → Step 4: Evaluate
