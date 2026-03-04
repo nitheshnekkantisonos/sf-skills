@@ -102,7 +102,7 @@ sf agent generate agent-spec --spec ./agent-spec.yaml
 
 ### sf agent generate authoring-bundle
 
-Generates an authoring bundle scaffolding from an existing agent in the org.
+Generates an authoring bundle scaffolding from an existing agent in the org. When a bundle with the same name already exists locally, prompts with Yes/No/Cancel before overwriting (v2.125.1+).
 
 ```bash
 sf agent generate authoring-bundle --api-name <AgentApiName> --target-org <alias> --json
@@ -113,7 +113,7 @@ sf agent generate authoring-bundle --api-name <AgentApiName> --target-org <alias
 | `--api-name` | No | API name of the agent to generate from |
 | `--name` | No | Name for the authoring bundle |
 | `--no-spec` | No | Generate without a spec file |
-| `--force-overwrite` | No | Overwrite existing files |
+| `--force-overwrite` | No | Skip the duplicate-detection prompt and overwrite without confirmation (v2.125.1+) |
 | `--authoring-bundle` | No | Path to authoring bundle directory |
 | `--target-org` | No | Alias or username of the target org |
 | `--json` | No | Return output as JSON |
