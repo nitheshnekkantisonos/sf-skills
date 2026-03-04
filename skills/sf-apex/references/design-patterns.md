@@ -998,197 +998,197 @@ public class AccountRules {
 
         return targetIndustries.contains(account.Industry) &&
                targetCountries.contains(account.BillingCountry);
-1000     }
-1001 
-1002     public static Boolean requiresExecutiveApproval(Account account, Decimal dealValue) {
-1003         return isStrategicAccount(account) && dealValue > 500000;
-1004     }
-1005 
-1006     public static Boolean isEligibleForDiscount(Account account) {
-1007         return account.Customer_Since__c != null &&
-1008                account.Customer_Since__c.monthsBetween(Date.today()) > 24 &&
-1009                isHighValue(account);
-1010     }
-1011 }
-1012 ```
-1013 
-1014 ### Usage
-1015 
-1016 ```apex
-1017 // Reads like plain English
-1018 public void processOpportunity(Opportunity opp, Account account) {
-1019     if (AccountRules.isStrategicAccount(account)) {
-1020         assignToEnterpriseTeam(opp);
-1021     }
-1022 
-1023     if (AccountRules.requiresExecutiveApproval(account, opp.Amount)) {
-1024         routeForApproval(opp);
-1025     }
-1026 
-1027     if (AccountRules.isEligibleForDiscount(account)) {
-1028         applyLoyaltyDiscount(opp);
-1029     }
-1030 }
-1031 ```
-1032 
-1033 ### When to Use
-1034 
-1035 - Business rules are reused across multiple classes
-1036 - Complex boolean logic needs to be readable
-1037 - Rules change frequently (centralized = easier updates)
-1038 - You want trigger/service code to read like business requirements
-1039 
-1040 ### Relationship to Other Patterns
-1041 
-1042 | Pattern | Relationship |
-1043 |---------|--------------|
-1044 | Selector | Domain class uses Selector for data access |
-1045 | Service | Service orchestrates, Domain validates |
-1046 | Repository | Domain class is data-agnostic |
-1047 | Strategy | Domain rules can use Strategy for variations |
-1048 
-1049 ---
-1050 
-1051 ## Abstraction Level Management
-1052 
-1053 > 💡 *Principles inspired by "Clean Apex Code" by Pablo Gonzalez.
-1054 > [Purchase the book](https://link.springer.com/book/10.1007/979-8-8688-1411-2) for complete coverage.*
-1055 
-1056 ### Purpose
-1057 
-1058 Ensure each method operates at a consistent level of abstraction. Don't mix high-level orchestration with low-level implementation details.
-1059 
-1060 ### The Problem
-1061 
-1062 ```apex
-1063 // BAD: Mixed abstraction levels
-1064 public void processNewCustomer(Account account) {
-1065     // HIGH-LEVEL: Validation
-1066     validateAccount(account);
-1067 
-1068     // LOW-LEVEL: String manipulation (doesn't belong here)
-1069     String sanitizedPhone = account.Phone.replaceAll('[^0-9]', '');
-1070     if (sanitizedPhone.length() == 10) {
-1071         sanitizedPhone = '1' + sanitizedPhone;
-1072     }
-1073     account.Phone = '+' + sanitizedPhone;
-1074 
-1075     // HIGH-LEVEL: Save
-1076     insert account;
-1077 
-1078     // LOW-LEVEL: HTTP details (doesn't belong here)
-1079     HttpRequest req = new HttpRequest();
-1080     req.setEndpoint('https://api.crm.com/customers');
-1081     req.setMethod('POST');
-1082     req.setHeader('Content-Type', 'application/json');
-1083     req.setBody(JSON.serialize(account));
-1084     Http http = new Http();
-1085     HttpResponse res = http.send(req);
-1086 
-1087     // HIGH-LEVEL: Notification
-1088     sendWelcomeEmail(account);
-1089 }
-1090 ```
-1091 
-1092 ### The Solution
-1093 
-1094 ```apex
-1095 // GOOD: Consistent high-level abstraction
-1096 public void processNewCustomer(Account account) {
-1097     validateAccount(account);
-1098     normalizePhoneNumber(account);
-1099     insert account;
-1100     syncToExternalCRM(account);
-1101     sendWelcomeEmail(account);
-1102 }
-1103 
-1104 // Low-level details extracted to focused methods
-1105 private void normalizePhoneNumber(Account account) {
-1106     if (String.isBlank(account.Phone)) return;
-1107 
-1108     String digitsOnly = account.Phone.replaceAll('[^0-9]', '');
-1109     if (digitsOnly.length() == 10) {
-1110         digitsOnly = '1' + digitsOnly;
-1111     }
-1112     account.Phone = '+' + digitsOnly;
-1113 }
-1114 
-1115 private void syncToExternalCRM(Account account) {
-1116     CRMIntegrationService.syncCustomer(account);
-1117 }
-1118 ```
-1119 
-1120 ### Abstraction Layers in Apex
-1121 
-1122 ```
-1123 ┌─────────────────────────────────────────────────────────────┐
-1124 │  TRIGGER LAYER                                              │
-1125 │  - Routes events to handlers                                │
-1126 │  - No business logic                                        │
-1127 └─────────────────────────────────────────────────────────────┘
-1128                             │
-1129                             ▼
-1130 ┌─────────────────────────────────────────────────────────────┐
-1131 │  HANDLER/SERVICE LAYER (High-level)                         │
-1132 │  - Orchestrates business operations                         │
-1133 │  - Coordinates between components                           │
-1134 │  - Each step is a method call, not implementation           │
-1135 └─────────────────────────────────────────────────────────────┘
-1136                             │
-1137                             ▼
-1138 ┌─────────────────────────────────────────────────────────────┐
-1139 │  DOMAIN LAYER (Business rules)                              │
-1140 │  - Encapsulates business logic                              │
-1141 │  - AccountRules, OpportunityRules, etc.                     │
-1142 │  - Pure logic, no infrastructure                            │
-1143 └─────────────────────────────────────────────────────────────┘
-1144                             │
-1145                             ▼
-1146 ┌─────────────────────────────────────────────────────────────┐
-1147 │  DATA ACCESS LAYER (Low-level)                              │
-1148 │  - Selectors for SOQL                                       │
-1149 │  - Repositories for DML                                     │
-1150 │  - Integration services for external calls                  │
-1151 └─────────────────────────────────────────────────────────────┘
-1152 ```
-1153 
-1154 ### Guidelines
-1155 
-1156 | Level | Should Contain | Should NOT Contain |
-1157 |-------|---------------|-------------------|
-1158 | High (Orchestration) | Method calls, flow control | SOQL, DML, string parsing |
-1159 | Mid (Domain) | Business rules, validation | HTTP calls, database queries |
-1160 | Low (Data Access) | SOQL, DML, HTTP | Business decisions |
-1161 
-1162 ### Signs of Mixed Abstraction
-1163 
-1164 - A method has both `[SELECT ...]` and business logic
-1165 - HTTP request building next to email sending
-1166 - String manipulation in a method that also updates records
-1167 - Governor limit checks scattered among business rules
-1168 
-1169 ### Benefits
-1170 
-1171 - Each method is easier to understand in isolation
-1172 - Methods at the same level can be tested with similar techniques
-1173 - Changes to implementation don't affect orchestration
-1174 - Code reads like a high-level description of the process
-1175 
-1176 ---
-1177 
-1178 ## Pattern Selection Guide
-1179 
-1180 | Need | Pattern |
-1181 |------|---------|
-1182 | Centralize object creation | Factory |
-1183 | Abstract data access | Repository / Selector |
-1184 | Build complex objects | Builder |
-1185 | Single cached instance | Singleton |
-1186 | Interchangeable algorithms | Strategy |
-1187 | Transactional DML | Unit of Work |
-1188 | Add behavior without modification | Decorator |
-1189 | React to state changes | Observer |
-1190 | Queue/undo operations | Command |
-1191 | Simplify complex systems | Facade |
-1192 | Encapsulate business rules | Domain Class |
-1193 | Consistent method structure | Abstraction Levels |
+    }
+
+    public static Boolean requiresExecutiveApproval(Account account, Decimal dealValue) {
+        return isStrategicAccount(account) && dealValue > 500000;
+    }
+
+    public static Boolean isEligibleForDiscount(Account account) {
+        return account.Customer_Since__c != null &&
+               account.Customer_Since__c.monthsBetween(Date.today()) > 24 &&
+               isHighValue(account);
+    }
+}
+```
+
+### Usage
+
+```apex
+// Reads like plain English
+public void processOpportunity(Opportunity opp, Account account) {
+    if (AccountRules.isStrategicAccount(account)) {
+        assignToEnterpriseTeam(opp);
+    }
+
+    if (AccountRules.requiresExecutiveApproval(account, opp.Amount)) {
+        routeForApproval(opp);
+    }
+
+    if (AccountRules.isEligibleForDiscount(account)) {
+        applyLoyaltyDiscount(opp);
+    }
+}
+```
+
+### When to Use
+
+- Business rules are reused across multiple classes
+- Complex boolean logic needs to be readable
+- Rules change frequently (centralized = easier updates)
+- You want trigger/service code to read like business requirements
+
+### Relationship to Other Patterns
+
+| Pattern | Relationship |
+|---------|--------------|
+| Selector | Domain class uses Selector for data access |
+| Service | Service orchestrates, Domain validates |
+| Repository | Domain class is data-agnostic |
+| Strategy | Domain rules can use Strategy for variations |
+
+---
+
+## Abstraction Level Management
+
+> 💡 *Principles inspired by "Clean Apex Code" by Pablo Gonzalez.
+> [Purchase the book](https://link.springer.com/book/10.1007/979-8-8688-1411-2) for complete coverage.*
+
+### Purpose
+
+Ensure each method operates at a consistent level of abstraction. Don't mix high-level orchestration with low-level implementation details.
+
+### The Problem
+
+```apex
+// BAD: Mixed abstraction levels
+public void processNewCustomer(Account account) {
+    // HIGH-LEVEL: Validation
+    validateAccount(account);
+
+    // LOW-LEVEL: String manipulation (doesn't belong here)
+    String sanitizedPhone = account.Phone.replaceAll('[^0-9]', '');
+    if (sanitizedPhone.length() == 10) {
+        sanitizedPhone = '1' + sanitizedPhone;
+    }
+    account.Phone = '+' + sanitizedPhone;
+
+    // HIGH-LEVEL: Save
+    insert account;
+
+    // LOW-LEVEL: HTTP details (doesn't belong here)
+    HttpRequest req = new HttpRequest();
+    req.setEndpoint('https://api.crm.com/customers');
+    req.setMethod('POST');
+    req.setHeader('Content-Type', 'application/json');
+    req.setBody(JSON.serialize(account));
+    Http http = new Http();
+    HttpResponse res = http.send(req);
+
+    // HIGH-LEVEL: Notification
+    sendWelcomeEmail(account);
+}
+```
+
+### The Solution
+
+```apex
+// GOOD: Consistent high-level abstraction
+public void processNewCustomer(Account account) {
+    validateAccount(account);
+    normalizePhoneNumber(account);
+    insert account;
+    syncToExternalCRM(account);
+    sendWelcomeEmail(account);
+}
+
+// Low-level details extracted to focused methods
+private void normalizePhoneNumber(Account account) {
+    if (String.isBlank(account.Phone)) return;
+
+    String digitsOnly = account.Phone.replaceAll('[^0-9]', '');
+    if (digitsOnly.length() == 10) {
+        digitsOnly = '1' + digitsOnly;
+    }
+    account.Phone = '+' + digitsOnly;
+}
+
+private void syncToExternalCRM(Account account) {
+    CRMIntegrationService.syncCustomer(account);
+}
+```
+
+### Abstraction Layers in Apex
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  TRIGGER LAYER                                              │
+│  - Routes events to handlers                                │
+│  - No business logic                                        │
+└─────────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│  HANDLER/SERVICE LAYER (High-level)                         │
+│  - Orchestrates business operations                         │
+│  - Coordinates between components                           │
+│  - Each step is a method call, not implementation           │
+└─────────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│  DOMAIN LAYER (Business rules)                              │
+│  - Encapsulates business logic                              │
+│  - AccountRules, OpportunityRules, etc.                     │
+│  - Pure logic, no infrastructure                            │
+└─────────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│  DATA ACCESS LAYER (Low-level)                              │
+│  - Selectors for SOQL                                       │
+│  - Repositories for DML                                     │
+│  - Integration services for external calls                  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Guidelines
+
+| Level | Should Contain | Should NOT Contain |
+|-------|---------------|-------------------|
+| High (Orchestration) | Method calls, flow control | SOQL, DML, string parsing |
+| Mid (Domain) | Business rules, validation | HTTP calls, database queries |
+| Low (Data Access) | SOQL, DML, HTTP | Business decisions |
+
+### Signs of Mixed Abstraction
+
+- A method has both `[SELECT ...]` and business logic
+- HTTP request building next to email sending
+- String manipulation in a method that also updates records
+- Governor limit checks scattered among business rules
+
+### Benefits
+
+- Each method is easier to understand in isolation
+- Methods at the same level can be tested with similar techniques
+- Changes to implementation don't affect orchestration
+- Code reads like a high-level description of the process
+
+---
+
+## Pattern Selection Guide
+
+| Need | Pattern |
+|------|---------|
+| Centralize object creation | Factory |
+| Abstract data access | Repository / Selector |
+| Build complex objects | Builder |
+| Single cached instance | Singleton |
+| Interchangeable algorithms | Strategy |
+| Transactional DML | Unit of Work |
+| Add behavior without modification | Decorator |
+| React to state changes | Observer |
+| Queue/undo operations | Command |
+| Simplify complex systems | Facade |
+| Encapsulate business rules | Domain Class |
+| Consistent method structure | Abstraction Levels |

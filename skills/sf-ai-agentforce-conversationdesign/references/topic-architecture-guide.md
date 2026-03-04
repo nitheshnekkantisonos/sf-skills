@@ -998,88 +998,88 @@ Problem: "Where's my order?" matches both.
 
 ### Mistake 4: System-Centric Topics
 
-1000 **Symptom:** Topics named after internal systems or data models.
-1001 
-1002 **Example:**
-1003 
-1004 ```markdown
-1005 ❌ BAD:
-1006 - Order Management System (OMS) Topic
-1007 - Customer Relationship Management (CRM) Topic
-1008 - Product Information Management (PIM) Topic
-1009 ```
-1010 
-1011 **Fix:** Name topics based on USER goals, not systems.
-1012 
-1013 ```markdown
-1014 ✅ GOOD:
-1015 - Order Tracking & Status
-1016 - Account Management
-1017 - Product Information & Search
-1018 ```
-1019 
-1020 ### Mistake 5: Actions in Multiple Topics
-1021 
-1022 **Symptom:** Duplicate actions, unclear classification routing.
-1023 
-1024 **Example:**
-1025 
-1026 ```markdown
-1027 ❌ BAD:
-1028 Action: "Look Up Order Status"
-1029 - In Topic A: Order Tracking
-1030 - In Topic B: Order Management
-1031 
-1032 Problem: Which topic should "Where's my order?" route to?
-1033 ```
-1034 
-1035 **Fix:** Assign each action to exactly one topic. If truly needed in multiple contexts, create specialized versions.
-1036 
-1037 ---
-1038 
-1039 ## Testing Your Topic Architecture
-1040 
-1041 Use the Agentforce Testing Center to validate:
-1042 
-1043 ### Test Suite
-1044 
-1045 1. **Classification Accuracy:** 50+ utterances across all topics
-1046 2. **Boundary Cases:** Utterances that might match multiple topics
-1047 3. **Out-of-Scope:** Utterances that should route to General Escalation
-1048 4. **Multi-Turn:** Conversations that switch between topics
-1049 
-1050 ### Test Template
-1051 
-1052 | Utterance | Expected Topic | Actual Topic | Pass/Fail |
-1053 |-----------|----------------|--------------|-----------|
-1054 | "Where is my order?" | Order Tracking | [Result] | ✅/❌ |
-1055 | "I want to return this" | Returns & Cancellations | [Result] | ✅/❌ |
-1056 | "Is this sweater in stock?" | Product Information | [Result] | ✅/❌ |
-1057 | "Update my email address" | Account Management | [Result] | ✅/❌ |
-1058 | "What's your return policy?" | Policies & General Questions | [Result] | ✅/❌ |
-1059 | "I need legal advice" | General Escalation | [Result] | ✅/❌ |
-1060 | "Can I change my order and also return something?" | Order Modifications (first) | [Result] | ✅/❌ |
-1061 
-1062 ### Iteration Cycle
-1063 
-1064 1. Test with 50+ utterances
-1065 2. Identify misclassifications
-1066 3. Refine classification descriptions
-1067 4. Merge or split topics if needed
-1068 5. Re-test
-1069 
-1070 **Goal:** 90%+ accuracy for critical topics, 85%+ for secondary topics.
-1071 
-1072 ---
-1073 
-1074 ## Next Steps
-1075 
-1076 1. Complete the action inventory for your agent
-1077 2. Group actions by user intent
-1078 3. Write classification descriptions for each topic
-1079 4. Test for semantic distinctness
-1080 5. Validate with real user utterances
-1081 6. Implement in Agentforce Agent Builder
-1082 7. Test and iterate
-1083 
-1084 **Remember:** Topic architecture is foundational. Invest time upfront to get it right, and your agent's performance will be dramatically better.
+**Symptom:** Topics named after internal systems or data models.
+
+**Example:**
+
+```markdown
+❌ BAD:
+- Order Management System (OMS) Topic
+- Customer Relationship Management (CRM) Topic
+- Product Information Management (PIM) Topic
+```
+
+**Fix:** Name topics based on USER goals, not systems.
+
+```markdown
+✅ GOOD:
+- Order Tracking & Status
+- Account Management
+- Product Information & Search
+```
+
+### Mistake 5: Actions in Multiple Topics
+
+**Symptom:** Duplicate actions, unclear classification routing.
+
+**Example:**
+
+```markdown
+❌ BAD:
+Action: "Look Up Order Status"
+- In Topic A: Order Tracking
+- In Topic B: Order Management
+
+Problem: Which topic should "Where's my order?" route to?
+```
+
+**Fix:** Assign each action to exactly one topic. If truly needed in multiple contexts, create specialized versions.
+
+---
+
+## Testing Your Topic Architecture
+
+Use the Agentforce Testing Center to validate:
+
+### Test Suite
+
+1. **Classification Accuracy:** 50+ utterances across all topics
+2. **Boundary Cases:** Utterances that might match multiple topics
+3. **Out-of-Scope:** Utterances that should route to General Escalation
+4. **Multi-Turn:** Conversations that switch between topics
+
+### Test Template
+
+| Utterance | Expected Topic | Actual Topic | Pass/Fail |
+|-----------|----------------|--------------|-----------|
+| "Where is my order?" | Order Tracking | [Result] | ✅/❌ |
+| "I want to return this" | Returns & Cancellations | [Result] | ✅/❌ |
+| "Is this sweater in stock?" | Product Information | [Result] | ✅/❌ |
+| "Update my email address" | Account Management | [Result] | ✅/❌ |
+| "What's your return policy?" | Policies & General Questions | [Result] | ✅/❌ |
+| "I need legal advice" | General Escalation | [Result] | ✅/❌ |
+| "Can I change my order and also return something?" | Order Modifications (first) | [Result] | ✅/❌ |
+
+### Iteration Cycle
+
+1. Test with 50+ utterances
+2. Identify misclassifications
+3. Refine classification descriptions
+4. Merge or split topics if needed
+5. Re-test
+
+**Goal:** 90%+ accuracy for critical topics, 85%+ for secondary topics.
+
+---
+
+## Next Steps
+
+1. Complete the action inventory for your agent
+2. Group actions by user intent
+3. Write classification descriptions for each topic
+4. Test for semantic distinctness
+5. Validate with real user utterances
+6. Implement in Agentforce Agent Builder
+7. Test and iterate
+
+**Remember:** Topic architecture is foundational. Invest time upfront to get it right, and your agent's performance will be dramatically better.

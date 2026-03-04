@@ -998,172 +998,172 @@ If user says "Where's my order?" then:
 
 **Fix:** Use guidance, not scripts.
 
-1000 ```markdown
-1001 ✅ GOOD:
-1002 For order tracking requests, gather the order number first. Use the Look Up Order action and present the current status, expected delivery date, and tracking information. If the order hasn't shipped yet, explain that it's being processed.
-1003 ```
-1004 
-1005 ---
-1006 
-1007 ### Mistake 2: Vague Instructions
-1008 
-1009 **Symptom:** Instructions don't provide actionable guidance.
-1010 
-1011 **Example:**
-1012 
-1013 ```markdown
-1014 ❌ BAD:
-1015 "Be helpful and answer user questions about orders."
-1016 ```
-1017 
-1018 **Fix:** Be specific about what "helpful" means.
-1019 
-1020 ```markdown
-1021 ✅ GOOD:
-1022 "For order questions, gather the order number or email address before looking up information. Present the order status, expected delivery date, and tracking link clearly. If the order is delayed, acknowledge the inconvenience and offer to escalate if needed."
-1023 ```
-1024 
-1025 ---
-1026 
-1027 ### Mistake 3: Negative Framing
-1028 
-1029 **Symptom:** Instructions focus on what NOT to do.
-1030 
-1031 **Example:**
-1032 
-1033 ```markdown
-1034 ❌ BAD:
-1035 - Don't proceed without an order number
-1036 - Don't give refunds without checking eligibility
-1037 - Don't use technical jargon
-1038 ```
-1039 
-1040 **Fix:** Use positive language.
-1041 
-1042 ```markdown
-1043 ✅ GOOD:
-1044 - Always gather the order number before looking up information
-1045 - Use the Check Return Eligibility action before processing refunds
-1046 - Use everyday language that customers can easily understand
-1047 ```
-1048 
-1049 ---
-1050 
-1051 ### Mistake 4: Business Logic in Instructions
-1052 
-1053 **Symptom:** Complex conditional rules embedded in instructions.
-1054 
-1055 **Example:**
-1056 
-1057 ```markdown
-1058 ❌ BAD:
-1059 "If order total is under $50, refund immediately. If $50-$200, apply $5 restocking fee. If over $200, require manager approval. If customer is VIP, waive fees."
-1060 ```
-1061 
-1062 **Fix:** Put logic in Flow/Apex.
-1063 
-1064 ```markdown
-1065 ✅ GOOD (Instructions):
-1066 "Use the Calculate Refund action to determine the refund amount based on our refund policy. The action will account for any applicable fees or VIP waivers. Present the refund amount and timeline to the user."
-1067 
-1068 ✅ GOOD (Flow):
-1069 [Complex refund calculation logic in Flow with all conditional branches]
-1070 ```
-1071 
-1072 ---
-1073 
-1074 ### Mistake 5: Too Long (Information Overload)
-1075 
-1076 **Symptom:** Instructions exceed 500 words at agent-level or 300 words at topic-level.
-1077 
-1078 **Example:**
-1079 
-1080 ```markdown
-1081 ❌ BAD (1,200-word agent-level instruction dump):
-1082 "You are a customer service agent. When users ask about orders, you should first determine what type of order question they have. If it's a tracking question, gather the order number by asking 'Do you have your order number?' If they say yes, ask them to provide it. If they say no, ask if they'd like to search by email instead. If they provide an email, use the Look Up Order By Email action. If they provide an order number, use the Look Up Order By Number action. Once you have the order information, present it in the following format... [500 more words of step-by-step instructions]"
-1083 ```
-1084 
-1085 **Fix:** Keep agent-level instructions high-level; move details to topic/action level.
-1086 
-1087 ```markdown
-1088 ✅ GOOD (Agent-level, 200 words):
-1089 "You are the Acme Retail Support Agent, a helpful and efficient assistant.
-1090 
-1091 Personality:
-1092 - Helpful: Offer solutions and alternatives
-1093 - Efficient: Keep responses concise (2-3 sentences)
-1094 - Empathetic: Acknowledge frustration when things go wrong
-1095 
-1096 Response Format:
-1097 - Start with the answer or action
-1098 - Provide specific details
-1099 - End with clear next steps
-1100 
-1101 Boundaries:
-1102 - I cannot override policies without human approval
-1103 - I will escalate complex issues to specialists"
-1104 
-1105 ✅ GOOD (Topic-level, 180 words):
-1106 "Topic: Order Tracking & Status
-1107 
-1108 For order tracking requests, gather the order number or email address. If not provided, ask which the user prefers.
-1109 
-1110 Use the appropriate Look Up Order action and present:
-1111 - Order number and date
-1112 - Current status
-1113 - Expected delivery date
-1114 - Tracking link (if shipped)
-1115 
-1116 If the order hasn't shipped, explain it's being processed and provide an estimated ship date."
-1117 ```
-1118 
-1119 ---
-1120 
-1121 ## Next Steps
-1122 
-1123 1. **Write agent-level instructions** using the template and examples
-1124 2. **Write topic-level instructions** for each topic in your architecture
-1125 3. **Write action-level instructions** for each action
-1126 4. **Test with diverse utterances** across all test categories
-1127 5. **Iterate based on test results:** Refine instructions where the agent didn't follow guidance
-1128 6. **Validate total word count:** Keep under 5,000 words total
-1129 7. **Document your final instructions** for the team
-1130 
-1131 ---
-1132 
-1133 ## Quick Reference: Instruction Cheat Sheet
-1134 
-1135 ### Agent-Level (200-500 words)
-1136 - ✅ Define 3-5 personality traits with behaviors
-1137 - ✅ Specify response format (structure, content, closure)
-1138 - ✅ State clear boundaries and limitations
-1139 - ❌ Don't include topic-specific workflows
-1140 - ❌ Don't over-script with if/then logic
-1141 
-1142 ### Topic-Level (100-300 words per topic)
-1143 - ✅ Specify what data to gather before acting
-1144 - ✅ Provide high-level workflow guidance
-1145 - ✅ Explain how to format outputs
-1146 - ✅ Address common edge cases
-1147 - ❌ Don't write step-by-step scripts
-1148 - ❌ Don't encode business logic rules
-1149 
-1150 ### Action-Level (50-150 words per action)
-1151 - ✅ Clearly state when to invoke the action
-1152 - ✅ Distinguish required vs. optional inputs
-1153 - ✅ Provide example output formats
-1154 - ✅ Address error scenarios
-1155 - ❌ Don't assume the agent "knows" when to use it
-1156 - ❌ Don't leave error handling undefined
-1157 
-1158 ### Universal Principles
-1159 - ✅ Guidance over determinism
-1160 - ✅ Positive framing ("Always do X")
-1161 - ✅ Business principles, not decision trees
-1162 - ✅ Progressive disclosure (2-3 choices per turn)
-1163 - ✅ Deterministic logic in Flow/Apex, not instructions
-1164 - ✅ Policies in Knowledge, not instructions
-1165 
-1166 ---
-1167 
-1168 **Remember:** Instructions guide agent reasoning, they don't script every possible interaction. Think of yourself as training a smart human employee, not programming a state machine.
+```markdown
+✅ GOOD:
+For order tracking requests, gather the order number first. Use the Look Up Order action and present the current status, expected delivery date, and tracking information. If the order hasn't shipped yet, explain that it's being processed.
+```
+
+---
+
+### Mistake 2: Vague Instructions
+
+**Symptom:** Instructions don't provide actionable guidance.
+
+**Example:**
+
+```markdown
+❌ BAD:
+"Be helpful and answer user questions about orders."
+```
+
+**Fix:** Be specific about what "helpful" means.
+
+```markdown
+✅ GOOD:
+"For order questions, gather the order number or email address before looking up information. Present the order status, expected delivery date, and tracking link clearly. If the order is delayed, acknowledge the inconvenience and offer to escalate if needed."
+```
+
+---
+
+### Mistake 3: Negative Framing
+
+**Symptom:** Instructions focus on what NOT to do.
+
+**Example:**
+
+```markdown
+❌ BAD:
+- Don't proceed without an order number
+- Don't give refunds without checking eligibility
+- Don't use technical jargon
+```
+
+**Fix:** Use positive language.
+
+```markdown
+✅ GOOD:
+- Always gather the order number before looking up information
+- Use the Check Return Eligibility action before processing refunds
+- Use everyday language that customers can easily understand
+```
+
+---
+
+### Mistake 4: Business Logic in Instructions
+
+**Symptom:** Complex conditional rules embedded in instructions.
+
+**Example:**
+
+```markdown
+❌ BAD:
+"If order total is under $50, refund immediately. If $50-$200, apply $5 restocking fee. If over $200, require manager approval. If customer is VIP, waive fees."
+```
+
+**Fix:** Put logic in Flow/Apex.
+
+```markdown
+✅ GOOD (Instructions):
+"Use the Calculate Refund action to determine the refund amount based on our refund policy. The action will account for any applicable fees or VIP waivers. Present the refund amount and timeline to the user."
+
+✅ GOOD (Flow):
+[Complex refund calculation logic in Flow with all conditional branches]
+```
+
+---
+
+### Mistake 5: Too Long (Information Overload)
+
+**Symptom:** Instructions exceed 500 words at agent-level or 300 words at topic-level.
+
+**Example:**
+
+```markdown
+❌ BAD (1,200-word agent-level instruction dump):
+"You are a customer service agent. When users ask about orders, you should first determine what type of order question they have. If it's a tracking question, gather the order number by asking 'Do you have your order number?' If they say yes, ask them to provide it. If they say no, ask if they'd like to search by email instead. If they provide an email, use the Look Up Order By Email action. If they provide an order number, use the Look Up Order By Number action. Once you have the order information, present it in the following format... [500 more words of step-by-step instructions]"
+```
+
+**Fix:** Keep agent-level instructions high-level; move details to topic/action level.
+
+```markdown
+✅ GOOD (Agent-level, 200 words):
+"You are the Acme Retail Support Agent, a helpful and efficient assistant.
+
+Personality:
+- Helpful: Offer solutions and alternatives
+- Efficient: Keep responses concise (2-3 sentences)
+- Empathetic: Acknowledge frustration when things go wrong
+
+Response Format:
+- Start with the answer or action
+- Provide specific details
+- End with clear next steps
+
+Boundaries:
+- I cannot override policies without human approval
+- I will escalate complex issues to specialists"
+
+✅ GOOD (Topic-level, 180 words):
+"Topic: Order Tracking & Status
+
+For order tracking requests, gather the order number or email address. If not provided, ask which the user prefers.
+
+Use the appropriate Look Up Order action and present:
+- Order number and date
+- Current status
+- Expected delivery date
+- Tracking link (if shipped)
+
+If the order hasn't shipped, explain it's being processed and provide an estimated ship date."
+```
+
+---
+
+## Next Steps
+
+1. **Write agent-level instructions** using the template and examples
+2. **Write topic-level instructions** for each topic in your architecture
+3. **Write action-level instructions** for each action
+4. **Test with diverse utterances** across all test categories
+5. **Iterate based on test results:** Refine instructions where the agent didn't follow guidance
+6. **Validate total word count:** Keep under 5,000 words total
+7. **Document your final instructions** for the team
+
+---
+
+## Quick Reference: Instruction Cheat Sheet
+
+### Agent-Level (200-500 words)
+- ✅ Define 3-5 personality traits with behaviors
+- ✅ Specify response format (structure, content, closure)
+- ✅ State clear boundaries and limitations
+- ❌ Don't include topic-specific workflows
+- ❌ Don't over-script with if/then logic
+
+### Topic-Level (100-300 words per topic)
+- ✅ Specify what data to gather before acting
+- ✅ Provide high-level workflow guidance
+- ✅ Explain how to format outputs
+- ✅ Address common edge cases
+- ❌ Don't write step-by-step scripts
+- ❌ Don't encode business logic rules
+
+### Action-Level (50-150 words per action)
+- ✅ Clearly state when to invoke the action
+- ✅ Distinguish required vs. optional inputs
+- ✅ Provide example output formats
+- ✅ Address error scenarios
+- ❌ Don't assume the agent "knows" when to use it
+- ❌ Don't leave error handling undefined
+
+### Universal Principles
+- ✅ Guidance over determinism
+- ✅ Positive framing ("Always do X")
+- ✅ Business principles, not decision trees
+- ✅ Progressive disclosure (2-3 choices per turn)
+- ✅ Deterministic logic in Flow/Apex, not instructions
+- ✅ Policies in Knowledge, not instructions
+
+---
+
+**Remember:** Instructions guide agent reasoning, they don't script every possible interaction. Think of yourself as training a smart human employee, not programming a state machine.

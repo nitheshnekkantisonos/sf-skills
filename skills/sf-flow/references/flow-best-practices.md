@@ -998,346 +998,346 @@ TRANSACTION: Creates Account → Creates Contact → Updates related Opportuniti
 
 ## 15. Screen Flow UX Best Practices
 
-1000 ### Progress Indicators
-1001 
-1002 For multi-step flows (3+ screens):
-1003 - Use Screen component headers to show "Step X of Y"
-1004 - Consider visual progress bars for long wizards
-1005 - Update progress on each screen transition
-1006 
-1007 ### Stage Resource for Multi-Screen Flows
-1008 
-1009 The **Stage** resource provides visual progress tracking across multiple screens, showing users where they are in a multi-step process.
-1010 
-1011 #### When to Use Stage
-1012 
-1013 - Flows with 3+ screens that represent distinct phases
-1014 - Onboarding wizards (Identity → Configuration → Confirmation)
-1015 - Order processes (Cart → Shipping → Payment → Review)
-1016 - Application workflows with logical sections
-1017 
-1018 #### How Stages Work
-1019 
-1020 1. **Define stages** in your flow resources (Stage elements)
-1021 2. **Assign current stage** using Assignment element at each phase transition
-1022 3. **Display progress** using the Stage component in screens
-1023 
-1024 #### Stage Example
-1025 
-1026 ```
-1027 Flow: New Customer Onboarding
-1028 
-1029 Stages:
-1030 1. Identity (collect customer info)
-1031 2. Configuration (set preferences)
-1032 3. Payment (billing details)
-1033 4. Confirmation (review and submit)
-1034 
-1035 Each screen shows visual indicator: ● ○ ○ ○ → ● ● ○ ○ → ● ● ● ○ → ● ● ● ●
-1036 ```
-1037 
-1038 #### Benefits
-1039 
-1040 | Feature | Benefit |
-1041 |---------|---------|
-1042 | Visual progress | Users know how far along they are |
-1043 | Reduced abandonment | Clear expectation of remaining steps |
-1044 | Better UX | Professional wizard-like experience |
-1045 | Navigation context | Users understand their position |
-1046 
-1047 #### Implementation Tips
-1048 
-1049 - Keep stage names short (1-3 words)
-1050 - Use consistent naming pattern (nouns: "Identity", "Payment" vs verbs: "Collect Info", "Enter Payment")
-1051 - Consider allowing users to click back to previous stages (if safe)
-1052 
-1053 ### Button Design
-1054 
-1055 #### Naming Pattern
-1056 Use: `Action_[Verb]_[Object]`
-1057 - `Action_Save_Contact`
-1058 - `Action_Submit_Application`
-1059 - `Action_Cancel_Request`
-1060 
-1061 #### Button Ordering
-1062 1. **Primary action** first (Submit, Save, Confirm)
-1063 2. **Secondary actions** next (Save Draft, Back)
-1064 3. **Tertiary/Cancel** last (Cancel, Exit)
-1065 
-1066 ### Navigation Controls
-1067 
-1068 #### Standard Navigation Pattern
-1069 
-1070 | Button | Position | When to Show |
-1071 |--------|----------|--------------|
-1072 | Previous | Left | After first screen (if safe) |
-1073 | Cancel | Left | Always |
-1074 | Next | Right | Before final screen |
-1075 | Finish/Submit | Right | Final screen only |
-1076 
-1077 #### When to Disable Back Button
-1078 
-1079 Disable "Previous" when returning would:
-1080 - Cause duplicate record creation
-1081 - Lose unsaved complex data
-1082 - Break transaction integrity
-1083 - Confuse business process state
-1084 
-1085 ### Screen Instructions
-1086 
-1087 For complex screens, add instruction text at the top:
-1088 - Use Display Text component
-1089 - Keep instructions concise (1-2 sentences)
-1090 - Highlight required fields or important notes
-1091 
-1092 Example: "Complete all required fields (*) before proceeding."
-1093 
-1094 ### Performance Tips
-1095 
-1096 - **Lazy Loading**: Don't load all data upfront; query as needed per screen
-1097 - **Minimize Screens**: Each screen = user wait time; combine where logical
-1098 - **Avoid Complex Formulas**: In screen components (impacts render time)
-1099 - **LWC for Complex UI**: Consider Lightning Web Components for rich interactions
-1100 
-1101 ---
-1102 
-1103 ## 16. Bypass Mechanism for Data Loads
-1104 
-1105 When loading large amounts of data, flows can cause performance issues. Implement a bypass mechanism using Custom Metadata.
-1106 
-1107 ### Setup Pattern
-1108 
-1109 #### Step 1: Create Custom Metadata Type
-1110 
-1111 Create `Flow_Bypass_Settings__mdt` with fields:
-1112 - `Bypass_Flows__c` (Checkbox)
-1113 - `Flow_API_Name__c` (Text) - optional, for granular control
-1114 
-1115 #### Step 2: Add Decision at Flow Start
-1116 
-1117 Add a Decision element as the first step after Start:
-1118 
-1119 **Condition**: `{!$CustomMetadata.Flow_Bypass_Settings__mdt.Default.Bypass_Flows__c} = true`
-1120 - **If true** → End flow early (no processing)
-1121 - **If false** → Continue normal processing
-1122 
-1123 ### Use Cases
-1124 
-1125 - Data migrations
-1126 - Bulk data loads via Data Loader
-1127 - Integration batch processing
-1128 - Initial org setup/seeding
-1129 
-1130 ### Best Practice
-1131 
-1132 - Document which flows support bypass
-1133 - Ensure bypass is disabled after data load completes
-1134 - Consider logging when bypass is active
-1135 
-1136 ---
-1137 
-1138 ## 17. Flow Activation Guidelines
-1139 
-1140 ### When to Keep Flows in Draft
-1141 
-1142 - During development and testing
-1143 - Before user acceptance testing (UAT) is complete
-1144 - When dependent configurations aren't deployed yet
-1145 
-1146 ### Deployment Recommendation
-1147 
-1148 1. Deploy flows as **Draft** initially
-1149 2. Validate in target environment
-1150 3. Test with representative data
-1151 4. Activate only after verification
-1152 5. Keep previous version as backup before activating new version
-1153 
-1154 ### Scheduled Flow Considerations
-1155 
-1156 Scheduled flows run automatically without user interaction:
-1157 - Test thoroughly before activation
-1158 - Verify schedule frequency is correct
-1159 - Ensure error notifications are configured
-1160 - Monitor first few executions
-1161 
-1162 ---
-1163 
-1164 ## 18. Variable Naming Conventions
-1165 
-1166 Use consistent prefixes for all variables:
-1167 
-1168 | Prefix | Purpose | Example |
-1169 |--------|---------|---------|
-1170 | `var_` | Regular variables | `var_AccountName` |
-1171 | `col_` | Collections | `col_ContactIds` |
-1172 | `rec_` | Record variables | `rec_Account` |
-1173 | `inp_` | Input variables | `inp_RecordId` |
-1174 | `out_` | Output variables | `out_IsSuccess` |
-1175 
-1176 ### Why Prefixes Matter
-1177 
-1178 - **Clarity**: Immediately understand variable type
-1179 - **Debugging**: Easier to trace values in debug logs
-1180 - **Maintenance**: New developers understand intent quickly
-1181 - **Consistency**: Team-wide standards reduce confusion
-1182 
-1183 ### Element Naming
-1184 
-1185 For flow elements (decisions, assignments, etc.):
-1186 - Use `PascalCase_With_Underscores`
-1187 - Be descriptive: `Check_Account_Type` not `Decision_1`
-1188 - Include context: `Get_Related_Contacts` not `Get_Records`
-1189 
-1190 ---
-1191 
-1192 ## 19. Flow & Element Descriptions
-1193 
-1194 Clear descriptions are essential for maintenance, collaboration, and **Agentforce integration**. AI agents use Flow descriptions to understand and select appropriate automations.
-1195 
-1196 ### Flow Description (Critical for Agentforce)
-1197 
-1198 #### Why This Matters
-1199 
-1200 | Consumer | How They Use Descriptions |
-1201 |----------|--------------------------|
-1202 | **Agentforce Agents** | AI uses descriptions to understand what automation does and when to invoke it |
-1203 | **Future Developers** | Quick understanding without reading the entire flow |
-1204 | **Flow Orchestrator** | Discovery of available subflows |
-1205 | **Governance Tools** | Auditing and documentation generation |
-1206 | **Setup Search** | Finding flows by purpose |
-1207 
-1208 #### What to Include in Flow Description
-1209 
-1210 Every Flow description should contain:
-1211 
-1212 1. **Purpose**: One sentence explaining what the flow does
-1213 2. **Trigger**: When/how the flow is invoked
-1214 3. **Objects**: Which objects are read/written
-1215 4. **Outcome**: What changes when the flow completes
-1216 5. **Dependencies**: Any required configurations or prerequisites
-1217 
-1218 #### Examples
-1219 
-1220 ```
-1221 ✅ GOOD DESCRIPTION:
-1222 ───────────────────────────────────────────────────────────────
-1223 "Automatically assigns new Leads to the appropriate sales rep
-1224 based on territory and product interest. Updates Lead Owner,
-1225 sets Assignment_Date__c, and sends notification email to the
-1226 assigned rep. Triggered on Lead creation when Status = 'New'.
-1227 Requires Territory__c field and Lead_Assignment_Queue__c queue."
-1228 ───────────────────────────────────────────────────────────────
-1229 
-1230 ❌ BAD DESCRIPTION:
-1231 "Lead flow"
-1232 "Auto assignment"
-1233 "Created by Admin"
-1234 ```
-1235 
-1236 #### Description Template
-1237 
-1238 ```
-1239 [ACTION] [OBJECT(S)] [CONDITION].
-1240 [WHAT CHANGES]. [TRIGGER/SCHEDULE].
-1241 [DEPENDENCIES if any].
-1242 ```
-1243 
-1244 Examples using template:
-1245 - "Creates Task and sends email when Opportunity Stage changes to Closed Won. Updates Account Last_Deal_Date__c. Runs after Opportunity update."
-1246 - "Validates Contact email format and enriches with external data. Blocks save if validation fails. Runs before Contact insert/update."
-1247 
-1248 ### Element Descriptions
-1249 
-1250 Add descriptions to complex elements (Decisions, Assignments, Get Records, Loops) to explain **why** the element exists, not just what it does.
-1251 
-1252 #### When to Add Element Descriptions
-1253 
-1254 | Element Type | Add Description When... |
-1255 |--------------|------------------------|
-1256 | **Decision** | Logic has business meaning beyond obvious field comparison |
-1257 | **Get Records** | Query has specific filter reasoning |
-1258 | **Assignment** | Calculation or transformation isn't self-evident |
-1259 | **Loop** | Processing order or exit conditions matter |
-1260 | **Subflow** | Purpose of delegation isn't obvious |
-1261 
-1262 #### Element Description Format
-1263 
-1264 ```
-1265 WHY: [Business reason this element exists]
-1266 WHAT: [Technical summary if complex]
-1267 EDGE CASE: [Special handling if applicable]
-1268 ```
-1269 
-1270 #### Examples
-1271 
-1272 ```
-1273 Decision: Check_Discount_Eligibility
-1274 Description: "Customers with >$100K annual revenue OR
-1275 Premium tier get automatic 15% discount. Edge case:
-1276 New customers without revenue history default to no discount."
-1277 
-1278 Get Records: Get_Active_Contracts
-1279 Description: "Retrieves only contracts expiring in next 90 days
-1280 to avoid processing historical data. Filtered by Status=Active
-1281 to reduce collection size for bulk safety."
-1282 
-1283 Assignment: Calculate_Renewal_Date
-1284 Description: "Adds 365 days to current contract end date.
-1285 Uses formula to handle leap years. Returns null if
-1286 original end date is null (new contracts)."
-1287 ```
-1288 
-1289 ### Benefits of Good Descriptions
-1290 
-1291 | Benefit | Impact |
-1292 |---------|--------|
-1293 | **6-month test** | Can you understand the flow in 6 months? |
-1294 | **Handoff ready** | New team member can maintain without meetings |
-1295 | **Agentforce-ready** | AI can discover and use your flows correctly |
-1296 | **Audit-friendly** | Compliance reviews understand business logic |
-1297 | **Debug faster** | Element descriptions explain expected behavior |
-1298 
-1299 > **Rule of Thumb**: If you had to explain this Flow or element to a colleague, put that explanation in the description.
-1300 
-1301 ---
-1302 
-1303 ## Quick Reference Checklist
-1304 
-1305 ### Record-Triggered Flow Essentials
-1306 - [ ] Use `$Record` directly - do NOT create loops over triggered records
-1307 - [ ] Never use `$Record__c` (Process Builder pattern, doesn't exist in Flows)
-1308 - [ ] Platform handles bulk batching - you don't need manual loops
-1309 
-1310 ### Get Records Best Practices
-1311 - [ ] Use `$Record` instead of querying trigger object
-1312 - [ ] Add filters to all Get Records elements
-1313 - [ ] Enable `getFirstRecordOnly` when expecting single record
-1314 - [ ] Disable `storeOutputAutomatically` (specify fields explicitly)
-1315 - [ ] **For relationship data**: Use two-step query pattern (child → parent by ID)
-1316 - [ ] Never query `Parent.Field` in queriedFields (not supported)
-1317 
-1318 ### Error Handling & DML
-1319 - [ ] Add fault paths to all DML operations
-1320 - [ ] Implement rollback for multi-step DML
-1321 - [ ] Capture `$Flow.FaultMessage` in error handlers
-1322 
-1323 ### Naming & Organization
-1324 - [ ] Use variable naming prefixes (`var_`, `col_`, `rec_`, etc.)
-1325 - [ ] Add progress indicators to multi-screen flows
-1326 
-1327 ### Testing & Deployment
-1328 - [ ] Test with bulk data (200+ records)
-1329 - [ ] Keep flows in Draft until fully tested
-1330 - [ ] **Always use sf-deploy skill** - never direct CLI commands
-1331 
-1332 ---
-1333 
-1334 ## Related Documentation
-1335 
-1336 - [Transform vs Loop Guide](./transform-vs-loop-guide.md) - When to use each element
-1337 - [Flow Quick Reference](./flow-quick-reference.md) - Comprehensive cheat sheet
-1338 - [Orchestration Guide](./orchestration-guide.md) - Parent-child and sequential patterns
-1339 - [Subflow Library](./subflow-library.md) - Reusable subflow templates
-1340 - [Testing Guide](./testing-guide.md) - Comprehensive testing strategies
-1341 - [Governance Checklist](./governance-checklist.md) - Security and compliance
-1342 - [XML Gotchas](./xml-gotchas.md) - Common XML pitfalls
+### Progress Indicators
+
+For multi-step flows (3+ screens):
+- Use Screen component headers to show "Step X of Y"
+- Consider visual progress bars for long wizards
+- Update progress on each screen transition
+
+### Stage Resource for Multi-Screen Flows
+
+The **Stage** resource provides visual progress tracking across multiple screens, showing users where they are in a multi-step process.
+
+#### When to Use Stage
+
+- Flows with 3+ screens that represent distinct phases
+- Onboarding wizards (Identity → Configuration → Confirmation)
+- Order processes (Cart → Shipping → Payment → Review)
+- Application workflows with logical sections
+
+#### How Stages Work
+
+1. **Define stages** in your flow resources (Stage elements)
+2. **Assign current stage** using Assignment element at each phase transition
+3. **Display progress** using the Stage component in screens
+
+#### Stage Example
+
+```
+Flow: New Customer Onboarding
+
+Stages:
+1. Identity (collect customer info)
+2. Configuration (set preferences)
+3. Payment (billing details)
+4. Confirmation (review and submit)
+
+Each screen shows visual indicator: ● ○ ○ ○ → ● ● ○ ○ → ● ● ● ○ → ● ● ● ●
+```
+
+#### Benefits
+
+| Feature | Benefit |
+|---------|---------|
+| Visual progress | Users know how far along they are |
+| Reduced abandonment | Clear expectation of remaining steps |
+| Better UX | Professional wizard-like experience |
+| Navigation context | Users understand their position |
+
+#### Implementation Tips
+
+- Keep stage names short (1-3 words)
+- Use consistent naming pattern (nouns: "Identity", "Payment" vs verbs: "Collect Info", "Enter Payment")
+- Consider allowing users to click back to previous stages (if safe)
+
+### Button Design
+
+#### Naming Pattern
+Use: `Action_[Verb]_[Object]`
+- `Action_Save_Contact`
+- `Action_Submit_Application`
+- `Action_Cancel_Request`
+
+#### Button Ordering
+1. **Primary action** first (Submit, Save, Confirm)
+2. **Secondary actions** next (Save Draft, Back)
+3. **Tertiary/Cancel** last (Cancel, Exit)
+
+### Navigation Controls
+
+#### Standard Navigation Pattern
+
+| Button | Position | When to Show |
+|--------|----------|--------------|
+| Previous | Left | After first screen (if safe) |
+| Cancel | Left | Always |
+| Next | Right | Before final screen |
+| Finish/Submit | Right | Final screen only |
+
+#### When to Disable Back Button
+
+Disable "Previous" when returning would:
+- Cause duplicate record creation
+- Lose unsaved complex data
+- Break transaction integrity
+- Confuse business process state
+
+### Screen Instructions
+
+For complex screens, add instruction text at the top:
+- Use Display Text component
+- Keep instructions concise (1-2 sentences)
+- Highlight required fields or important notes
+
+Example: "Complete all required fields (*) before proceeding."
+
+### Performance Tips
+
+- **Lazy Loading**: Don't load all data upfront; query as needed per screen
+- **Minimize Screens**: Each screen = user wait time; combine where logical
+- **Avoid Complex Formulas**: In screen components (impacts render time)
+- **LWC for Complex UI**: Consider Lightning Web Components for rich interactions
+
+---
+
+## 16. Bypass Mechanism for Data Loads
+
+When loading large amounts of data, flows can cause performance issues. Implement a bypass mechanism using Custom Metadata.
+
+### Setup Pattern
+
+#### Step 1: Create Custom Metadata Type
+
+Create `Flow_Bypass_Settings__mdt` with fields:
+- `Bypass_Flows__c` (Checkbox)
+- `Flow_API_Name__c` (Text) - optional, for granular control
+
+#### Step 2: Add Decision at Flow Start
+
+Add a Decision element as the first step after Start:
+
+**Condition**: `{!$CustomMetadata.Flow_Bypass_Settings__mdt.Default.Bypass_Flows__c} = true`
+- **If true** → End flow early (no processing)
+- **If false** → Continue normal processing
+
+### Use Cases
+
+- Data migrations
+- Bulk data loads via Data Loader
+- Integration batch processing
+- Initial org setup/seeding
+
+### Best Practice
+
+- Document which flows support bypass
+- Ensure bypass is disabled after data load completes
+- Consider logging when bypass is active
+
+---
+
+## 17. Flow Activation Guidelines
+
+### When to Keep Flows in Draft
+
+- During development and testing
+- Before user acceptance testing (UAT) is complete
+- When dependent configurations aren't deployed yet
+
+### Deployment Recommendation
+
+1. Deploy flows as **Draft** initially
+2. Validate in target environment
+3. Test with representative data
+4. Activate only after verification
+5. Keep previous version as backup before activating new version
+
+### Scheduled Flow Considerations
+
+Scheduled flows run automatically without user interaction:
+- Test thoroughly before activation
+- Verify schedule frequency is correct
+- Ensure error notifications are configured
+- Monitor first few executions
+
+---
+
+## 18. Variable Naming Conventions
+
+Use consistent prefixes for all variables:
+
+| Prefix | Purpose | Example |
+|--------|---------|---------|
+| `var_` | Regular variables | `var_AccountName` |
+| `col_` | Collections | `col_ContactIds` |
+| `rec_` | Record variables | `rec_Account` |
+| `inp_` | Input variables | `inp_RecordId` |
+| `out_` | Output variables | `out_IsSuccess` |
+
+### Why Prefixes Matter
+
+- **Clarity**: Immediately understand variable type
+- **Debugging**: Easier to trace values in debug logs
+- **Maintenance**: New developers understand intent quickly
+- **Consistency**: Team-wide standards reduce confusion
+
+### Element Naming
+
+For flow elements (decisions, assignments, etc.):
+- Use `PascalCase_With_Underscores`
+- Be descriptive: `Check_Account_Type` not `Decision_1`
+- Include context: `Get_Related_Contacts` not `Get_Records`
+
+---
+
+## 19. Flow & Element Descriptions
+
+Clear descriptions are essential for maintenance, collaboration, and **Agentforce integration**. AI agents use Flow descriptions to understand and select appropriate automations.
+
+### Flow Description (Critical for Agentforce)
+
+#### Why This Matters
+
+| Consumer | How They Use Descriptions |
+|----------|--------------------------|
+| **Agentforce Agents** | AI uses descriptions to understand what automation does and when to invoke it |
+| **Future Developers** | Quick understanding without reading the entire flow |
+| **Flow Orchestrator** | Discovery of available subflows |
+| **Governance Tools** | Auditing and documentation generation |
+| **Setup Search** | Finding flows by purpose |
+
+#### What to Include in Flow Description
+
+Every Flow description should contain:
+
+1. **Purpose**: One sentence explaining what the flow does
+2. **Trigger**: When/how the flow is invoked
+3. **Objects**: Which objects are read/written
+4. **Outcome**: What changes when the flow completes
+5. **Dependencies**: Any required configurations or prerequisites
+
+#### Examples
+
+```
+✅ GOOD DESCRIPTION:
+───────────────────────────────────────────────────────────────
+"Automatically assigns new Leads to the appropriate sales rep
+based on territory and product interest. Updates Lead Owner,
+sets Assignment_Date__c, and sends notification email to the
+assigned rep. Triggered on Lead creation when Status = 'New'.
+Requires Territory__c field and Lead_Assignment_Queue__c queue."
+───────────────────────────────────────────────────────────────
+
+❌ BAD DESCRIPTION:
+"Lead flow"
+"Auto assignment"
+"Created by Admin"
+```
+
+#### Description Template
+
+```
+[ACTION] [OBJECT(S)] [CONDITION].
+[WHAT CHANGES]. [TRIGGER/SCHEDULE].
+[DEPENDENCIES if any].
+```
+
+Examples using template:
+- "Creates Task and sends email when Opportunity Stage changes to Closed Won. Updates Account Last_Deal_Date__c. Runs after Opportunity update."
+- "Validates Contact email format and enriches with external data. Blocks save if validation fails. Runs before Contact insert/update."
+
+### Element Descriptions
+
+Add descriptions to complex elements (Decisions, Assignments, Get Records, Loops) to explain **why** the element exists, not just what it does.
+
+#### When to Add Element Descriptions
+
+| Element Type | Add Description When... |
+|--------------|------------------------|
+| **Decision** | Logic has business meaning beyond obvious field comparison |
+| **Get Records** | Query has specific filter reasoning |
+| **Assignment** | Calculation or transformation isn't self-evident |
+| **Loop** | Processing order or exit conditions matter |
+| **Subflow** | Purpose of delegation isn't obvious |
+
+#### Element Description Format
+
+```
+WHY: [Business reason this element exists]
+WHAT: [Technical summary if complex]
+EDGE CASE: [Special handling if applicable]
+```
+
+#### Examples
+
+```
+Decision: Check_Discount_Eligibility
+Description: "Customers with >$100K annual revenue OR
+Premium tier get automatic 15% discount. Edge case:
+New customers without revenue history default to no discount."
+
+Get Records: Get_Active_Contracts
+Description: "Retrieves only contracts expiring in next 90 days
+to avoid processing historical data. Filtered by Status=Active
+to reduce collection size for bulk safety."
+
+Assignment: Calculate_Renewal_Date
+Description: "Adds 365 days to current contract end date.
+Uses formula to handle leap years. Returns null if
+original end date is null (new contracts)."
+```
+
+### Benefits of Good Descriptions
+
+| Benefit | Impact |
+|---------|--------|
+| **6-month test** | Can you understand the flow in 6 months? |
+| **Handoff ready** | New team member can maintain without meetings |
+| **Agentforce-ready** | AI can discover and use your flows correctly |
+| **Audit-friendly** | Compliance reviews understand business logic |
+| **Debug faster** | Element descriptions explain expected behavior |
+
+> **Rule of Thumb**: If you had to explain this Flow or element to a colleague, put that explanation in the description.
+
+---
+
+## Quick Reference Checklist
+
+### Record-Triggered Flow Essentials
+- [ ] Use `$Record` directly - do NOT create loops over triggered records
+- [ ] Never use `$Record__c` (Process Builder pattern, doesn't exist in Flows)
+- [ ] Platform handles bulk batching - you don't need manual loops
+
+### Get Records Best Practices
+- [ ] Use `$Record` instead of querying trigger object
+- [ ] Add filters to all Get Records elements
+- [ ] Enable `getFirstRecordOnly` when expecting single record
+- [ ] Disable `storeOutputAutomatically` (specify fields explicitly)
+- [ ] **For relationship data**: Use two-step query pattern (child → parent by ID)
+- [ ] Never query `Parent.Field` in queriedFields (not supported)
+
+### Error Handling & DML
+- [ ] Add fault paths to all DML operations
+- [ ] Implement rollback for multi-step DML
+- [ ] Capture `$Flow.FaultMessage` in error handlers
+
+### Naming & Organization
+- [ ] Use variable naming prefixes (`var_`, `col_`, `rec_`, etc.)
+- [ ] Add progress indicators to multi-screen flows
+
+### Testing & Deployment
+- [ ] Test with bulk data (200+ records)
+- [ ] Keep flows in Draft until fully tested
+- [ ] **Always use sf-deploy skill** - never direct CLI commands
+
+---
+
+## Related Documentation
+
+- [Transform vs Loop Guide](./transform-vs-loop-guide.md) - When to use each element
+- [Flow Quick Reference](./flow-quick-reference.md) - Comprehensive cheat sheet
+- [Orchestration Guide](./orchestration-guide.md) - Parent-child and sequential patterns
+- [Subflow Library](./subflow-library.md) - Reusable subflow templates
+- [Testing Guide](./testing-guide.md) - Comprehensive testing strategies
+- [Governance Checklist](./governance-checklist.md) - Security and compliance
+- [XML Gotchas](./xml-gotchas.md) - Common XML pitfalls

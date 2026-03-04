@@ -998,5 +998,5 @@ describe('c-account-list', () => {
 
 - [component-patterns.md](component-patterns.md) - Component implementation patterns
 - [lms-guide.md](lms-guide.md) - Lightning Message Service
-1000 - [James Simone - Advanced LWC Jest Testing](https://www.jamessimone.net/blog/joys-of-apex/advanced-lwc-jest-testing/)
-1001 - [LWC Recipes - Tests](https://github.com/trailheadapps/lwc-recipes/tree/main/force-app/main/default/lwc/__tests__)
+- [James Simone - Advanced LWC Jest Testing](https://www.jamessimone.net/blog/joys-of-apex/advanced-lwc-jest-testing/)
+- [LWC Recipes - Tests](https://github.com/trailheadapps/lwc-recipes/tree/main/force-app/main/default/lwc/__tests__)
