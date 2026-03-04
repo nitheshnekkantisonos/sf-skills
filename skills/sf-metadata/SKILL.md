@@ -1,9 +1,11 @@
 ---
 name: sf-metadata
 description: >
-  Generates and queries Salesforce metadata with 120-point scoring. Use when
-  creating custom objects, fields, profiles, permission sets, validation rules,
-  or querying org metadata structures via sf CLI.
+  Salesforce metadata generation and querying with 120-point scoring.
+  TRIGGER when: user creates custom objects, fields, validation rules, or touches
+  .object-meta.xml, .field-meta.xml, .profile-meta.xml files.
+  DO NOT TRIGGER when: permission set analysis (use sf-permissions), deploying
+  metadata (use sf-deploy), or Flow XML (use sf-flow).
 license: MIT
 metadata:
   version: "1.1.0"

@@ -1,9 +1,11 @@
 ---
 name: sf-diagram-nanobananapro
 description: >
-  AI-powered visual content generation for Salesforce development.
-  Generates ERD diagrams, LWC mockups, architecture visuals using Nano Banana Pro.
-  Also provides Gemini as a parallel sub-agent for code review and research.
+  AI-powered image generation for Salesforce visuals via Nano Banana Pro.
+  TRIGGER when: user asks for PNG/SVG output, UI mockups, wireframes, visual ERDs,
+  or says "generate image" / "create mockup".
+  DO NOT TRIGGER when: text-based Mermaid diagrams (use sf-diagram-mermaid),
+  or non-visual documentation tasks.
 license: MIT
 metadata:
   version: "1.5.0"

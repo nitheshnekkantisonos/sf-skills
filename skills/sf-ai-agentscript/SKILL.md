@@ -1,10 +1,13 @@
 ---
 name: sf-ai-agentscript
 description: >
-  Agent Script DSL development skill for Salesforce Agentforce.
-  Enables writing deterministic agents in a single .agent file with
-  FSM architecture, instruction resolution, and hybrid reasoning.
-  Covers syntax, debugging, testing, and CLI deployment.
+  Agent Script DSL for deterministic Agentforce agents.
+  TRIGGER when: user writes or edits .agent files, builds FSM-based agents,
+  uses Agent Script CLI (sf agent generate/publish), or asks about deterministic
+  agent patterns, slot filling, or instruction resolution.
+  DO NOT TRIGGER when: Setup UI agent building (use sf-ai-agentforce), agent
+  testing (use sf-ai-agentforce-testing), or conversation design
+  (use sf-ai-agentforce-conversationdesign).
 license: MIT
 compatibility: "Requires Agentforce license, API v66.0+, Einstein Agent User"
 metadata:

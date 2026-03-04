@@ -1,9 +1,11 @@
 ---
 name: sf-diagram-mermaid
 description: >
-  Creates Salesforce architecture diagrams using Mermaid with ASCII fallback.
-  Use when visualizing OAuth flows, data models (ERDs), integration sequences,
-  system landscapes, role hierarchies, or Agentforce agent architectures.
+  Salesforce architecture diagrams using Mermaid with ASCII fallback.
+  TRIGGER when: user says "diagram", "visualize", "ERD", or asks for sequence
+  diagrams, flowcharts, class diagrams, or architecture visualizations in Mermaid.
+  DO NOT TRIGGER when: user wants PNG/SVG image output (use sf-diagram-nanobananapro),
+  or asks about non-Salesforce systems.
 license: MIT
 compatibility: "Requires Mermaid-capable renderer for diagram previews"
 metadata:

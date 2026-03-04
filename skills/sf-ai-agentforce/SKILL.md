@@ -1,10 +1,13 @@
 ---
 name: sf-ai-agentforce
 description: >
-  Standard Agentforce platform skill. Covers Setup UI-based agent building,
-  topic/action configuration, PromptTemplate metadata, Einstein Models API,
-  GenAiFunction/GenAiPlugin setup, and custom Lightning types.
-  For Agent Script DSL development, use sf-ai-agentscript instead.
+  Agentforce platform agent building via Setup UI.
+  TRIGGER when: user configures agents in Agent Builder, creates topics/actions,
+  writes PromptTemplates, or touches .genAiFunction/.genAiPlugin/.promptTemplate
+  metadata XML files.
+  DO NOT TRIGGER when: Agent Script DSL .agent files (use sf-ai-agentscript),
+  agent testing (use sf-ai-agentforce-testing), or conversation design
+  (use sf-ai-agentforce-conversationdesign).
 license: MIT
 compatibility: "Requires API v66.0+ (Spring '26)"
 metadata:

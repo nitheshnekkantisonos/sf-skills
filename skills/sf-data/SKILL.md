@@ -1,9 +1,11 @@
 ---
 name: sf-data
 description: >
-  Salesforce data operations expert with 130-point scoring. Use when writing
-  SOQL queries, creating test data, performing bulk data operations, or
-  importing/exporting data via sf CLI.
+  Salesforce data operations with 130-point scoring.
+  TRIGGER when: user creates test data, performs bulk import/export, uses sf data CLI
+  commands, or needs data factory patterns for Apex tests.
+  DO NOT TRIGGER when: SOQL query writing only (use sf-soql), Apex test execution
+  (use sf-testing), or metadata deployment (use sf-deploy).
 license: MIT
 metadata:
   version: "1.1.0"

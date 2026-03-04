@@ -1,10 +1,11 @@
 ---
 name: sf-ai-agentforce-testing
 description: >
-  Comprehensive Agentforce testing skill with dual-track workflow: multi-turn API testing
-  (primary) and CLI Testing Center (secondary). Execute multi-turn conversations via Agent
-  Runtime API, run single-utterance tests via sf CLI, analyze topic/action/context coverage,
-  and automatically fix failing agents with 100-point scoring across 7 categories.
+  Agentforce agent testing with dual-track workflow and 100-point scoring.
+  TRIGGER when: user tests Agentforce agents, runs sf agent test commands, creates
+  test specs, validates topic routing, or analyzes agent test coverage.
+  DO NOT TRIGGER when: Apex unit tests (use sf-testing), building agents
+  (use sf-ai-agentforce), or Agent Script DSL (use sf-ai-agentscript).
 license: MIT
 compatibility: "Requires API v66.0+ (Spring '26) and Agentforce enabled org"
 metadata:

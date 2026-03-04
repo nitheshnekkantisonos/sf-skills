@@ -1,10 +1,13 @@
 ---
 name: sf-ai-agentforce-conversationdesign
 description: >
-  Conversation design skill for Salesforce Agentforce. Generates persona
-  documents, topic architectures, instruction sets, utterance libraries,
-  escalation matrices, and guardrail configurations. Validates existing
-  agents against conversation design best practices with 120-point scoring.
+  Conversation design for Agentforce agents with 120-point scoring.
+  TRIGGER when: user designs agent personas, writes topic instructions, creates
+  utterance libraries, builds escalation matrices, or reviews agent conversation
+  quality and guardrails.
+  DO NOT TRIGGER when: building agent metadata (use sf-ai-agentforce), testing
+  agents (use sf-ai-agentforce-testing), or Agent Script DSL
+  (use sf-ai-agentscript).
 license: MIT
 compatibility: "Agentforce license, API v66.0+, Einstein Agent runtime"
 metadata:

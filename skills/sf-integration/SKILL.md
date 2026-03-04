@@ -1,9 +1,11 @@
 ---
 name: sf-integration
 description: >
-  Creates comprehensive Salesforce integrations with 120-point scoring. Use when
-  setting up Named Credentials, External Services, REST/SOAP callouts, Platform
-  Events, Change Data Capture, or connecting Salesforce to external systems.
+  Salesforce integration architecture with 120-point scoring.
+  TRIGGER when: user sets up Named Credentials, External Services, REST/SOAP
+  callouts, Platform Events, CDC, or touches .namedCredential-meta.xml files.
+  DO NOT TRIGGER when: Connected App/OAuth config (use sf-connected-apps),
+  Apex-only logic (use sf-apex), or data import/export (use sf-data).
 license: MIT
 metadata:
   version: "1.2.0"

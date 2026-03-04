@@ -1,10 +1,10 @@
 ---
 name: sf-lwc
 description: >
-  Lightning Web Components development skill with PICKLES architecture methodology,
-  component scaffolding, wire service patterns, event handling, Apex integration,
-  GraphQL support, and Jest test generation. Build modern Salesforce UIs with
-  proper reactivity, accessibility, dark mode compatibility, and performance patterns.
+  Lightning Web Components with PICKLES methodology and 165-point scoring.
+  TRIGGER when: user creates/edits LWC components, touches lwc/**/*.js, .html,
+  .css, .js-meta.xml files, or asks about wire service, SLDS, or Jest LWC tests.
+  DO NOT TRIGGER when: Apex classes (use sf-apex), Aura components, or Visualforce.
 license: MIT
 metadata:
   version: "2.1.0"

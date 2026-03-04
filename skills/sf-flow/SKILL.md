@@ -1,9 +1,11 @@
 ---
 name: sf-flow
 description: >
-  Creates and validates Salesforce flows with 110-point scoring and Spring '26
-  best practices. Use when building record-triggered flows, screen flows,
-  autolaunched flows, scheduled flows, or reviewing existing flow performance.
+  Creates and validates Salesforce Flows with 110-point scoring.
+  TRIGGER when: user builds or edits record-triggered, screen, autolaunched, or
+  scheduled flows, or touches .flow-meta.xml files.
+  DO NOT TRIGGER when: Apex automation (use sf-apex), process builder migration
+  questions only, or non-Flow declarative config (use sf-metadata).
 license: MIT
 metadata:
   version: "2.1.0"

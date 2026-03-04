@@ -1,9 +1,12 @@
 ---
 name: sf-ai-agentforce-observability
 description: >
-  Extract and analyze Agentforce session tracing data from Salesforce Data 360.
-  Supports high-volume extraction (1-10M records/day), Polars-based analysis,
-  and debugging workflows for agent sessions.
+  Agentforce session tracing extraction and analysis.
+  TRIGGER when: user extracts STDM data from Data Cloud, analyzes agent session
+  traces, debugs agent conversations via telemetry, or works with .parquet files
+  from Agentforce.
+  DO NOT TRIGGER when: testing agents (use sf-ai-agentforce-testing), Apex debug
+  logs (use sf-debug), or building agents (use sf-ai-agentforce).
 license: MIT
 compatibility: "Requires Data 360 enabled org with Agentforce Session Tracing"
 metadata:

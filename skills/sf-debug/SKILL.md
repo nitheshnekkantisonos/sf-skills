@@ -1,9 +1,11 @@
 ---
 name: sf-debug
 description: >
-  Salesforce debugging and troubleshooting skill with log analysis, governor limit
-  detection, and agentic fix suggestions. Parse debug logs, identify performance
-  bottlenecks, analyze stack traces, and automatically suggest fixes.
+  Salesforce debug log analysis and troubleshooting with 100-point scoring.
+  TRIGGER when: user analyzes debug logs, hits governor limits, reads stack traces,
+  or touches .log files from Salesforce orgs.
+  DO NOT TRIGGER when: running Apex tests (use sf-testing), fixing Apex code
+  (use sf-apex), or Agentforce session tracing (use sf-ai-agentforce-observability).
 license: MIT
 metadata:
   version: "1.1.0"

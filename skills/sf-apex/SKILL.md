@@ -1,9 +1,11 @@
 ---
 name: sf-apex
 description: >
-  Generates and reviews Salesforce Apex code with 2025 best practices and 150-point
-  scoring. Use when writing Apex classes, triggers, test classes, batch jobs, or
-  reviewing existing Apex code for bulkification, security, and SOLID principles.
+  Generates and reviews Salesforce Apex code with 150-point scoring.
+  TRIGGER when: user writes, reviews, or fixes Apex classes, triggers, test classes,
+  batch/queueable/schedulable jobs, or touches .cls/.trigger files.
+  DO NOT TRIGGER when: LWC JavaScript (use sf-lwc), Flow XML (use sf-flow),
+  SOQL-only queries (use sf-soql), or non-Salesforce code.
 license: MIT
 metadata:
   version: "1.1.0"

@@ -121,7 +121,9 @@
         "\\.cls-meta\\.xml$"
       ],
       "priority": "high",
-      "description": "Apex code development with validation and best practices"
+      "description": "Apex code development with validation and best practices",
+      "triggerWhen": "user writes, reviews, or fixes Apex classes, triggers, test classes, batch/queueable/schedulable jobs, or touches .cls/.trigger files",
+      "doNotTriggerWhen": "LWC JavaScript (use sf-lwc), Flow XML (use sf-flow), SOQL-only queries (use sf-soql), or non-Salesforce code"
     },
     "sf-flow": {
       "keywords": [
@@ -161,7 +163,9 @@
         "\\.flow$"
       ],
       "priority": "high",
-      "description": "Flow Builder automation with validation"
+      "description": "Flow Builder automation with validation",
+      "triggerWhen": "user builds or edits record-triggered, screen, autolaunched, or scheduled flows, or touches .flow-meta.xml files",
+      "doNotTriggerWhen": "Apex automation (use sf-apex), process builder migration questions only, or non-Flow declarative config (use sf-metadata)"
     },
     "sf-lwc": {
       "keywords": [
@@ -199,7 +203,9 @@
         "\\.js-meta\\.xml$"
       ],
       "priority": "high",
-      "description": "Lightning Web Components with SLDS compliance"
+      "description": "Lightning Web Components with SLDS compliance",
+      "triggerWhen": "user creates/edits LWC components, touches lwc/**/*.js, .html, .css, .js-meta.xml files, or asks about wire service, SLDS, or Jest LWC tests",
+      "doNotTriggerWhen": "Apex classes (use sf-apex), Aura components, or Visualforce"
     },
     "sf-ai-agentforce-conversationdesign": {
       "keywords": [
@@ -234,7 +240,9 @@
         "scorecard.*\\.md$"
       ],
       "priority": "high",
-      "description": "Conversation design for Agentforce agents \u2014 personas, topics, instructions, utterances, escalation, guardrails"
+      "description": "Conversation design for Agentforce agents \u2014 personas, topics, instructions, utterances, escalation, guardrails",
+      "triggerWhen": "user designs agent personas, writes topic instructions, creates utterance libraries, builds escalation matrices, or reviews agent conversation quality",
+      "doNotTriggerWhen": "building agent metadata (use sf-ai-agentforce), testing agents (use sf-ai-agentforce-testing), or Agent Script DSL (use sf-ai-agentscript)"
     },
     "sf-ai-agentforce": {
       "keywords": [
@@ -264,7 +272,9 @@
         "\\.lightningTypeBundle-meta\\.xml$"
       ],
       "priority": "medium",
-      "description": "Standard Agentforce platform skill for Setup UI agent building, PromptTemplate, Models API, and GenAi metadata"
+      "description": "Standard Agentforce platform skill for Setup UI agent building, PromptTemplate, Models API, and GenAi metadata",
+      "triggerWhen": "user configures agents in Agent Builder, creates topics/actions, writes PromptTemplates, or touches .genAiFunction/.genAiPlugin/.promptTemplate metadata XML",
+      "doNotTriggerWhen": "Agent Script DSL .agent files (use sf-ai-agentscript), agent testing (use sf-ai-agentforce-testing), or conversation design (use sf-ai-agentforce-conversationdesign)"
     },
     "sf-metadata": {
       "keywords": [
@@ -302,7 +312,9 @@
         "\\.profile-meta\\.xml$"
       ],
       "priority": "medium",
-      "description": "Salesforce metadata configuration"
+      "description": "Salesforce metadata configuration",
+      "triggerWhen": "user creates custom objects, fields, validation rules, or touches .object-meta.xml, .field-meta.xml, .profile-meta.xml files",
+      "doNotTriggerWhen": "permission set analysis (use sf-permissions), deploying metadata (use sf-deploy), or Flow XML (use sf-flow)"
     },
     "sf-deploy": {
       "keywords": [
@@ -335,7 +347,9 @@
       ],
       "filePatterns": [],
       "priority": "medium",
-      "description": "CI/CD deployment automation"
+      "description": "CI/CD deployment automation",
+      "triggerWhen": "user deploys metadata, creates/manages scratch orgs or sandboxes, sets up CI/CD pipelines, or troubleshoots deployment errors with sf project deploy",
+      "doNotTriggerWhen": "writing Apex/LWC code (use sf-apex/sf-lwc), creating metadata XML (use sf-metadata), or querying org data (use sf-data)"
     },
     "sf-testing": {
       "keywords": [
@@ -369,7 +383,9 @@
         ".*_Test\\.cls$"
       ],
       "priority": "medium",
-      "description": "Test execution and coverage analysis"
+      "description": "Test execution and coverage analysis",
+      "triggerWhen": "user runs Apex tests, checks code coverage, fixes failing tests, or touches *Test.cls / *_Test.cls files",
+      "doNotTriggerWhen": "writing Apex production code (use sf-apex), Agentforce agent testing (use sf-ai-agentforce-testing), or Jest/LWC tests (use sf-lwc)"
     },
     "sf-soql": {
       "keywords": [
@@ -405,7 +421,9 @@
         "\\.soql$"
       ],
       "priority": "medium",
-      "description": "SOQL query optimization and analysis"
+      "description": "SOQL query optimization and analysis",
+      "triggerWhen": "user writes, optimizes, or debugs SOQL/SOSL queries, touches .soql files, or asks about relationship queries, aggregates, or query performance",
+      "doNotTriggerWhen": "bulk data operations (use sf-data), Apex DML logic (use sf-apex), or report/dashboard queries"
     },
     "sf-data": {
       "keywords": [
@@ -435,7 +453,9 @@
       ],
       "filePatterns": [],
       "priority": "medium",
-      "description": "Test data generation and management"
+      "description": "Test data generation and management",
+      "triggerWhen": "user creates test data, performs bulk import/export, uses sf data CLI commands, or needs data factory patterns for Apex tests",
+      "doNotTriggerWhen": "SOQL query writing only (use sf-soql), Apex test execution (use sf-testing), or metadata deployment (use sf-deploy)"
     },
     "sf-integration": {
       "keywords": [
@@ -473,7 +493,9 @@
         "\\.externalServiceRegistration-meta\\.xml$"
       ],
       "priority": "medium",
-      "description": "External system integrations"
+      "description": "External system integrations",
+      "triggerWhen": "user sets up Named Credentials, External Services, REST/SOAP callouts, Platform Events, CDC, or touches .namedCredential-meta.xml files",
+      "doNotTriggerWhen": "Connected App/OAuth config (use sf-connected-apps), Apex-only logic (use sf-apex), or data import/export (use sf-data)"
     },
     "sf-connected-apps": {
       "keywords": [
@@ -507,7 +529,9 @@
         "\\.eca-meta\\.xml$"
       ],
       "priority": "low",
-      "description": "OAuth and authentication configuration"
+      "description": "OAuth and authentication configuration",
+      "triggerWhen": "user configures OAuth flows, JWT bearer auth, Connected Apps, or touches .connectedApp-meta.xml / .eca-meta.xml files",
+      "doNotTriggerWhen": "Named Credentials for callouts (use sf-integration), permission policies (use sf-permissions), or API endpoint code (use sf-apex)"
     },
     "sf-debug": {
       "keywords": [
@@ -544,7 +568,9 @@
         "debug.*\\.txt$"
       ],
       "priority": "low",
-      "description": "Debug log analysis and troubleshooting"
+      "description": "Debug log analysis and troubleshooting",
+      "triggerWhen": "user analyzes debug logs, hits governor limits, reads stack traces, or touches .log files from Salesforce orgs",
+      "doNotTriggerWhen": "running Apex tests (use sf-testing), fixing Apex code (use sf-apex), or Agentforce session tracing (use sf-ai-agentforce-observability)"
     },
     "sf-diagram-mermaid": {
       "keywords": [
@@ -599,7 +625,9 @@
         ".*-diagram\\.md$"
       ],
       "priority": "low",
-      "description": "Mermaid diagram generation"
+      "description": "Mermaid diagram generation",
+      "triggerWhen": "user says 'diagram', 'visualize', 'ERD', or asks for sequence diagrams, flowcharts, class diagrams, or architecture visualizations in Mermaid",
+      "doNotTriggerWhen": "user wants PNG/SVG image output (use sf-diagram-nanobananapro), or non-Salesforce systems"
     },
     "sf-diagram-nanobananapro": {
       "keywords": [
@@ -649,7 +677,9 @@
         "\\.jpg$"
       ],
       "priority": "low",
-      "description": "Visual mockups and image generation"
+      "description": "Visual mockups and image generation",
+      "triggerWhen": "user asks for PNG/SVG output, UI mockups, wireframes, visual ERDs, or says 'generate image' / 'create mockup'",
+      "doNotTriggerWhen": "text-based Mermaid diagrams (use sf-diagram-mermaid), or non-visual documentation tasks"
     },
     "sf-ai-agentforce-testing": {
       "keywords": [
@@ -679,7 +709,9 @@
         ".*-test-spec\\.yml$"
       ],
       "priority": "low",
-      "description": "Agentforce agent test automation"
+      "description": "Agentforce agent test automation",
+      "triggerWhen": "user tests Agentforce agents, runs sf agent test commands, creates test specs, validates topic routing, or analyzes agent test coverage",
+      "doNotTriggerWhen": "Apex unit tests (use sf-testing), building agents (use sf-ai-agentforce), or Agent Script DSL (use sf-ai-agentscript)"
     },
     "sf-ai-agentscript": {
       "keywords": [
@@ -712,7 +744,9 @@
         "GenAi.*\\.xml$"
       ],
       "priority": "high",
-      "description": "Agent Script DSL for deterministic Agentforce agents"
+      "description": "Agent Script DSL for deterministic Agentforce agents",
+      "triggerWhen": "user writes or edits .agent files, builds FSM-based agents, uses Agent Script CLI (sf agent generate/publish), or asks about deterministic agent patterns",
+      "doNotTriggerWhen": "Setup UI agent building (use sf-ai-agentforce), agent testing (use sf-ai-agentforce-testing), or conversation design (use sf-ai-agentforce-conversationdesign)"
     },
     "sf-permissions": {
       "keywords": [
@@ -742,7 +776,9 @@
         "\\.permissionsetgroup-meta\\.xml$"
       ],
       "priority": "medium",
-      "description": "Permission Set analysis and hierarchy visualization"
+      "description": "Permission Set analysis and hierarchy visualization",
+      "triggerWhen": "user asks 'who has access to X?', analyzes permission sets/groups, or touches .permissionset-meta.xml / .permissionsetgroup-meta.xml files",
+      "doNotTriggerWhen": "creating new metadata (use sf-metadata), deploying permission sets (use sf-deploy), or Apex sharing logic (use sf-apex)"
     },
     "sf-ai-agentforce-observability": {
       "keywords": [
@@ -774,7 +810,9 @@
         "stdm_data/"
       ],
       "priority": "medium",
-      "description": "Extract and analyze Agentforce session tracing data from Data Cloud"
+      "description": "Extract and analyze Agentforce session tracing data from Data Cloud",
+      "triggerWhen": "user extracts STDM data from Data Cloud, analyzes agent session traces, debugs agent conversations via telemetry, or works with .parquet files from Agentforce",
+      "doNotTriggerWhen": "testing agents (use sf-ai-agentforce-testing), Apex debug logs (use sf-debug), or building agents (use sf-ai-agentforce)"
     }
   }
 }

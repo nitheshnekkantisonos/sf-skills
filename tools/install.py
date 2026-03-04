@@ -1643,53 +1643,6 @@ def migrate_legacy_layout(dry_run: bool = False) -> bool:
 COMMANDS_DIR = CLAUDE_DIR / "commands"
 
 
-def register_skills_as_commands(skills_dir: Path, dry_run: bool = False) -> int:
-    """
-    Register skills in ~/.claude/commands/ by creating symlinks to SKILL.md files.
-
-    Claude Code discovers custom commands from ~/.claude/commands/*.md files.
-    This function creates symlinks like:
-        ~/.claude/commands/sf-apex.md -> ~/.claude/sf-skills/skills/sf-apex/SKILL.md
-
-    Args:
-        skills_dir: Directory containing skill subdirectories (each with SKILL.md)
-        dry_run: If True, only report what would be done
-
-    Returns:
-        Number of skills registered
-    """
-    if not skills_dir.exists():
-        return 0
-
-    if not dry_run:
-        COMMANDS_DIR.mkdir(parents=True, exist_ok=True)
-
-    count = 0
-    for skill_dir in skills_dir.iterdir():
-        if not skill_dir.is_dir() or not skill_dir.name.startswith("sf-"):
-            continue
-
-        skill_md = skill_dir / "SKILL.md"
-        if not skill_md.exists():
-            continue
-
-        # Create symlink: ~/.claude/commands/sf-apex.md -> SKILL.md
-        link_path = COMMANDS_DIR / f"{skill_dir.name}.md"
-
-        if dry_run:
-            print_info(f"Would create: {link_path} -> {skill_md}")
-        else:
-            # Remove existing link or file
-            if link_path.exists() or link_path.is_symlink():
-                link_path.unlink()
-
-            # Create symlink
-            link_path.symlink_to(skill_md)
-
-        count += 1
-
-    return count
-
 
 def unregister_skills_from_commands(dry_run: bool = False) -> int:
     """
