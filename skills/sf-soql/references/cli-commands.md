@@ -9,7 +9,7 @@
 | JSON output | `sf data query --query "..." --json` |
 | CSV output | `sf data query --query "..." --result-format csv` |
 | Bulk export | `sf data export bulk --query "SELECT..." --target-org alias` |
-| Query plan | `sf data query --query "..." --use-tooling-api --plan` |
+| Query plan | `sf api request rest '/query/?explain=<SOQL>' --target-org alias` |
 
 ---
 

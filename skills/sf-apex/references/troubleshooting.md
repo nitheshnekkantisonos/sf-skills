@@ -190,7 +190,7 @@ sf project deploy start --metadata ApexClass:MyClass --target-org <alias> --dry-
 
 ```
 1. sf-metadata: Create custom fields
-   └─> sf sobject create --sobject-name Lead --fields "Score__c:Number(3,0)"
+   └─> sf schema generate field --object Lead --label "Score" (then edit XML for Number(3,0))
 
 2. sf-metadata: Create Permission Sets
    └─> Grant FLS on custom fields

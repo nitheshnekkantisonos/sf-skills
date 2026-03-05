@@ -6,8 +6,8 @@
 | Task | Command |
 |------|---------|
 | Create component | `sf template generate lightning component --name myComp --type lwc` |
-| Create FlexiPage | `sf template generate flexipage --name MyPage --page-type AppPage` |
-| Run all tests | `sf lightning lwc test run` |
+| Create FlexiPage | `sf template generate flexipage --name MyPage --template DefaultAppPage` |
+| Run all tests | `sf force lightning lwc test run` |
 | Deploy component | `sf project deploy start --source-dir force-app/.../lwc/myComp` |
 | Create message channel | Manual XML: `force-app/.../messageChannels/MyChannel.messageChannel-meta.xml` |
 
@@ -46,13 +46,13 @@ touch force-app/main/default/lwc/accountList/__tests__/accountList.test.js
 ### Run All Jest Tests
 
 ```bash
-sf lightning lwc test run
+sf force lightning lwc test run
 ```
 
 ### Run Specific Test File
 
 ```bash
-sf lightning lwc test run \
+sf force lightning lwc test run \
   --spec force-app/main/default/lwc/accountList/__tests__/accountList.test.js
 ```
 
@@ -60,14 +60,14 @@ sf lightning lwc test run \
 
 ```bash
 # Re-runs tests when files change
-sf lightning lwc test run --watch
+sf force lightning lwc test run --watch
 ```
 
 ### Coverage Report
 
 ```bash
 # Generate HTML coverage report
-sf lightning lwc test run --coverage
+sf force lightning lwc test run --coverage
 # Report at: coverage/lcov-report/index.html
 ```
 
@@ -75,7 +75,7 @@ sf lightning lwc test run --coverage
 
 ```bash
 # Run with Node debugger
-sf lightning lwc test run --debug
+sf force lightning lwc test run --debug
 
 # Then in Chrome: chrome://inspect
 ```
@@ -83,7 +83,7 @@ sf lightning lwc test run --debug
 ### Update Snapshots
 
 ```bash
-sf lightning lwc test run --update-snapshot
+sf force lightning lwc test run --update-snapshot
 ```
 
 ---
@@ -294,7 +294,7 @@ module.exports = {
 
 ```bash
 # 1. Run local tests
-sf lightning lwc test run
+sf force lightning lwc test run
 
 # 2. Deploy to sandbox
 sf project deploy start \
@@ -314,7 +314,7 @@ sf org open --target-org my-sandbox
 npx eslint ./force-app/main/default/lwc || exit 1
 
 # Test
-sf lightning lwc test run --coverage || exit 1
+sf force lightning lwc test run --coverage || exit 1
 
 # Validate deployment
 sf project deploy start \
@@ -362,7 +362,7 @@ sf project deploy start \
 npx jest --clearCache
 
 # Re-run tests
-sf lightning lwc test run
+sf force lightning lwc test run
 ```
 
 ### Wire Service Not Working
@@ -404,7 +404,6 @@ sf plugins install @salesforce/plugin-code-analyzer
 # Run scan on LWC components
 sf code-analyzer run \
   --workspace force-app/main/default/lwc \
-  --output-format html \
   --output-file lwc-scan-results.html
 
 # Run with specific rules
@@ -413,7 +412,7 @@ sf code-analyzer run \
   --rule-selector "Category:Best Practices,Security"
 ```
 
-> **Migration from sfdx-scanner**: v5 uses `--workspace` instead of `--target`, `--output-format` instead of `--format`, `--output-file` instead of `--outfile`, and `--rule-selector` instead of `--engine`/`--category`.
+> **Migration from sfdx-scanner**: v5 uses `--workspace` instead of `--target`, `--output-file` instead of `--outfile` (format inferred from extension), `--view` for table/detail display, and `--rule-selector` instead of `--engine`/`--category`.
 
 ### SLDS 2 Compliance Checks
 

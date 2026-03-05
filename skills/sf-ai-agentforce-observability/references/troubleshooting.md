@@ -70,7 +70,7 @@ Extracted 0 sessions
 |-------|----------|
 | Session tracing not enabled | Setup → Agentforce → Enable Session Tracing |
 | Wrong date range | Data typically lags 5-15 minutes |
-| Wrong agent name | Check exact API name with `sf agent list` |
+| Wrong agent name | Check exact API name with `sf org list metadata --metadata-type Bot --target-org <alias>` |
 | Sandbox without data | Session tracing may not be enabled in sandbox |
 
 **Debug:**

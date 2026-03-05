@@ -98,7 +98,7 @@ This file contains practical examples of common Salesforce deployment scenarios 
 
 2. **Run targeted tests**
    ```bash
-   sf apex test run \
+   sf apex run test \
      --tests AccountControllerTest \
      --target-org production \
      --wait 5
@@ -309,7 +309,7 @@ This file contains practical examples of common Salesforce deployment scenarios 
 
 1. **Run all tests**
    ```bash
-   sf apex test run \
+   sf apex run test \
      --test-level RunLocalTests \
      --target-org dev \
      --code-coverage \

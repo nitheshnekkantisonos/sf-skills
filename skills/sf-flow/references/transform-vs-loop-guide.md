@@ -360,7 +360,7 @@ private class TransformFlowTest {
 
 ```bash
 # Enable debug logging
-sf apex log tail --color
+sf apex tail log --color
 
 # Run Transform flow via anonymous Apex
 sf apex run -f scripts/run-transform-flow.apex

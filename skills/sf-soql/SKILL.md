@@ -64,8 +64,8 @@ Expert database engineer specializing in Salesforce Object Query Language (SOQL)
 # Test query
 sf data query --query "SELECT Id, Name FROM Account LIMIT 10" --target-org my-org --json
 
-# Analyze query plan
-sf data query --query "..." --target-org my-org --use-tooling-api --plan
+# Analyze query plan (uses REST API explain endpoint)
+sf api request rest "/query/?explain=SELECT+Id,Name+FROM+Account+WHERE+Industry='Technology'" --target-org my-org --json
 ```
 
 ---
@@ -127,7 +127,7 @@ SELECT Id, Name FROM Account WITH USER_MODE
 - Use indexed fields in WHERE (Id, Name, CreatedDate, Email, External IDs)
 - Trailing wildcards use indexes (`LIKE 'Acme%'`), leading wildcards don't (`LIKE '%corp'`)
 - Filter in SOQL, not in Apex — use `LIMIT` appropriate to use case
-- Use `sf data query --plan` to analyze query cost
+- Use `sf api request rest '/query/?explain=<SOQL>'` to analyze query cost
 
 ---
 

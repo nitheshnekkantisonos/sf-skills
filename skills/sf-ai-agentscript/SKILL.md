@@ -376,7 +376,7 @@ This skill's resource files are editable. When you discover errors, new patterns
 |----------|-----------|
 | `AgentName.aiAuthoringBundle-meta.xml` | `AgentName.bundle-meta.xml` |
 | `sf project deploy start` | `sf agent publish authoring-bundle` |
-| `sf agent validate --source-dir` | `sf agent validate authoring-bundle --source-dir` |
+| `sf agent validate --source-dir` | `sf agent validate authoring-bundle --api-name AgentName` |
 | Query user from wrong org | Query **target org** specifically with `-o` flag |
 
 ### Einstein Agent User Format (Org-Specific)

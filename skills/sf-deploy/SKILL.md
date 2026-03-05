@@ -131,7 +131,7 @@ test -f sfdx-project.json # Valid SFDX project
 
 ```bash
 sf org display --target-org <alias> --json             # Check connection
-sf apex test run --test-level RunLocalTests --target-org <alias> --wait 10 --json  # Local tests
+sf apex run test --test-level RunLocalTests --target-org <alias> --wait 10 --json  # Local tests
 sf project deploy start --dry-run --test-level RunLocalTests --target-org <alias> --wait 30 --json  # Validate
 ```
 
@@ -176,7 +176,7 @@ See [references/deployment-report-template.md](references/deployment-report-temp
 
 **Deploy**: `sf project deploy start [--dry-run] [--source-dir <path>] [--manifest <xml>] [--test-level <level>] --json`
 **Quick**: `sf project deploy quick --job-id <id> --json` | **Status**: `sf project deploy report --json`
-**Test**: `sf apex test run --test-level RunLocalTests` | **Coverage**: `sf apex get test --code-coverage`
+**Test**: `sf apex run test --test-level RunLocalTests` | **Coverage**: `sf apex get test --code-coverage`
 **Org**: `sf org list` | `sf org display` | `sf org create scratch [--snapshot <name>]` | `sf org open`
 **Metadata**: `sf project retrieve start` | `sf org list metadata --metadata-type <type>`
 **Debug**: `sf project deploy start --dev-debug` — Show which files are ignored during deploy/retrieve (v2.117.7+)
@@ -246,19 +246,19 @@ Standard pipeline workflow:
 sf plugins install @salesforce/plugin-code-analyzer
 
 # Run scan on source directory
-sf code-analyzer run --workspace force-app --output-format csv --output-file scan-results.csv
+sf code-analyzer run --workspace force-app --output-file scan-results.csv
 
 # Run with specific rule categories
 sf code-analyzer run --workspace force-app --rule-selector "Category:Security,Best Practices"
 
 # List available rules
-sf code-analyzer rules --output-format csv
+sf code-analyzer rules --view detail
 
 # Generate config file for customization
 sf code-analyzer config --output-file code-analyzer.yaml
 ```
 
-> **Migration from sf scanner**: v5 uses `--workspace` (not `--target`), `--output-format` (not `--format`), `--output-file` (not `--outfile`), and `--rule-selector` (not `--engine`/`--category`).
+> **Migration from sf scanner**: v5 uses `--workspace` (not `--target`), `--view` for table/detail display (not `--output-format`), `--output-file` for file output (format inferred from extension), and `--rule-selector` (not `--engine`/`--category`).
 
 See [references/deployment-workflows.md](references/deployment-workflows.md) for full pipeline scripts.
 

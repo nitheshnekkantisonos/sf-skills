@@ -6,7 +6,7 @@
  * - Typed event assertions
  * - Interface-based test data
  *
- * Run: sf lightning lwc test run --spec force-app/main/default/lwc/typescriptComponent/__tests__
+ * Run: sf force lightning lwc test run --spec force-app/main/default/lwc/typescriptComponent/__tests__
  */
 import { createElement, LightningElement } from 'lwc';
 import TypescriptComponent from 'c/typescriptComponent';

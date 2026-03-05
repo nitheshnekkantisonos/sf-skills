@@ -222,6 +222,6 @@ sf data query --query "SELECT Id, Name FROM Account" --result-format csv --targe
 # Bulk export (for large results, > 2,000 records)
 sf data export bulk --query "SELECT Id, Name FROM Account" --target-org my-org --output-file accounts.csv
 
-# Query plan
-sf data query --query "SELECT Id FROM Account WHERE Name = 'Test'" --use-tooling-api --plan --target-org my-org
+# Query plan (uses REST API explain endpoint)
+sf api request rest "/query/?explain=SELECT+Id+FROM+Account+WHERE+Name='Test'" --target-org my-org --json
 ```

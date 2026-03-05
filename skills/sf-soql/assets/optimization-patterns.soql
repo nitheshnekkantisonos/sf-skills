@@ -213,8 +213,8 @@ Use Developer Console or CLI to analyze query plans:
    - Query Editor > Check "Use Tooling API"
    - Click "Query Plan" button
 
-2. CLI:
-   sf data query --query "SELECT..." --use-tooling-api --plan
+2. CLI (uses REST API explain endpoint):
+   sf api request rest '/query/?explain=SELECT+Id+FROM+Account+WHERE+Name='\''Test'\''' --target-org my-org --json
 
 Plan Output:
 - Cardinality: Estimated rows returned

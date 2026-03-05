@@ -113,7 +113,7 @@ Flow tests are now GA and run separately from Apex tests:
 
 ```bash
 # Run specific flow tests
-sf flow run test --test-names FlowTest1,FlowTest2 --target-org [alias] --json
+sf flow run test --tests FlowTest1,FlowTest2 --target-org [alias] --json
 
 # Run all flow tests
 sf flow run test --target-org [alias] --json
@@ -123,7 +123,7 @@ sf flow get test --test-run-id <id> --target-org [alias] --json
 ```
 
 **Key flags:**
-- `--test-names` — comma-separated Flow test names
+- `--tests` (`-t`) — comma-separated Flow test names
 - `--wait <minutes>` — wait for completion (default: async)
 - `--json` — structured output
 

@@ -291,13 +291,12 @@ Additional preview flags:
 
 | Flag | Purpose |
 |------|---------|
-| `--apex-debug` | Enable Apex debug logging during preview session |
-| `--output-dir <path>` | Save conversation transcripts to directory |
+| `--use-live-actions` | Use live (not mocked) actions during preview |
 | `--authoring-bundle` | Specify authoring bundle name instead of `--api-name` |
 
 ```bash
-# Live preview with Apex debug logging and transcript saving
-SESSION_ID=$(sf agent preview start --api-name MyAgent --use-live-actions --apex-debug --output-dir ./transcripts -o TARGET_ORG --json | jq -r '.result.sessionId')
+# Live preview with live actions
+SESSION_ID=$(sf agent preview start --api-name MyAgent --use-live-actions -o TARGET_ORG --json | jq -r '.result.sessionId')
 
 # Preview using authoring bundle name instead of api-name
 SESSION_ID=$(sf agent preview start --authoring-bundle MyBundle -o TARGET_ORG --json | jq -r '.result.sessionId')

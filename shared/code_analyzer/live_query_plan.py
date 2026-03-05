@@ -2,7 +2,7 @@
 """
 Live Query Plan Analyzer - Real-time SOQL query plan analysis via Salesforce REST API.
 
-Calls the Salesforce `explain` endpoint through sf CLI to get actual query plan data:
+Calls the Salesforce `explain` endpoint via `sf api request rest /query/?explain=...` to get actual query plan data:
 - relativeCost (cost > 1 = non-selective)
 - leadingOperationType (Index, TableScan, etc.)
 - cardinality estimates
@@ -26,6 +26,7 @@ import subprocess
 import json
 import re
 import os
+import urllib.parse
 from typing import List, Optional, Dict, Any, Tuple
 from dataclasses import dataclass, field
 
@@ -95,7 +96,7 @@ class LiveQueryPlanAnalyzer:
     """
     Analyzes SOQL queries using Salesforce's Query Plan API.
 
-    Uses `sf data query --plan` to call the REST API explain endpoint,
+    Uses `sf api request rest /query/?explain=...` to call the REST API explain endpoint,
     which returns real query execution plans from the connected org.
 
     Usage:
@@ -253,11 +254,11 @@ class LiveQueryPlanAnalyzer:
             )
 
         try:
-            # Build command
+            # Build command using the REST API explain endpoint
+            encoded_query = urllib.parse.quote(prepared_query)
             cmd = [
-                'sf', 'data', 'query',
-                '--query', prepared_query,
-                '--plan',  # This is the key flag that invokes the explain API
+                'sf', 'api', 'request', 'rest',
+                f'/query/?explain={encoded_query}',
                 '--json'
             ]
 
@@ -361,7 +362,7 @@ class LiveQueryPlanAnalyzer:
 
     def _parse_plan_response(self, stdout: str, original_query: str) -> QueryPlanResult:
         """
-        Parse the sf data query --plan JSON response.
+        Parse the sf api request rest /query/?explain=... JSON response.
 
         Args:
             stdout: JSON output from sf CLI

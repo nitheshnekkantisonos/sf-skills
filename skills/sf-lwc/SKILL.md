@@ -199,9 +199,9 @@ Choose the simplest tool that meets requirements — don't default to LWC when S
 | Command | Purpose |
 |---------|---------|
 | `sf template generate lightning component --type lwc` | Create new LWC |
-| `sf template generate flexipage --name MyPage --page-type AppPage` | Generate FlexiPage metadata (AppPage, HomePage, RecordPage) |
-| `sf lightning lwc test run` | Run Jest tests |
-| `sf lightning lwc test run --watch` | Watch mode |
+| `sf template generate flexipage --name MyPage --template DefaultAppPage` | Generate FlexiPage metadata |
+| `sf force lightning lwc test run` | Run Jest tests |
+| `sf force lightning lwc test run --watch` | Watch mode |
 | `sf project deploy start -m LightningComponentBundle` | Deploy LWC |
 
 ```bash
@@ -212,10 +212,10 @@ sf template generate lightning component \
   --output-dir force-app/main/default/lwc
 
 # Run tests with coverage
-sf lightning lwc test run -- --coverage
+sf force lightning lwc test run -- --coverage
 
 # Specific component tests
-sf lightning lwc test run --spec force-app/main/default/lwc/accountList/__tests__
+sf force lightning lwc test run --spec force-app/main/default/lwc/accountList/__tests__
 ```
 
 ---

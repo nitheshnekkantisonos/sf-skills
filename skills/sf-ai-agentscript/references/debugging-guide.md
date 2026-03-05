@@ -334,7 +334,7 @@ SESSION_ID=$(sf agent preview start \
 # 2. Send utterance(s)
 PLAN_ID=$(sf agent preview send \
   --session-id "$SESSION_ID" \
-  --message "I need help with my order" \
+  --utterance "I need help with my order" \
   --target-org myOrg 2>/dev/null | jq -r '.messages[-1].planId')
 
 # 3. End session and get trace path

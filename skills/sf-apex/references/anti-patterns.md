@@ -818,7 +818,7 @@ public static void sendEmail(EmailAddress address, String subject, String body) 
 
 **VS Code Command:**
 ```bash
-sf code-analyzer run --workspace force-app/main/default/classes --output-format table
+sf code-analyzer run --workspace force-app/main/default/classes --view table
 ```
 
 **Example output:**

@@ -55,7 +55,7 @@ sequenceDiagram
 
     SF->>GH: 8. Access token
 
-    GH->>SF: 9. sf deploy start
+    GH->>SF: 9. sf project deploy start
     SF->>GH: 10. Deployment result
 ```
 
@@ -76,7 +76,7 @@ sequenceDiagram
             │  5. Return access_token   │
             │<──────────────────────────│
             │                           │
-            │  6. sf deploy start       │
+            │  6. sf project deploy start       │
             │──────────────────────────>│
 ```
 

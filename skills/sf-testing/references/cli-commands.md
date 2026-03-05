@@ -272,7 +272,7 @@ sf apex run test \
 
 Check if tests exist:
 ```bash
-sf apex list test --target-org my-sandbox
+sf data query --query "SELECT Id, Name FROM ApexClass WHERE Name LIKE '%Test%'" --target-org my-sandbox
 ```
 
 ### Permission Errors

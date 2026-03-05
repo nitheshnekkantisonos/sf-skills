@@ -274,16 +274,16 @@ sf apex run --target-org myorg
 ### Run Tests
 ```bash
 # All local tests
-sf apex test run --target-org myorg --test-level RunLocalTests
+sf apex run test --target-org myorg --test-level RunLocalTests
 
 # Specific test class
-sf apex test run --target-org myorg --tests MyTestClass
+sf apex run test --target-org myorg --tests MyTestClass
 
 # Specific test method
-sf apex test run --target-org myorg --tests MyTestClass.testMethod
+sf apex run test --target-org myorg --tests MyTestClass.testMethod
 
 # With code coverage
-sf apex test run --target-org myorg --code-coverage --test-level RunLocalTests
+sf apex run test --target-org myorg --code-coverage --test-level RunLocalTests
 ```
 
 ---
@@ -361,7 +361,7 @@ sf org display -o myorg
 sf project deploy start -d force-app -o myorg
 
 # Run tests
-sf apex test run -o myorg -l RunLocalTests -c
+sf apex run test -o myorg -l RunLocalTests -c
 
 # Query data
 sf data query -q "SELECT Id FROM Account LIMIT 1" -o myorg
@@ -391,5 +391,5 @@ sf project deploy start -d force-app -o myorg --dry-run -l RunLocalTests
 sf project deploy start -d force-app -o myorg -l RunLocalTests
 
 # Run additional tests
-sf apex test run -o myorg -l RunLocalTests -c -r human
+sf apex run test -o myorg -l RunLocalTests -c -r human
 ```

@@ -199,7 +199,7 @@ See `references/xml-gotchas.md` for XML-specific issues.
 ## Flow Testing (CLI)
 
 ```bash
-sf flow run test --test-names FlowTest1,FlowTest2 --target-org my-sandbox
+sf flow run test --tests FlowTest1,FlowTest2 --target-org my-sandbox
 sf flow run test --test-level RunAllFlowTests --target-org my-sandbox
 sf flow get test --test-run-id <id> --target-org my-sandbox
 ```

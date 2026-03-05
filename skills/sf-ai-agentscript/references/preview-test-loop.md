@@ -345,7 +345,7 @@ get_order: @actions.Get_Order_Status
 |-------|-------|------------|
 | **500 from `preview start`** | Agent never published (authoring bundle doesn't exist in org) | Run Phase 5 first (publish + activate), then return to Phase 3.5 |
 | **Empty traces directory** | `sf agent preview end` may not write traces in all CLI versions | Check `--json` output of `preview end` for inline trace data; upgrade CLI if needed |
-| **`sessionId` is null** | Auth expired or org session invalid | Re-authenticate: `sf org login web -o ORG_ALIAS` |
+| **`sessionId` is null** | Auth expired or org session invalid | Re-authenticate: `sf org login web --alias ORG_ALIAS` |
 | **No TransitionStep in trace** | Agent used Topic Selector but didn't route to any topic | Topic descriptions are too vague — add more keywords |
 | **No FunctionStep in trace** | Planner didn't select any action | Check `available when:` guards and action descriptions |
 | **`preview send` timeout** | Preview compilation taking too long | `.agent` file may be too complex; simplify or wait longer |

@@ -352,7 +352,7 @@ Use the **sf-ai-agentforce-observability** skill: "Analyze STDM sessions for age
 
 | Check | Command | Why |
 |-------|---------|-----|
-| Agent published | `sf agent list --target-org [alias]` | Can't test unpublished agent |
+| Agent published | `sf org list metadata --metadata-type Bot --target-org [alias]` | Can't test unpublished agent |
 | Agent activated | Check status | API and preview require activation |
 | Flows deployed | `sf org list metadata --metadata-type Flow` | Actions need Flows |
 | ECA configured (Phase A only) | Token request test | Required for Agent Runtime API |

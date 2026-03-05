@@ -353,7 +353,7 @@ After deployment, verify trigger execution order if you have multiple triggers o
 
 ```bash
 # Query trigger execution order (via Debug Logs)
-sf apex log tail --target-org alias
+sf apex tail log --target-org alias
 
 # Or check in Setup: Object Manager → [Object] → Triggers
 ```

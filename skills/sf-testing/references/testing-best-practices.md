@@ -494,10 +494,10 @@ static void testAccountRules_IsHighValue() {
 
 ```bash
 # Run tests and view timing
-sf apex test run --test-level RunLocalTests --target-org alias --result-format human
+sf apex run test --test-level RunLocalTests --target-org alias --result-format human
 
 # Check individual test timing
-sf apex test get --test-run-id [id] --code-coverage --result-format json | jq '.tests[] | {name: .MethodName, time: .RunTime}'
+sf apex get test --test-run-id [id] --code-coverage --result-format json | jq '.tests[] | {name: .MethodName, time: .RunTime}'
 ```
 
 ### Fast Test Checklist

@@ -321,7 +321,7 @@ fi
 
 # Step 4: Publish agent (--skip-retrieve skips metadata retrieval, faster in CI)
 echo "📤 Publishing agent..."
-sf agent publish authoring-bundle --api-name $AGENT_NAME --target-org $ORG_ALIAS --skip-retrieve --wait 10
+sf agent publish authoring-bundle --api-name $AGENT_NAME --target-org $ORG_ALIAS --skip-retrieve
 
 # Step 5: Activate agent
 echo "▶️ Activating agent..."

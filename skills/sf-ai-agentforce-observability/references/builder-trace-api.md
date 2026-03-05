@@ -417,7 +417,7 @@ The `sf agent preview start/send/end` commands (beta) provide programmatic acces
 ```bash
 # Start session → send utterance → end and get traces
 SESSION_ID=$(sf agent preview start --api-name My_Agent --target-org myOrg 2>/dev/null | jq -r '.sessionId')
-PLAN_ID=$(sf agent preview send --session-id "$SESSION_ID" --message "test" --target-org myOrg 2>/dev/null | jq -r '.messages[-1].planId')
+PLAN_ID=$(sf agent preview send --session-id "$SESSION_ID" --utterance "test" --target-org myOrg 2>/dev/null | jq -r '.messages[-1].planId')
 TRACES_PATH=$(sf agent preview end --session-id "$SESSION_ID" --target-org myOrg 2>/dev/null | jq -r '.tracesPath')
 
 # Analyze trace
