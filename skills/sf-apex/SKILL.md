@@ -209,15 +209,33 @@ sf package install --package 04tKZ000000gUEFYA2 --target-org [alias] --wait 10
 
 ---
 
+## Automation Density
+
+| Object Density | Recommended Tool | Notes |
+|---------------|-----------------|-------|
+| **Low** (0-2 automations) | Flow (Record-Triggered) | Declarative, admin-maintainable |
+| **Medium** (3-5) | Hybrid (Flow + Invocable Apex) | Flow orchestrates, Apex handles complexity |
+| **High** (6+) | Apex (TAF) | Full control over execution order and limits |
+
+> ⚠️ **One Entry Point Per Object**: Don't add a second trigger or record-triggered flow if one exists. Use Flow Trigger Explorer (Setup → Process Automation) to audit before adding automation.
+
+**See**: [references/automation-density-guide.md](references/automation-density-guide.md) for framework details, hybrid patterns, CDC async, and coexistence management
+
+---
+
 ## Async Decision Matrix
 
-| Scenario | Use |
-|----------|-----|
-| Simple callout, fire-and-forget | `@future(callout=true)` |
-| Complex logic, needs chaining | `Queueable` |
-| Process millions of records | `Batch Apex` |
-| Scheduled/recurring job | `Schedulable` |
-| Post-queueable cleanup | `Queueable Finalizer` |
+| Scenario | Use | Key Advantage | Daily Limit |
+|----------|-----|---------------|-------------|
+| Default async processing | **Queueable** (preferred) | Job ID, chaining, non-primitive types, delays up to 10 min, dedup signatures | 250K or 200× licenses |
+| Process millions of records | Batch Apex | Chunked, off-peak, max 5 concurrent threads | Same pool |
+| Modern batch alternative | **CursorStep** (`Database.Cursor`) | 2000-record chunks, higher throughput | N/A |
+| Scheduled/recurring job | **Scheduled Flow** (preferred) or Schedulable | Flow = deployable metadata, packageable; Apex = 100 job limit | — |
+| Post-job cleanup | Queueable Finalizer (`System.Finalizer`) | Runs regardless of success/failure | — |
+| Long-running Lightning callouts | `Continuation` | 3 per txn, 3 parallel, doesn't count toward daily async | — |
+| Legacy fire-and-forget | `@future` (legacy — prefer Queueable) | Simpler syntax only | Same pool |
+
+> ⚠️ **Async doesn't solve horizontal scaling.** Finite threads + flow control + fair usage algorithm constrain throughput. Design for governor limits, not unlimited parallelism.
 
 **See**: [references/patterns-deep-dive.md](references/patterns-deep-dive.md#async-patterns) for detailed async patterns
 
@@ -412,6 +430,7 @@ For LSP validation to work, users must have:
 | `code-smells-guide.md` | Code smells detection and refactoring patterns |
 | `design-patterns.md` | 12 patterns including Domain Class, Abstraction Levels |
 | `trigger-actions-framework.md` | TAF setup and advanced patterns |
+| `automation-density-guide.md` | Automation density framework, hybrid patterns, CDC async |
 | `security-guide.md` | Complete CRUD/FLS and sharing reference |
 | `testing-guide.md` | Complete test patterns and mocking |
 | `naming-conventions.md` | Variable, method, class naming rules |

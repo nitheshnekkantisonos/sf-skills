@@ -24,7 +24,7 @@ v2.2.0 New Validations (Lightning Flow Scanner Parity):
 
 v2.1.0 Fixes:
 - FIXED: DML-in-loop detection now traces actual connector paths
-- FIXED: Subflow recommendation skipped for record-triggered flows (can't call subflows via XML)
+- FIXED: Subflow recommendation now applies to all flow types (RTFs CAN call subflows via XML on API 66.0+)
 - FIXED: Error logging detection includes inline patterns (not just subflows)
 - IMPROVED: Better understanding of $Record context in record-triggered flows
 
@@ -283,12 +283,7 @@ class EnhancedFlowValidator:
         subflow_count = self._count_elements('subflows')
         decision_count = self._count_elements('decisions')
 
-        # v2.1.0 FIX: Skip subflow recommendation for record-triggered flows
-        # Record-triggered flows (AutoLaunchedFlow with triggerType) CANNOT call subflows
-        # via XML deployment due to Metadata API limitations
-        is_record_triggered = self._is_record_triggered_flow()
-
-        if subflow_count == 0 and not is_record_triggered:
+        if subflow_count == 0:
             # Check if flow is complex enough to warrant subflows
             total_elements = sum([
                 self._count_elements('recordCreates'),
@@ -304,22 +299,6 @@ class EnhancedFlowValidator:
                     'category': 'Orchestration',
                     'message': 'Complex flow with no subflows - consider breaking into components',
                     'suggestion': 'Use Parent-Child pattern for better maintainability'
-                })
-        elif subflow_count == 0 and is_record_triggered:
-            # For record-triggered flows, recommend inline orchestration instead
-            total_elements = sum([
-                self._count_elements('recordCreates'),
-                self._count_elements('recordUpdates'),
-                self._count_elements('recordDeletes'),
-                self._count_elements('recordLookups'),
-                decision_count
-            ])
-            if total_elements > 15:
-                # Only suggest for very complex flows, and don't deduct points
-                advisory.append({
-                    'category': 'Orchestration',
-                    'message': 'Complex record-triggered flow - consider inline section organization',
-                    'suggestion': 'Use XML comments and clear element naming to organize sections (subflows not supported via XML deployment)'
                 })
 
         # Modularity (5 points)
@@ -802,7 +781,6 @@ class EnhancedFlowValidator:
         Check if flow has error logging.
 
         v2.1.0 FIX: Now also detects inline error logging patterns, not just subflows.
-        This is important because record-triggered flows can't call subflows via XML.
         """
         # Check for subflow-based error logging
         for subflow in self.root.findall('.//sf:subflows', self.namespace):
@@ -836,21 +814,6 @@ class EnhancedFlowValidator:
 
         return False
 
-    def _is_record_triggered_flow(self) -> bool:
-        """
-        Check if this is a record-triggered flow.
-
-        v2.1.0: Added to properly identify record-triggered flows which have
-        different constraints (e.g., can't call subflows via XML deployment).
-        """
-        start = self.root.find('.//sf:start', self.namespace)
-        if start is not None:
-            trigger_type = start.find('sf:triggerType', self.namespace)
-            if trigger_type is not None:
-                trigger_text = trigger_type.text or ''
-                if trigger_text in ['RecordAfterSave', 'RecordBeforeSave', 'RecordBeforeDelete']:
-                    return True
-        return False
 
     def _estimate_line_count(self) -> int:
         """Estimate line count of flow XML."""

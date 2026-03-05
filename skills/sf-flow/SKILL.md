@@ -48,10 +48,28 @@ Flow references custom object/fields? Create with sf-metadata FIRST. Deploy obje
 
 | Insight | Details |
 |---------|---------|
-| **Before vs After Save** | Before-Save: same-record updates (no DML), validation. After-Save: related records, emails, callouts |
+| **Before vs After Save** | Before-Save updates avoid a second DML — changes are committed in memory with the triggering record. This is the most performant pattern for same-record updates. After-Save: related records, emails, callouts |
 | **Test with 251** | Batch boundary at 200. Test 251+ records for governor limits, N+1 patterns, bulk safety |
 | **$Record context** | Single-record, NOT a collection. Platform handles batching. Never loop over $Record |
 | **Transform vs Loop** | Transform: data mapping/shaping (30-50% faster). Loop: per-record decisions, counters, varying logic. See `references/transform-vs-loop-guide.md` |
+
+**Automation Density**: For Low density objects (0-2 automations), Flow is the official recommendation. Use **Flow Trigger Explorer** (Setup → Process Automation) to audit existing automations before adding new ones. See [sf-apex/references/automation-density-guide.md](../sf-apex/references/automation-density-guide.md) for the full framework.
+
+---
+
+## Form Building
+
+| Need | Tool | Notes |
+|------|------|-------|
+| Simple record field visibility | **Dynamic Forms** | No code, Lightning App Builder config |
+| Guided wizard / multi-step | **Screen Flow** | Declarative, admin-buildable |
+| Complex custom UI in Flow | **Screen Flow + LWC** | Hybrid — Flow orchestrates, LWC renders |
+
+> ⚠️ **Screens break transactions**: Each screen element commits prior DML. Collect all input first, then perform DML after the final screen. Use the Roll Back Records element for multi-step forms.
+
+**Scheduled Flow > Apex Schedulable** for most scheduling needs. Scheduled Flows are deployable metadata, packageable, and don't count against the 100 Apex scheduled job limit.
+
+**See**: [references/form-building-guide.md](references/form-building-guide.md) for the 5-tool comparison, decision tree, security warnings, and OmniStudio considerations
 
 ---
 
@@ -82,7 +100,7 @@ Flow references custom object/fields? Create with sf-metadata FIRST. Deploy obje
 
 **Screen Flow Buttons**: `allowFinish="true"` required on all screens. Connector present → "Next", absent → "Finish".
 
-**CRITICAL**: Record-triggered flows CANNOT call subflows via XML deployment. See `references/xml-gotchas.md` and `references/orchestration-guide.md`.
+**Note**: Record-triggered flows CAN call subflows via XML deployment (validated E2E on API 66.0, Spring '26). `<faultConnector>` is NOT valid on `<subflows>` elements — handle faults inside the subflow and surface results via output variables. Deploy child subflow BEFORE parent RTF. See `references/xml-gotchas.md` and `references/orchestration-parent-child.md`.
 
 ### Phase 3: Flow Generation & Validation
 

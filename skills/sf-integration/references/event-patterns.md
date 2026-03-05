@@ -738,9 +738,97 @@ private class AccountCDCTest {
 
 ---
 
+## Pub/Sub API (Recommended for External Consumers)
+
+The Pub/Sub API is the **recommended mechanism** for external systems subscribing to Platform Events and CDC events. It replaces the legacy Streaming API (CometD).
+
+### Why Pub/Sub API
+
+| Feature | Pub/Sub API | Legacy Streaming API |
+|---------|-------------|---------------------|
+| **Protocol** | gRPC (binary, high performance) | CometD (long-polling, HTTP overhead) |
+| **Authentication** | OAuth 2.0 | Session-based |
+| **Event Types** | Platform Events, CDC, Custom Channels | PushTopic, Generic Events |
+| **Status** | **Current** | **Deprecated — no new investments** |
+
+### Subscription Modes
+
+- **Subscribe**: Stream events from a given replay ID forward
+- **PublishStream**: Bi-directional — publish events via gRPC
+- **ManagedSubscribe**: Salesforce manages replay state (simplest)
+
+### LWC Internal Subscription
+
+For Lightning Web Components, use the `empApi` module:
+
+```javascript
+import { subscribe, unsubscribe, onError } from 'lightning/empApi';
+
+connectedCallback() {
+    subscribe('/event/Order_Status__e', -1, (response) => {
+        this.handleEvent(response.data.payload);
+    }).then((sub) => { this.subscription = sub; });
+}
+
+disconnectedCallback() {
+    unsubscribe(this.subscription);
+}
+```
+
+> **Note**: `empApi` uses CometD internally but is the supported LWC API. For external consumers, always use the gRPC-based Pub/Sub API.
+
+---
+
+## Platform Event Anti-Patterns
+
+### 1. Publishing from Trigger on Same Event Object → Infinite Loop
+
+```apex
+// ❌ WRONG: Trigger on Order_Status__e publishes Order_Status__e
+trigger OrderStatusSubscriber on Order_Status__e (after insert) {
+    for (Order_Status__e event : Trigger.new) {
+        // This creates an infinite loop!
+        EventBus.publish(new Order_Status__e(Status__c = 'Processed'));
+    }
+}
+```
+
+**Fix**: Never publish the same event type from its own subscriber trigger. Use a different event type or update a record instead.
+
+### 2. PublishImmediately When Data Integrity Matters
+
+```apex
+// ❌ WRONG: Event fires even if the transaction rolls back
+Order_Status__e event = new Order_Status__e();
+event.Status__c = 'Completed';
+// publishBehavior = PublishImmediately in event definition
+EventBus.publish(event);
+
+// If subsequent DML fails, the event was already published
+// External system thinks order is "Completed" but it's not
+```
+
+**Fix**: Use `PublishAfterCommit` (the default) when the event represents a state change that depends on the transaction succeeding.
+
+### 3. Using Platform Events for Synchronous-Style Flow Orchestration
+
+```
+// ❌ WRONG: Using events to simulate synchronous request/response
+Flow A → Publish "Request" Event → Subscriber triggers Flow B → Publish "Response" Event → ???
+```
+
+**Fix**: Platform Events are asynchronous and unordered. For synchronous orchestration, use Subflows, @InvocableMethod, or direct Apex calls. Events are for decoupled, fire-and-forget communication.
+
+### 4. Oversized Event Payloads
+
+> **1 MB message size limit.** Balance payload size — smaller = faster delivery, larger = fewer API calls. Include record IDs and essential context; let consumers query Salesforce for full records if needed.
+
+---
+
 ## Related Resources
 
 - [Callout Patterns](./callout-patterns.md) - REST and SOAP callout implementations
+- [Event-Driven Architecture Guide](./event-driven-architecture-guide.md) - EDA patterns, Pub/Sub API deep dive, monitoring
 - [Main Skill Documentation](../SKILL.md) - sf-integration overview
 - [Platform Event Templates](../assets/platform-events/) - Event definitions and triggers
 - [CDC Templates](../assets/cdc/) - Change Data Capture triggers

@@ -436,39 +436,23 @@ public static List<Response> sendData(List<Request> requests) {
 
 ### Decision Matrix
 
-| Scenario | Use | Pros | Cons |
-|----------|-----|------|------|
-| Simple callout, fire-and-forget | `@future(callout=true)` | Simple, built-in | No return value, no chaining |
-| Complex logic, needs chaining | `Queueable` | Return ID, chain jobs, complex types | More code |
-| Process millions of records | `Batch Apex` | Handles huge volumes | Complex, overhead |
-| Scheduled/recurring job | `Schedulable` | Cron-like scheduling | Requires separate Queueable/Batch |
-| Post-queueable cleanup | `Queueable Finalizer` | Guaranteed execution | Only for Queueable |
+| Scenario | Use | Key Advantage | Daily Limit |
+|----------|-----|---------------|-------------|
+| Default async processing | **Queueable** (preferred) | Job ID, chaining, non-primitive types, delays, dedup | 250K or 200× licenses |
+| Process millions of records | Batch Apex | Chunked, off-peak, max 5 concurrent threads | Same pool |
+| Modern batch alternative | **CursorStep** (`Database.Cursor`) | 2000-record chunks, higher throughput | N/A |
+| Scheduled/recurring job | **Scheduled Flow** (preferred) or Schedulable | Flow = deployable metadata; Apex = 100 job limit | — |
+| Post-job cleanup | Queueable Finalizer (`System.Finalizer`) | Runs regardless of success/failure | — |
+| Long-running Lightning callouts | `Continuation` | 3 per txn, 3 parallel | — |
+| Legacy fire-and-forget | `@future` (legacy) | Simpler syntax only | Same pool |
 
-### @future Pattern
+> ⚠️ **Batch Apex max 5 simultaneous threads.** Additional batch jobs queue. Plan accordingly for time-sensitive processing.
 
-```apex
-public class CalloutService {
+> **Scheduled Flow preferred over Apex Schedulable** for most scheduling needs. Schedulable has a hard limit of 100 jobs. Use Schedulable only when chaining to Batch Apex or needing complex Apex-only logic.
 
-    @future(callout=true)
-    public static void sendDataToExternalSystem(Set<Id> recordIds) {
-        // Cannot pass complex objects, only primitives
-        List<Account> accounts = [SELECT Id, Name FROM Account WHERE Id IN :recordIds];
+> **For delays > 10 minutes** (Queueable max), use `System.scheduleBatch()` to schedule a Batch job at a specific time.
 
-        HttpRequest req = new HttpRequest();
-        req.setEndpoint('callout:MyNamedCredential/api');
-        req.setMethod('POST');
-        req.setBody(JSON.serialize(accounts));
-
-        Http http = new Http();
-        HttpResponse res = http.send(req);
-
-        // Process response (no return to caller)
-        System.debug('Response: ' + res.getBody());
-    }
-}
-```
-
-### Queueable Pattern
+### Queueable Pattern (Preferred)
 
 ```apex
 public class AccountProcessor implements Queueable {
@@ -508,7 +492,35 @@ public class AccountProcessor implements Queueable {
 System.enqueueJob(new AccountProcessor(accountIds));
 ```
 
-### Queueable with Finalizer
+### Queueable: Configurable Delay
+
+Delay execution up to 10 minutes using `AsyncOptions`:
+
+```apex
+AccountProcessor job = new AccountProcessor(accountIds);
+AsyncOptions options = new AsyncOptions();
+options.setMinimumQueueableDelayInMinutes(10); // Max 10 min
+System.enqueueJob(job, options);
+```
+
+### Queueable: Deduplication Signatures
+
+Prevent duplicate jobs from being enqueued by assigning a dedup signature:
+
+```apex
+AccountProcessor job = new AccountProcessor(accountIds);
+AsyncOptions options = new AsyncOptions();
+options.setDuplicateSignature(QueueableDuplicateSignature.Builder()
+    .addId(accountIds[0])
+    .addString('AccountProcessor')
+    .build());
+System.enqueueJob(job, options);
+// If another job with the same signature is already queued, this is silently ignored
+```
+
+### Queueable with Finalizer (System.Finalizer)
+
+`System.Finalizer` acts as a blanket error handler — it executes regardless of whether the Queueable job succeeds or fails. Use it for logging, notifications, retry logic, and cleanup.
 
 ```apex
 public class DataSyncQueueable implements Queueable {
@@ -597,6 +609,62 @@ public class AccountBatchProcessor implements Database.Batchable<SObject> {
 
 // Usage:
 Database.executeBatch(new AccountBatchProcessor(), 200); // Batch size
+```
+
+### CursorStep Pattern (Database.Cursor)
+
+Modern alternative to Batch Apex with higher throughput and 2000-record chunks:
+
+```apex
+public class AccountCursorStep implements Database.CursorStep {
+
+    public Database.Cursor start() {
+        return Database.getCursor(
+            'SELECT Id, Name, Industry FROM Account WHERE Industry = \'Technology\''
+        );
+    }
+
+    public void execute(Database.CursorStepContext context, List<SObject> scope) {
+        List<Account> accounts = (List<Account>) scope;
+        for (Account acc : accounts) {
+            acc.Description = 'Processed via CursorStep on ' + System.now();
+        }
+        update accounts;
+    }
+
+    public void finish(Database.CursorStepContext context) {
+        System.debug('CursorStep completed');
+    }
+}
+
+// Usage:
+Database.executeCursorStep(new AccountCursorStep());
+```
+
+> **CursorStep vs Batch**: CursorStep processes 2000 records per chunk (vs 200 default for Batch), doesn't count against the 5 simultaneous batch job limit, and has higher throughput. Use for new development when Batch Apex limits are a concern.
+
+### @future Pattern (Legacy — Prefer Queueable)
+
+> ⚠️ **Legacy pattern.** Prefer Queueable for new development. `@future` cannot return job IDs, cannot chain, cannot pass non-primitive types, and cannot use configurable delays or dedup signatures.
+
+```apex
+public class CalloutService {
+
+    @future(callout=true)
+    public static void sendDataToExternalSystem(Set<Id> recordIds) {
+        // Cannot pass complex objects, only primitives
+        List<Account> accounts = [SELECT Id, Name FROM Account WHERE Id IN :recordIds];
+
+        HttpRequest req = new HttpRequest();
+        req.setEndpoint('callout:MyNamedCredential/api');
+        req.setMethod('POST');
+        req.setBody(JSON.serialize(accounts));
+
+        Http http = new Http();
+        HttpResponse res = http.send(req);
+        System.debug('Response: ' + res.getBody());
+    }
+}
 ```
 
 ---

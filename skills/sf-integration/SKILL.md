@@ -141,10 +141,17 @@ ExternalService.Stripe_createCustomer_Response resp = stripe.createCustomer(req)
 ## Event-Driven Patterns
 
 > See [references/event-patterns.md](references/event-patterns.md) for complete Platform Event and CDC implementations.
+> See [references/event-driven-architecture-guide.md](references/event-driven-architecture-guide.md) for EDA patterns, Pub/Sub API, Event Relays, and monitoring.
 
-**Platform Events**: Standard Volume (~2K events/hour, 3-day retention) or High Volume (millions/day, 24-hour retention). Publish via `EventBus.publish()`, subscribe via triggers.
+**Platform Events**: Standard Volume (~2K events/hour, 3-day retention) or High Volume (millions/day, 24-hour retention). Publish via `EventBus.publish()`, subscribe via triggers. Use `PublishAfterCommit` (default) to ensure events only fire on successful transactions. Use `PublishImmediately` only when the event must fire regardless of transaction outcome.
 
 **Change Data Capture (CDC)**: Enable via Setup → Integrations → CDC. Channel: `{{Object}}ChangeEvent`. Change types: CREATE, UPDATE, DELETE, UNDELETE.
+
+**Pub/Sub API** (recommended for external consumers): gRPC-based subscription to Platform Events and CDC. Replaces legacy Streaming API.
+
+> ⚠️ **PushTopic, Generic Streaming Events, and legacy Streaming API are deprecated** — they no longer receive new investments. Migrate to **Pub/Sub API** for external consumers or **empApi** for LWC subscribers.
+
+> ⚠️ **For high-volume outbound, use middleware + Platform Events.** Do NOT use async Apex directly — it consumes shared daily limits (250K). Let middleware (MuleSoft, custom Pub/Sub consumer) handle delivery, retries, and enrichment.
 
 ---
 
@@ -194,6 +201,7 @@ ExternalService.Stripe_createCustomer_Response resp = stripe.createCustomer(req)
 
 - [Callout Patterns](references/callout-patterns.md) — REST and SOAP implementations
 - [Event Patterns](references/event-patterns.md) — Platform Events and CDC
+- [Event-Driven Architecture Guide](references/event-driven-architecture-guide.md) — EDA patterns, Pub/Sub API, Event Relays, monitoring
 - [Messaging API v2](references/messaging-api-v2.md) — MIAW custom client architecture (Agentforce external chat)
 - [Scoring Rubric](references/scoring-rubric.md) — 120-point scoring details
 - [CLI Reference](references/cli-reference.md) — CLI commands and helper scripts

@@ -234,11 +234,61 @@ In `Trigger_Action__mdt`:
 - `Bypass_Permission__c`: Users with this permission skip the action
 - `Required_Permission__c`: Only users with this permission run the action
 
+### Custom Permissions as Preferred Bypass (Recommended)
+
+Custom Permissions provide a scalable, declarative bypass mechanism — preferred over hardcoded profile/role names.
+
+```apex
+public class TA_Account_SetDefaults implements TriggerAction.BeforeInsert {
+    public void beforeInsert(List<Account> newList) {
+        // Check Custom Permission — preferred over hardcoded profile names
+        if (FeatureManagement.checkPermission('Bypass_Triggers')) {
+            return;
+        }
+        for (Account acc : newList) {
+            acc.Industry = acc.Industry ?? 'Other';
+        }
+    }
+}
+```
+
+> **Why Custom Permissions > hardcoded profile names**: Custom Permissions can be assigned via Permission Sets (stackable, user-specific), don't break when profiles are renamed, and work across all automation types (Apex, Flow, Validation Rules).
+
 ---
 
 ## Recursion Prevention
 
-### Using TriggerBase
+### Field-Value Comparison (Recommended)
+
+The official recommendation for recursion prevention is to compare old vs new field values, processing only records where the relevant field actually changed. This is more precise than static boolean flags.
+
+```apex
+public class TA_Account_SyncExternal implements TriggerAction.AfterUpdate {
+
+    public void afterUpdate(List<Account> newList, List<Account> oldList) {
+        Map<Id, Account> oldMap = new Map<Id, Account>(oldList);
+        List<Account> toProcess = new List<Account>();
+
+        for (Account acc : newList) {
+            Account oldAcc = oldMap.get(acc.Id);
+            // Only process if the field we care about actually changed
+            if (acc.Status__c != oldAcc.Status__c) {
+                toProcess.add(acc);
+            }
+        }
+
+        if (!toProcess.isEmpty()) {
+            processAccounts(toProcess);
+        }
+    }
+}
+```
+
+> **Why field-value comparison > static boolean flags**: Static booleans (`hasRun = true`) prevent ALL re-entry, even legitimate re-entry from different field changes. Field-value comparison only skips records where the triggering field didn't change.
+
+### Using TriggerBase (TAF-Specific)
+
+TAF provides built-in recursion tracking via `idToNumberOfTimesSeenAfterUpdate`. Use this when you need to limit execution count per record regardless of which fields changed:
 
 ```apex
 public class TA_Account_PreventRecursion implements TriggerAction.AfterUpdate {

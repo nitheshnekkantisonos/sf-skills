@@ -987,6 +987,18 @@ For complex multi-step flows where you need manual rollback control:
 | Records retrieved by SOQL | 50,000 |
 | DML rows per transaction | 10,000 |
 
+### Screen Flow Transaction Boundaries
+
+> **In Screen Flows, each screen element breaks the transaction boundary.** DML committed before a screen element cannot be rolled back after the screen. This is a critical difference from Record-Triggered Flows (which run in a single transaction).
+
+**Impact**: If a Screen Flow creates an Account on Screen 1, then the user encounters an error on Screen 2, the Account is already committed and cannot be automatically rolled back.
+
+**Mitigation**:
+1. Collect ALL input across screens first (store in Flow variables)
+2. Perform ALL DML after the final screen
+3. Use the **Roll Back Records** element for multi-step forms that need atomicity
+4. For complex forms, consider a single-screen design with reactive components
+
 ### Document Transaction Boundaries
 
 Add comments in flow description:
@@ -1103,23 +1115,39 @@ Example: "Complete all required fields (*) before proceeding."
 
 ## 16. Bypass Mechanism for Data Loads
 
-When loading large amounts of data, flows can cause performance issues. Implement a bypass mechanism using Custom Metadata.
+When loading large amounts of data, flows can cause performance issues. Implement a bypass mechanism.
 
-### Setup Pattern
+### Option A: Custom Permissions (Recommended)
 
-#### Step 1: Create Custom Metadata Type
+Custom Permissions provide the most scalable bypass mechanism. They can be assigned via Permission Sets and checked in Flow entry conditions.
+
+#### Setup
+
+1. Create Custom Permission: `Bypass_Flow__c` (Setup → Custom Permissions)
+2. Assign to a Permission Set (e.g., "Data Load Bypass")
+3. Use in Flow **entry conditions** (not Decision elements):
+
+**Entry Condition Formula**: `NOT({!$Permission.Bypass_Flow__c})`
+
+This prevents the flow from executing at all for users with the bypass permission — more efficient than a Decision element inside the flow.
+
+#### For Decision Elements (Alternative)
+
+If you need conditional bypass within the flow (not at entry):
+
+**Condition**: `{!$Permission.Bypass_Flow__c} = true`
+- **If true** → End flow early
+- **If false** → Continue normal processing
+
+> **Why Custom Permissions > Custom Metadata bypass**: Custom Permissions are user-assignable via Permission Sets, don't require metadata deployment to toggle, and work consistently across Apex, Flow, and Validation Rules.
+
+### Option B: Custom Metadata (Legacy)
 
 Create `Flow_Bypass_Settings__mdt` with fields:
 - `Bypass_Flows__c` (Checkbox)
 - `Flow_API_Name__c` (Text) - optional, for granular control
 
-#### Step 2: Add Decision at Flow Start
-
-Add a Decision element as the first step after Start:
-
 **Condition**: `{!$CustomMetadata.Flow_Bypass_Settings__mdt.Default.Bypass_Flows__c} = true`
-- **If true** → End flow early (no processing)
-- **If false** → Continue normal processing
 
 ### Use Cases
 

@@ -222,31 +222,54 @@ Issues with hand-written Transform:
 - `inputReference` placement varies by context
 - Multiple conflicting rules in Metadata API
 
-## Subflow Calling Limitation (Metadata API Constraint)
+## Subflow Elements: What Works and What Doesn't
 
-**Record-triggered flows (`processType="AutoLaunchedFlow"`) CANNOT call subflows via XML deployment.**
+Record-triggered flows **CAN** call subflows via XML deployment (confirmed API 66.0, Spring '26).
 
-**Root Cause**: Salesforce Metadata API does not support the "flow" action type for AutoLaunchedFlow process types.
+### Working `<subflows>` Example
 
-**Valid action types for AutoLaunchedFlow**: apex, chatterPost, emailAlert, emailSimple, and platform-specific actions - but NOT "flow".
+```xml
+<subflows>
+    <name>Call_Validation_Subflow</name>
+    <label>Call Validation Subflow</label>
+    <locationX>0</locationX>
+    <locationY>0</locationY>
+    <connector>
+        <targetReference>Next_Element</targetReference>
+    </connector>
+    <flowName>Validation_Subflow</flowName>
+    <inputAssignments>
+        <name>recordId</name>
+        <value>
+            <elementReference>$Record.Id</elementReference>
+        </value>
+    </inputAssignments>
+    <outputAssignments>
+        <assignToReference>validationResult</assignToReference>
+        <name>isValid</name>
+    </outputAssignments>
+</subflows>
+```
 
-**Error message**: "You can't use the Flows action type in flows with the Autolaunched Flow process type"
+### `<faultConnector>` Is NOT Valid on `<subflows>`
 
-**Screen Flows (`processType="Flow"`) CAN call subflows** successfully via XML deployment.
+Adding a `<faultConnector>` to a `<subflows>` element causes a deployment error:
 
-**UI vs XML**: Flow Builder UI may use different internal mechanisms - UI capabilities may differ from direct XML deployment.
+**Error**: `The "faultConnector" field should not be set for "subflows" elements.`
 
-### Recommended Solution for Record-Triggered Flows
+**Valid `<faultConnector>` targets** (elements that DO support fault paths):
+- `<actionCalls>` — Apex invocable actions, external services
+- `<recordCreates>` — DML create operations
+- `<recordUpdates>` — DML update operations
+- `<recordDeletes>` — DML delete operations
 
-Use **inline orchestration** instead of subflows:
+### Correct Pattern: Handle Faults Inside the Subflow
 
-1. Organize logic into clear sections with descriptive element naming
-2. Pattern: `Decision_CheckCriteria` → `Assignment_SetFields` → `Create_Record`
-3. Add XML comments to delineate sections: `<!-- Section 1: Contact Creation -->`
+Instead of adding a fault connector on the `<subflows>` element, handle faults **within** the subflow itself and surface errors via output variables:
 
-**Benefits**: Single atomic flow, no deployment dependencies, full execution control.
-
-**Reference**: [Salesforce Help Article 000396957](https://help.salesforce.com/s/articleView?id=000396957&type=1)
+1. Inside the subflow: wrap DML/action calls with fault connectors
+2. On fault: set an output variable (e.g., `errorMessage`) with the error details
+3. In the parent flow: check the output variable after the subflow call and branch accordingly
 
 ## Fault Connectors Cannot Self-Reference (CRITICAL)
 
@@ -545,3 +568,10 @@ Even for simple pass-through flows, add at least one assignment:
 ### Standard Objects for Testing
 - **Problem**: Custom objects may not exist in target org
 - **Solution**: When testing flow generation/deployment, prefer standard objects (Account, Contact, Opportunity, Task) for guaranteed deployability
+
+### RTF + Subflow Deployment Order (Validated 2026-03-05)
+- **Problem**: Parent RTF references a child subflow that doesn't exist or isn't active
+- **Info Warning**: "The referenced flow X has no active version" (deploys succeed but flow fails at runtime)
+- **Solution**: Deploy and activate child subflow FIRST, then deploy and activate parent RTF
+- **Activation Order**: Child Active -> Parent Active (reverse for deactivation: Parent Draft -> Child Draft)
+- **Proof**: Case Escalation pattern — RTF on Case (after-save, Priority=High AND Status=New) calls Sub_EscalateCase to create Task. Passed positive, negative, and bulk (5x) tests on AgentforceTesting org, API 66.0

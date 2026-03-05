@@ -98,7 +98,7 @@ Expert frontend engineer specializing in Lightning Web Components for Salesforce
 | Simple record CRUD | `lightning-record-form` / `lightning-record-edit-form` |
 | Complex queries | Apex with `@AuraEnabled(cacheable=true)` |
 | Related records | GraphQL wire adapter |
-| Real-time updates | Platform Events / Streaming API |
+| Real-time updates | Platform Events / **Pub/Sub API** (empApi for LWC) |
 | External data | Named Credentials + Apex callout |
 
 ### Communication Patterns
@@ -181,6 +181,16 @@ WCAG compliance is mandatory for all components.
 > See [references/advanced-features.md](references/advanced-features.md) for Flow Screen integration (FlowAttributeChangeEvent, FlowNavigationFinishEvent), TypeScript support (API 66.0 GA), LWC in Dashboards (Beta), and Agentforce discoverability.
 
 **Flow Screen quick reference**: `@api` inputs → `FlowAttributeChangeEvent` outputs → `FlowNavigationFinishEvent` for navigation. See also [references/flow-integration-guide.md](references/flow-integration-guide.md).
+
+---
+
+## Form Building Context
+
+LWC is the **only form-building option with Jest unit testing**. For forms requiring automated test coverage or CI/CD validation, prefer LWC over Screen Flows or Dynamic Forms.
+
+**Complexity spectrum**: Dynamic Forms < Screen Flow < OmniStudio < Screen Flow + LWC < Full LWC
+
+Choose the simplest tool that meets requirements — don't default to LWC when Screen Flow suffices. See [sf-flow/references/form-building-guide.md](../sf-flow/references/form-building-guide.md) for the 5-tool comparison and decision tree.
 
 ---
 
