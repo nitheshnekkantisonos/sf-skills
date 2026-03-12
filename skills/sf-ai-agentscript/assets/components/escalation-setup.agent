@@ -115,8 +115,7 @@ topic help:
 			| - "live agent"
 			| - "customer service representative"
 			|
-			| Track escalation reason if provided:
-			set @variables.escalation_reason = ...
+			| Track the customer's escalation reason in @variables.escalation_reason when they provide one.
 		actions:
 			offer_escalation: @utils.transition to @topic.escalation
 

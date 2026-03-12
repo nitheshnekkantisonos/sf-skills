@@ -50,25 +50,21 @@ start_agent topic_selector:
          # ====================================================
 
          # Route ONLY when classification is complete
-         if @variables.needs_classification == False:
+         if @variables.needs_classification == False and @variables.confidence_score >= 80 and @variables.classified_intent == "billing":
+            transition to @topic.billing
+         if @variables.needs_classification == False and @variables.confidence_score >= 80 and @variables.classified_intent == "technical_support":
+            transition to @topic.technical_support
+         if @variables.needs_classification == False and @variables.confidence_score >= 80 and @variables.classified_intent == "sales":
+            transition to @topic.sales
+         if @variables.needs_classification == False and @variables.confidence_score >= 80 and @variables.classified_intent == "returns":
+            transition to @topic.returns
 
-            # HIGH-CONFIDENCE ROUTING
-            if @variables.confidence_score >= 80:
-               if @variables.classified_intent == "billing":
-                  transition to @topic.billing
-               if @variables.classified_intent == "technical_support":
-                  transition to @topic.technical_support
-               if @variables.classified_intent == "sales":
-                  transition to @topic.sales
-               if @variables.classified_intent == "returns":
-                  transition to @topic.returns
-
-            # LOW-CONFIDENCE: Confirm with user
-            if @variables.confidence_score < 80:
-               set @variables.low_confidence_warning = True
-               | I want to make sure I route you correctly.
-               | It sounds like you need help with **{!@variables.classified_intent}**.
-               | Is that correct?
+         # LOW-CONFIDENCE: Confirm with user
+         if @variables.needs_classification == False and @variables.confidence_score < 80:
+            set @variables.low_confidence_warning = True
+            | I want to make sure I route you correctly.
+            | It sounds like you need help with **{!@variables.classified_intent}**.
+            | Is that correct?
 
          # INITIAL STATE: Ask for help topic
          if @variables.needs_classification == True:

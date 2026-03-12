@@ -44,6 +44,8 @@ variables:
    # Operation state
    refund_status: mutable string = ""
       description: "Status of refund operation"
+   refund_amount: mutable number = 0
+      description: "Refund amount selected for the current request"
    churn_risk_score: mutable number = 0
       description: "Customer churn risk from Data Cloud"
 

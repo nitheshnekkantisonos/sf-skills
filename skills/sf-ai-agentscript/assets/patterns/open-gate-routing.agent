@@ -164,13 +164,12 @@ topic authentication_gate:
 
 	after_reasoning:
 		# ★ POST-AUTH ROUTING: If authenticated, route to deferred destination
-		if @variables.authenticated == True:
-			if @variables.next_topic == "protected_workflow":
-				set @variables.open_gate = "protected_workflow"
-				transition to @topic.protected_workflow
-			if @variables.next_topic == "account_management":
-				set @variables.open_gate = "account_management"
-				transition to @topic.account_management
+		if @variables.authenticated == True and @variables.next_topic == "protected_workflow":
+			set @variables.open_gate = "protected_workflow"
+			transition to @topic.protected_workflow
+		if @variables.authenticated == True and @variables.next_topic == "account_management":
+			set @variables.open_gate = "account_management"
+			transition to @topic.account_management
 
 # ─────────────────────────────────────────────────────────────────────
 # EXIT PROTOCOL (Resets Gate State)

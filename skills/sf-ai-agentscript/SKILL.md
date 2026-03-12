@@ -11,7 +11,7 @@ description: >
 license: MIT
 compatibility: "Requires Agentforce license, API v66.0+, Einstein Agent User"
 metadata:
-  version: "2.7.0"
+  version: "2.8.0"
   author: "Jag Valaiyapathy"
   scoring: "100 points across 6 categories"
   validated: "0-shot generation tested (Pet_Adoption_Advisor, TechCorp_IT_Agent, Quiz_Master, Expense_Calculator, Order_Processor). Agent user setup validated against ORM1, ORM2, AutomotiveSupport, SalesforceProductAssistant."
@@ -246,7 +246,7 @@ Level 2: ACTION INVOCATION (in `reasoning.actions:` block)
 
 ### Phase 3: Validation (LSP + CLI)
 
-> **AUTOMATIC**: validation runs on every Write/Edit to `.agent` files — catches mixed tabs/spaces, invalid Service-vs-Employee `default_agent_user` usage, invalid `@utils.transition` metadata, empty-list expression gotchas, bare `run` calls, common variable/reference errors, and now **org-aware Service Agent checks** against the active project org: valid Einstein Agent User, required `AgentforceServiceAgentUser` assignment, expected `{AgentName}_Access` assignment for target-backed actions, Apex `<classAccesses>` coverage, and Flow target existence/activation. Fix errors, re-save, repeat until clean.
+> **AUTOMATIC**: validation runs on every Write/Edit to `.agent` files — catches mixed tabs/spaces, invalid Service-vs-Employee `default_agent_user` usage, invalid `@utils.transition` metadata, empty-list expression gotchas, bare `run` calls, unsupported conditional patterns (`else if`, nested `if`, comment-only bodies), linked-variable misuse, missing target-action `outputs:`, connection routing drift, common variable/reference errors, and **org-aware Service Agent checks** against the active project org: valid Einstein Agent User, required `AgentforceServiceAgentUser` assignment, expected `{AgentName}_Access` assignment for target-backed actions, Apex `<classAccesses>` coverage, and Flow target existence/activation. Fix errors, re-save, repeat until clean.
 
 ```bash
 # CLI Validation (before deploy):
@@ -272,16 +272,21 @@ The write/edit validator now enforces this automatically against the resolved ta
 Validator output is now grouped into human-readable sections:
 - **Structure**
 - **Agent identity**
+- **Connections**
 - **Targets & permissions**
 - **Runtime gotchas**
+- **Quality**
 
 It also prints:
 - a top summary count (`blocking / warnings / informational / passing`)
 - confidence labels such as `Compiler rule`, `Proven publish blocker`, `Likely runtime risk`, and `Configuration drift / publish risk`
+- stable rule IDs such as `ASV-STR-015` and `ASV-RUN-011` for cross-referencing fixes and docs
 - a final recommendation such as:
   - `Fix blocking issues before preview/publish`
   - `Safe to preview. Review warnings before publish`
   - `Safe to preview and publish`
+
+> 📘 Rule catalog: See [references/validator-rule-catalog.md](references/validator-rule-catalog.md) for the full rule-ID list, severities, and what each automated check enforces.
 
 For Service Agents with targets, the validator also checks:
 - `AgentforceServiceAgentUser` permission set/group assignment on the agent user
@@ -473,6 +478,9 @@ sf data query -q "SELECT Username FROM User WHERE Profile.Name = 'Einstein Agent
 | Need | Document | Description |
 |------|----------|-------------|
 | Syntax reference | [references/syntax-reference.md](references/syntax-reference.md) | Complete block & expression syntax |
+| Validator rule catalog | [references/validator-rule-catalog.md](references/validator-rule-catalog.md) | Stable `ASV-*` rule IDs, severities, and enforcement coverage |
+| Validator test matrix | [references/validator-test-matrix.md](references/validator-test-matrix.md) | Current repo asset validation snapshot: clean vs warning-only vs intentionally partial |
+| Asset validation profiles | [references/asset-validation-profiles.md](references/asset-validation-profiles.md) | Profile-aware harness for standalone examples vs org fixtures vs partial snippets |
 | FSM design | [references/fsm-architecture.md](references/fsm-architecture.md) | State machine patterns & examples |
 | Instruction resolution | [references/instruction-resolution.md](references/instruction-resolution.md) | Three-phase execution model |
 | Data & multi-agent | [references/grounding-multiagent.md](references/grounding-multiagent.md) | Retriever actions & SOMA patterns |
