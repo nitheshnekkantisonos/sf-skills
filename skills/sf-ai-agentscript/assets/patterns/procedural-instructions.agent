@@ -26,10 +26,11 @@ system:
 		error: "I encountered an issue retrieving your information. Let me try again."
 
 config:
-	agent_name: "Smart_Service_Agent"
+	developer_name: "Smart_Service_Agent"
+	agent_type: "AgentforceServiceAgent"
 	default_agent_user: "agent@company.salesforce.com"
 	agent_label: "Smart Service Agent"
-	description: "Agent with procedural data loading"
+	agent_description: "Agent with procedural data loading"
 
 variables:
 	# Standard linked variables

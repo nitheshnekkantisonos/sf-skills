@@ -11,10 +11,11 @@ system:
 		error: "I'm sorry, I encountered an issue. Please try again."
 
 config:
-	agent_name: "Simple_FAQ_Agent"
+	developer_name: "Simple_FAQ_Agent"
+	agent_type: "AgentforceServiceAgent"
 	default_agent_user: "agent.user@company.com"
 	agent_label: "Simple FAQ Agent"
-	description: "A minimal FAQ agent that answers common questions using AI"
+	agent_description: "A minimal FAQ agent that answers common questions using AI"
 
 variables:
 	EndUserId: linked string

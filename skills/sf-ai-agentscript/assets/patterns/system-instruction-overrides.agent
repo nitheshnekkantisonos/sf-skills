@@ -27,10 +27,11 @@ system:
 		error: "I apologize, but I encountered an issue. Let me try that again."
 
 config:
-	agent_name: "Dynamic_Service_Agent"
+	developer_name: "Dynamic_Service_Agent"
+	agent_type: "AgentforceServiceAgent"
 	default_agent_user: "agent@company.salesforce.com"
 	agent_label: "Dynamic Service Agent"
-	description: "Agent with dynamic instruction overrides based on context"
+	agent_description: "Agent with dynamic instruction overrides based on context"
 
 variables:
 	# Standard linked variables

@@ -26,10 +26,11 @@ system:
 		error: "I encountered an issue generating content. Let me try again."
 
 config:
-	agent_name: "Content_Generator_Agent"
+	developer_name: "Content_Generator_Agent"
+	agent_type: "AgentforceServiceAgent"
 	default_agent_user: "agent@company.salesforce.com"
 	agent_label: "Content Generator"
-	description: "Agent that generates AI content using Prompt Templates"
+	agent_description: "Agent that generates AI content using Prompt Templates"
 
 variables:
 	# Standard linked variables

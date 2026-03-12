@@ -19,10 +19,10 @@ system:
 		error: "I'm sorry, something went wrong. Please try again."
 
 config:
-	agent_name: "Hello_World_Employee"
+	developer_name: "Hello_World_Employee"
 	agent_type: "AgentforceEmployeeAgent"
 	agent_label: "Hello World Employee Agent"
-	description: "A minimal Employee Agent example -- no dedicated user needed"
+	agent_description: "A minimal Employee Agent example -- no dedicated user needed"
 
 start_agent main:
 	label: "Main"

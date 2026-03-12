@@ -3,7 +3,7 @@
 # No external actions - just conversational AI
 #
 # Usage: Replace {{placeholders}} with your values
-# Required: agent_name, default_agent_user, agent_label, description
+# Required: developer_name, agent_type, default_agent_user, agent_label, agent_description
 
 system:
 	instructions: "{{SystemInstructions}}"
@@ -12,10 +12,11 @@ system:
 		error: "I'm sorry, I encountered an issue. Please try again."
 
 config:
-	agent_name: "{{AgentApiName}}"
+	developer_name: "{{AgentApiName}}"
+	agent_type: "AgentforceServiceAgent"
 	default_agent_user: "{{AgentUser}}"
 	agent_label: "{{AgentLabel}}"
-	description: "{{AgentDescription}}"
+	agent_description: "{{AgentDescription}}"
 
 variables:
 	EndUserId: linked string

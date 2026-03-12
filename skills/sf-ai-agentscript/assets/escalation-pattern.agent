@@ -17,36 +17,36 @@ system:
    instructions: "You are a helpful agent. When you cannot resolve an issue, escalate to a human agent with full context."
 
 config:
-   agent_name: "EscalationPatternAgent"
+   developer_name: "EscalationPatternAgent"
    agent_label: "Escalation Demo Agent"
-   description: "Agent demonstrating complete escalation patterns"
+   agent_description: "Agent demonstrating complete escalation patterns"
+   agent_type: "AgentforceServiceAgent"
    default_agent_user: "agent@yourorg.com"  # REQUIRED: Change to valid Einstein Agent User
 
 # ============================================================
 # CONNECTION BLOCKS (Multi-Channel Escalation)
 # ============================================================
 
-connections:
-   # Messaging channel (SMS, WhatsApp, etc.)
-   connection messaging:
-      escalation_message: "One moment, I'm transferring our conversation to a specialist who can better assist you."
-      outbound_route_type: "OmniChannelFlow"
-      outbound_route_name: "<flow://Escalate_Messaging_To_Agent>"
-      adaptive_response_allowed: False
+# Messaging channel (SMS, WhatsApp, etc.)
+connection messaging:
+   escalation_message: "One moment, I'm transferring our conversation to a specialist who can better assist you."
+   outbound_route_type: "OmniChannelFlow"
+   outbound_route_name: "flow://Escalate_Messaging_To_Agent"
+   adaptive_response_allowed: False
 
-   # Voice channel
-   connection voice:
-      escalation_message: "Please hold while I transfer you to a specialist. They will have full context of our conversation."
-      outbound_route_type: "Queue"
-      outbound_route_name: "Customer_Support_Queue"
-      adaptive_response_allowed: True
+# Voice channel
+connection voice:
+   escalation_message: "Please hold while I transfer you to a specialist. They will have full context of our conversation."
+   outbound_route_type: "OmniChannelFlow"
+   outbound_route_name: "flow://Escalate_Voice_To_Agent"
+   adaptive_response_allowed: True
 
-   # Web chat channel
-   connection web:
-      escalation_message: "Connecting you with a live agent now. They'll be with you shortly."
-      outbound_route_type: "OmniChannelFlow"
-      outbound_route_name: "<flow://Web_Chat_Escalation_Flow>"
-      adaptive_response_allowed: False
+# Web chat channel
+connection web:
+   escalation_message: "Connecting you with a live agent now. They'll be with you shortly."
+   outbound_route_type: "OmniChannelFlow"
+   outbound_route_name: "flow://Web_Chat_Escalation_Flow"
+   adaptive_response_allowed: False
 
 variables:
    # Customer context

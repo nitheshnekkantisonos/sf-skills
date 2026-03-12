@@ -19,9 +19,10 @@ system:
    instructions: "You are a helpful knowledge assistant. Always provide grounded answers based on retrieved knowledge."
 
 config:
-   agent_name: "RAGSearchAgent"
+   developer_name: "RAGSearchAgent"
    agent_label: "Knowledge Assistant"
-   description: "Agent demonstrating Prompt Template with Data Cloud RAG pattern"
+   agent_description: "Agent demonstrating Prompt Template with Data Cloud RAG pattern"
+   agent_type: "AgentforceServiceAgent"
    default_agent_user: "agent@yourorg.com"  # REQUIRED: Change to valid Einstein Agent User
 
 variables:

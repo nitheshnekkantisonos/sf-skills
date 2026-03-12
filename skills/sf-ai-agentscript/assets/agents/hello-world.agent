@@ -7,7 +7,7 @@
 #
 # ★ Why This Structure?
 #   - system: Sets agent personality and default messages
-#   - config: Required metadata for deployment (agent_name must be unique)
+#   - config: Required metadata for deployment (`developer_name` must be unique)
 #   - variables: Linked variables connect to Messaging context (required for deployment)
 #   - language: Locale settings (required for deployment)
 #   - start_agent: Entry point topic (exactly one required)
@@ -27,11 +27,11 @@ system:
 		error: "I'm sorry, something went wrong. Please try again."
 
 config:
-	agent_name: "Hello_World_Agent"
+	developer_name: "Hello_World_Agent"
 	agent_type: "AgentforceServiceAgent"
 	default_agent_user: "your.user@company.com"
 	agent_label: "Hello World Agent"
-	description: "A minimal example agent to learn Agent Script basics"
+	agent_description: "A minimal example agent to learn Agent Script basics"
 
 variables:
 	# Linked variables (required) - Connect to Salesforce Messaging context

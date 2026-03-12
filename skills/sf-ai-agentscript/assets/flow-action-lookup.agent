@@ -19,9 +19,10 @@ system:
    instructions: "You are a customer service agent helping users look up their orders."
 
 config:
-   agent_name: "FlowActionLookupAgent"
+   developer_name: "FlowActionLookupAgent"
    agent_label: "Order Lookup Agent"
-   description: "Agent demonstrating Flow action patterns with complex data types"
+   agent_description: "Agent demonstrating Flow action patterns with complex data types"
+   agent_type: "AgentforceServiceAgent"
    default_agent_user: "agent@yourorg.com"  # REQUIRED: Change to valid Einstein Agent User
 
 variables:

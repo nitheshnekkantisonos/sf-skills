@@ -13,7 +13,7 @@
 #
 # ★ Prerequisites:
 #   - Omni-Channel configured in Salesforce
-#   - Queue/Skill created for routing
+#   - Omni-Channel Flow created for escalation routing
 #   - Messaging channel active (Enhanced Chat, etc.)
 #
 # This is a COMPLETE template - customize for your use case
@@ -25,10 +25,11 @@ system:
 		error: "I apologize, but I encountered an issue. Let me connect you with a human agent."
 
 config:
-	agent_name: "{{AGENT_NAME}}"
+	developer_name: "{{AGENT_NAME}}"
+	agent_type: "AgentforceServiceAgent"
 	default_agent_user: "{{AGENT_USER_EMAIL}}"
 	agent_label: "{{AGENT_LABEL}}"
-	description: "Customer service agent with human escalation capability"
+	agent_description: "Customer service agent with human escalation capability"
 
 variables:
 	# Required linked variables for messaging context
@@ -58,29 +59,29 @@ language:
 
 # ★ CONNECTION BLOCK - Required for @utils.escalate to work
 # This defines where escalated conversations are routed
-# Use singular 'connection' for one channel, plural 'connections' for multiple
+# Use standalone `connection <channel>:` blocks (NOT a `connections:` wrapper)
 connection messaging:
-	# ⚠️ IMPORTANT: Only "OmniChannelFlow" is supported (not "queue", "skill", or "agent")
+	# ⚠️ IMPORTANT: Only "OmniChannelFlow" is supported here
 	outbound_route_type: "OmniChannelFlow"
-	# API name of your Omni-Channel Flow
-	outbound_route_name: "{{OMNI_CHANNEL_FLOW_NAME}}"
+	# API name of your Omni-Channel Flow with required flow:// prefix
+	outbound_route_name: "flow://{{OMNI_CHANNEL_FLOW_NAME}}"
 	# ⚠️ REQUIRED: escalation_message must be included when connection block is present
 	escalation_message: "Transferring you to a human agent now..."
 	# Optional: Allow agent to adapt responses during escalation
 	adaptive_response_allowed: True
 
-# ★ MULTI-CHANNEL EXAMPLE (use 'connections' plural for multiple channels)
-# connections:
-#    messaging:
-#       outbound_route_type: "OmniChannelFlow"
-#       outbound_route_name: "Chat_Support_Flow"
-#       escalation_message: "Connecting you to chat support..."
-#       adaptive_response_allowed: True
-#    telephony:
-#       outbound_route_type: "OmniChannelFlow"
-#       outbound_route_name: "Phone_Support_Flow"
-#       escalation_message: "Transferring to phone support..."
-#       adaptive_response_allowed: False
+# ★ MULTI-CHANNEL EXAMPLE (use separate standalone connection blocks)
+# connection messaging:
+#    outbound_route_type: "OmniChannelFlow"
+#    outbound_route_name: "flow://Chat_Support_Flow"
+#    escalation_message: "Connecting you to chat support..."
+#    adaptive_response_allowed: True
+#
+# connection voice:
+#    outbound_route_type: "OmniChannelFlow"
+#    outbound_route_name: "flow://Phone_Support_Flow"
+#    escalation_message: "Transferring to phone support..."
+#    adaptive_response_allowed: False
 
 # Entry point
 start_agent topic_selector:

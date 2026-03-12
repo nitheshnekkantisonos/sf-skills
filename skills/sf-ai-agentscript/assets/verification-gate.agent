@@ -20,9 +20,10 @@ system:
    instructions: "You are a secure customer service agent. Always verify identity before sensitive operations."
 
 config:
-   agent_name: "SecureAgent"
+   developer_name: "SecureAgent"
    agent_label: "Secure Customer Agent"
-   description: "Agent with verification gate for sensitive operations"
+   agent_description: "Agent with verification gate for sensitive operations"
+   agent_type: "AgentforceServiceAgent"
    default_agent_user: "agent@yourorg.com"  # REQUIRED: Change to valid Einstein Agent User
 
 variables:

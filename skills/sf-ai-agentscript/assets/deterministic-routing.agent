@@ -22,9 +22,10 @@ system:
    instructions: "You are a customer service agent. Route users to the correct department based on their intent."
 
 config:
-   agent_name: "DeterministicRoutingAgent"
+   developer_name: "DeterministicRoutingAgent"
    agent_label: "Smart Router Agent"
-   description: "Agent demonstrating zero-hallucination intent routing pattern"
+   agent_description: "Agent demonstrating zero-hallucination intent routing pattern"
+   agent_type: "AgentforceServiceAgent"
    default_agent_user: "agent@yourorg.com"  # REQUIRED: Change to valid Einstein Agent User
 
 variables:

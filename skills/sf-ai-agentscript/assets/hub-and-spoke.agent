@@ -14,9 +14,10 @@ system:
    instructions: "You are a customer service agent for an e-commerce company."
 
 config:
-   agent_name: "HubAndSpokeAgent"
+   developer_name: "HubAndSpokeAgent"
    agent_label: "Customer Service Agent"
-   description: "Multi-purpose agent with hub-and-spoke architecture"
+   agent_description: "Multi-purpose agent with hub-and-spoke architecture"
+   agent_type: "AgentforceServiceAgent"
    default_agent_user: "agent@yourorg.com"  # REQUIRED: Change to valid Einstein Agent User
 
 variables:

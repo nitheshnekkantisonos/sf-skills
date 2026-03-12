@@ -36,13 +36,13 @@ Templates for building complete, deployable agents.
 
 ## Required Blocks
 
-Every agent must have these blocks **in this order**:
+Every agent should use these top-level blocks **in this order**:
 
 | Block | Purpose |
 |-------|---------|
-| `system:` | Agent personality and default messages |
-| `config:` | Deployment metadata (agent_name, label, etc.) |
+| `config:` | Deployment metadata (`developer_name`, `agent_label`, `agent_type`, etc.) |
 | `variables:` | Data connections and state storage |
+| `system:` | Agent personality and default messages |
 | `language:` | Locale configuration |
 | `start_agent` | Entry point topic (exactly one required) |
 

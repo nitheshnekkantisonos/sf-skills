@@ -34,10 +34,11 @@ system:
 		error: "I encountered an issue. Let me try again."
 
 config:
-	agent_name: "Account_Research_Agent"
+	developer_name: "Account_Research_Agent"
+	agent_type: "AgentforceServiceAgent"
 	default_agent_user: "agent@company.salesforce.com"
 	agent_label: "Account Research Agent"
-	description: "Demonstrates critical input collection patterns for reliable slot filling"
+	agent_description: "Demonstrates critical input collection patterns for reliable slot filling"
 
 variables:
 	# Standard linked variables (required)
