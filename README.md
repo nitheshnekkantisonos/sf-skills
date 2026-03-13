@@ -39,9 +39,9 @@ The library is organized by capability area so you can scan quickly, pick the ri
 
 | If you want... | Use this | Best for |
 |---|---|---|
-| Skills only, any supported coding agent | `npx skills add Jaganpro/sf-skills` | Codex, Gemini CLI, OpenCode, Amp, Claude Code without local hooks |
-| Full Claude Code experience | `curl -sSL https://raw.githubusercontent.com/Jaganpro/sf-skills/main/tools/install.sh | bash` | Hooks, agents, LSP, guardrails, org preflight |
-| Manual / Windows / CI-friendly install | `curl -sSL https://raw.githubusercontent.com/Jaganpro/sf-skills/main/tools/install.py | python3` | Direct installer control without bash wrapper |
+| Skills only, any supported coding agent | <code>npx skills add Jaganpro/sf-skills</code> | Codex, Gemini CLI, OpenCode, Amp, Claude Code without local hooks |
+| Full Claude Code experience | <code>curl -sSL https://raw.githubusercontent.com/Jaganpro/sf-skills/main/tools/install.sh &#124; bash</code> | Hooks, agents, LSP, guardrails, org preflight |
+| Manual / Windows / CI-friendly install | <code>curl -sSL https://raw.githubusercontent.com/Jaganpro/sf-skills/main/tools/install.py &#124; python3</code> | Direct installer control without bash wrapper |
 
 ### Any AI Coding Agent
 
