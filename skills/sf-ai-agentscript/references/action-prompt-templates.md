@@ -147,6 +147,34 @@ generate_summary: @actions.Generate_Order_Summary
 
 ---
 
+## Draft Template Publish Errors (Critical)
+
+> **If your `generatePromptResponse://` action fails to publish, check the template status FIRST.** A Draft template produces a cascade of misleading errors — none of which mention the template status.
+
+When the target prompt template is in **Draft** status, `sf agent publish authoring-bundle` reports different errors depending on which I/O blocks are present. All are caused by the same root cause:
+
+| Agent Script State | Error Message | Actually Means |
+|---|---|---|
+| Full I/O (`inputs:` + `outputs:`) | `invalid input parameters found: 'Input:query'` | Template can't be resolved (Draft) |
+| `outputs:` only | `invalid output parameters found: 'promptResponse'` | Template can't be resolved (Draft) |
+| Bare definition (no I/O) | `Metadata API request failed: Metadata retrieval failed:` | Template can't be resolved (Draft) |
+| Bare definition (retry) | `Internal Error, try again later` | Template can't be resolved (Draft) |
+
+**`sf agent validate authoring-bundle` passes regardless of template status** — it does not check whether the target template is Active. This gives false confidence before publish.
+
+**Fix**: Activate the template in **Setup > Prompt Builder** before publishing. The original Agent Script syntax (with `"Input:X"` inputs and `promptResponse` output) is correct — it will publish successfully once the template is Active.
+
+**Pre-publish check**:
+```bash
+sf project retrieve start --metadata GenAiPromptTemplate:YourTemplateName -o TARGET_ORG --json
+# Then inspect the retrieved XML for <status>Published</status> or <status>Active</status>
+# Draft status = publish will fail with misleading errors
+```
+
+> See [known-issues.md](known-issues.md#issue-40) Issue 40 for the full bug report.
+
+---
+
 ## Common Errors
 
 | Error | Cause | Fix |
@@ -155,12 +183,14 @@ generate_summary: @actions.Generate_Order_Summary
 | Template not found | Wrong protocol or template name | Verify `generatePromptResponse://ExactTemplateName` |
 | Empty `promptResponse` | Template inactive or missing required inputs | Activate template in Setup, check all `is_required: True` inputs are bound |
 | Input not mapped | API name mismatch | Input field name after `Input:` must exactly match template's input API name |
+| `invalid input/output parameters found` | Target template is in **Draft** status | Activate the template in Setup > Prompt Builder — see "Draft Template Publish Errors" above |
+| `Internal Error` with bare action definition | Missing I/O blocks AND/OR Draft template | Add `inputs:`/`outputs:` blocks and ensure template is Active |
 
 ---
 
 ## Checklist
 
-- [ ] Template exists in org and is **active**
+- [ ] Template exists in org and is **active** (Draft templates cause misleading publish errors)
 - [ ] Input field API names match template configuration exactly
 - [ ] All `is_required: True` inputs are bound (via `...`, `@variables`, or fixed)
 - [ ] `promptResponse` output is captured with `set`

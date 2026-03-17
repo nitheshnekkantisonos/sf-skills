@@ -684,6 +684,20 @@
 
 ---
 
+<a id="issue-40"></a>
+
+### Issue 40: Draft prompt template causes misleading publish errors for `generatePromptResponse://` actions
+- **Status**: WORKAROUND
+- **Date Discovered**: 2026-03-17
+- **Affects**: `sf agent publish authoring-bundle` with `generatePromptResponse://` action targets
+- **Symptom**: Publish fails with `invalid input parameters found: 'Input:query'` or `invalid output parameters found: 'promptResponse'` — implying the I/O names are wrong. Removing I/O blocks produces `Metadata API request failed: Metadata retrieval failed:` or `Internal Error, try again later`. `sf agent validate authoring-bundle` passes in all cases.
+- **Root Cause**: The target prompt template is in **Draft** status. The platform cannot resolve the `generatePromptResponse://` target, but reports the failure as invalid I/O parameters or generic internal errors rather than indicating the template status.
+- **Workaround**: Activate the prompt template in **Setup > Prompt Builder** before publishing. The original Agent Script syntax (with `"Input:X"` inputs and `promptResponse` output) publishes successfully once the template is Active. Pre-publish check: retrieve the template XML and verify `<status>Published</status>` or `<status>Active</status>`.
+- **Open Questions**: Will Salesforce improve the error message to mention template status? Will `sf agent validate` add a target resolution check?
+- **References**: [action-prompt-templates.md](action-prompt-templates.md#draft-template-publish-errors) — "Draft Template Publish Errors" section
+
+---
+
 ## Resolved Issues
 
 <a id="issue-16"></a>

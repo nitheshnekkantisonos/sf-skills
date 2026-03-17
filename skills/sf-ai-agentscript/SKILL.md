@@ -193,6 +193,7 @@ See [references/instruction-resolution.md](references/instruction-resolution.md)
 | Symptom | Likely cause | Read next |
 |---|---|---|
 | `Internal Error` during publish | invalid Service Agent user or missing action I/O | [references/agent-user-setup.md](references/agent-user-setup.md), [references/actions-reference.md](references/actions-reference.md) |
+| `invalid input/output parameters` on prompt template action | **Target template is in Draft status** — activate it first | [references/action-prompt-templates.md](references/action-prompt-templates.md#draft-template-publish-errors) |
 | Parser rejects conditionals | `else if`, nested `if`, empty `if` body | [references/syntax-reference.md](references/syntax-reference.md) |
 | Action target issues | missing Flow / Apex target, inactive Flow, bad schemas | [references/actions-reference.md](references/actions-reference.md) |
 | Preview and runtime disagree | linked vars / context / known platform issues | [references/known-issues.md](references/known-issues.md) |
