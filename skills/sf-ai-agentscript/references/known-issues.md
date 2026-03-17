@@ -742,6 +742,34 @@
 - **Real-world impact**: Observed in a production agent — 6 output fields across 5 topics caused 4 cascading `ACTION_NOT_IN_SCOPE` errors that blocked publish.
 - **Validated on**: Production sandbox, 2026-03-17
 
+### Issue 41: Lifecycle arithmetic on mutable number crashes when variable is `None` at runtime
+
+- **Status**: WORKAROUND
+- **Severity**: High (Silent crash)
+- **Discovered**: 2026-03-17
+- **Affects**: `before_reasoning` / `after_reasoning` blocks with arithmetic on mutable number variables
+- **Symptom**: Agent crashes silently with "unexpected error" when a `before_reasoning` block does `set @variables.counter = @variables.counter + 1` and the variable is `None` at runtime. The crash is `None + 1` — a type error in the expression evaluator. No useful error message is surfaced to the user or logs.
+- **Root Cause**: Mutable number variables declared with `= 0` defaults can arrive as `None` at runtime. Known triggers: (1) Eval API / Testing Center state injection that omits the variable, (2) platform variable initialization bugs where defaults are not applied before the first `before_reasoning` execution.
+- **Cascade Pattern**: Common in guardrail topics where a strike counter is incremented on every entry. All guardrail topics (e.g., `inappropriate_content`, `prompt_injection`, `reverse_engineering`) crash simultaneously since they share the same counter pattern.
+- **Workaround**: Add a null guard before any arithmetic in lifecycle hooks:
+  ```yaml
+  # ❌ CRASHES when guardrail_strikes is None
+  before_reasoning:
+     set @variables.guardrail_strikes = @variables.guardrail_strikes + 1
+     if @variables.guardrail_strikes >= 3:
+        transition to @topic.escalation
+
+  # ✅ SAFE — null guard prevents None + 1
+  before_reasoning:
+     if @variables.guardrail_strikes is None:
+        set @variables.guardrail_strikes = 0
+     set @variables.guardrail_strikes = @variables.guardrail_strikes + 1
+     if @variables.guardrail_strikes >= 3:
+        transition to @topic.escalation
+  ```
+- **Validator Rule**: `ASV-RUN-021` (Warning)
+- **Validated on**: Production sandbox, 2026-03-17
+
 ---
 
 ## Contributing

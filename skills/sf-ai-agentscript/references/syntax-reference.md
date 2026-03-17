@@ -835,6 +835,7 @@ actions:
 | Line breaks in topic `description:` | Script breaks with syntax error | Keep `description:` on a single line — no line breaks. See Issue 35 |
 | Variable name matches system context | "Field is already mapped to a Context Variable" | Avoid names like `Locale`, `Channel`, `Status`, `Origin` — use prefixed names like `customer_locale`. See Issue 36 |
 | `filter_from_agent` + `is_used_by_planner` on output | `InvalidFormatError` + cascading `ACTION_NOT_IN_SCOPE` | These are mutually exclusive. Use only `filter_from_agent: True`; remove `is_used_by_planner`. See Issue 40 |
+| Lifecycle arithmetic on mutable number without null guard | Silent crash: `None + 1` → "unexpected error" | Add `if @variables.X is None: set @variables.X = 0` before arithmetic in `before_reasoning` / `after_reasoning`. See Issue 41 |
 
 ### `@inputs` in `set` — Deploy-Breaking Anti-Pattern
 

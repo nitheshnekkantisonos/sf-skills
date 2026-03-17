@@ -129,6 +129,8 @@ class AgentScriptValidator:
         self.lifecycle_instruction_wrappers: List[Tuple[int, str]] = []
         self.lifecycle_pipe_lines: List[Tuple[int, str]] = []
         self.lifecycle_run_lines: List[Tuple[int, str, str]] = []
+        self.lifecycle_arithmetic_lines: List[Tuple[int, str, str, str]] = []  # (line, lifecycle_name, var_name, owner)
+        self.lifecycle_null_guards: List[Tuple[int, str, str, str]] = []  # (line, lifecycle_name, var_name, owner)
         self.topic_inline_system_lines: List[Tuple[int, str]] = []
         self.line_owner: Dict[int, str] = {}
         self.welcome_error_interpolation_lines: List[Tuple[int, str]] = []
@@ -619,6 +621,17 @@ class AgentScriptValidator:
                     run_match = re.match(r"^run\s+@actions\.([A-Za-z_][A-Za-z0-9_]*)\b", stripped)
                     if run_match:
                         self.lifecycle_run_lines.append((i, lifecycle_block["name"], run_match.group(1)))
+                    # Detect arithmetic on variables: set @variables.X = @variables.X + N
+                    arith_match = re.match(
+                        r"^set\s+@variables\.([A-Za-z_][A-Za-z0-9_]*)\s*=\s*@variables\.\1\s*[+\-]\s*\d+",
+                        stripped,
+                    )
+                    if arith_match:
+                        self.lifecycle_arithmetic_lines.append((i, lifecycle_block["name"], arith_match.group(1), lifecycle_block.get("owner") or ""))
+                    # Detect null guards: if @variables.X is None:
+                    null_match = re.match(r"^if\s+@variables\.([A-Za-z_][A-Za-z0-9_]*)\s+is\s+None\s*:", stripped)
+                    if null_match:
+                        self.lifecycle_null_guards.append((i, lifecycle_block["name"], null_match.group(1), lifecycle_block.get("owner") or ""))
                     # keep parsing deeper structures too
 
                 if stripped == "reasoning:":
@@ -807,6 +820,7 @@ class AgentScriptValidator:
         self._check_lifecycle_instruction_wrappers()
         self._check_lifecycle_pipe_content()
         self._check_lifecycle_run_portability()
+        self._check_lifecycle_arithmetic_null_guard()
         self._check_post_action_position()
         self._check_empty_list_literals()
         self._check_inputs_in_set()
@@ -1160,6 +1174,25 @@ class AgentScriptValidator:
                 f"{lifecycle_name} runs '@actions.{action_name}'. Lifecycle-hook 'run' syntax is valid but not portable enough to treat as universally reliable across bundle types and org states.",
                 "ASV-RUN-010",
             )
+
+    def _check_lifecycle_arithmetic_null_guard(self):
+        # Build a set of (lifecycle_name, var_name, owner) tuples that have null guards
+        guarded = set()
+        for _, lifecycle_name, var_name, owner in self.lifecycle_null_guards:
+            guarded.add((lifecycle_name, var_name, owner))
+
+        for line, lifecycle_name, var_name, owner in self.lifecycle_arithmetic_lines:
+            if (lifecycle_name, var_name, owner) not in guarded:
+                var_def = self.variable_by_name.get(var_name)
+                var_type = var_def["type"] if var_def else "unknown"
+                if var_type in ("number", "integer"):
+                    self._add_warning(
+                        line,
+                        f"{lifecycle_name} in '{owner}' does arithmetic on '@variables.{var_name}' without a null guard. "
+                        f"Mutable number variables can be None at runtime (e.g., Eval API state injection, Testing Center). "
+                        f"Add 'if @variables.{var_name} is None: set @variables.{var_name} = 0' before the arithmetic to prevent silent crashes.",
+                        "ASV-RUN-021",
+                    )
 
     def _check_post_action_position(self):
         in_instructions = False
@@ -1783,6 +1816,7 @@ class AgentScriptValidator:
             self._checklist_entry("Structure", "Description formatting", ["ASV-STR-012"], success_detail="Topic/start_agent descriptions stay on a single safe line."),
             self._checklist_entry("Structure", "Conditional block structure", ["ASV-STR-014", "ASV-STR-015", "ASV-STR-016"], success_detail="Conditional blocks avoid unsupported else-if/nested/empty-body patterns."),
             self._checklist_entry("Structure", "Lifecycle hook formatting", ["ASV-STR-013", "ASV-RUN-009", "ASV-RUN-010"], success_detail="Lifecycle hooks use direct deterministic content."),
+            self._checklist_entry("Structure", "Lifecycle arithmetic null guards", ["ASV-RUN-021"], success_detail="Lifecycle arithmetic operations have null guards.", na_detail="No lifecycle arithmetic operations detected.", applicable=bool(self.lifecycle_arithmetic_lines), confidence="Runtime crash risk"),
             self._checklist_entry("Agent identity", "Config field completeness", ["ASV-CFG-001", "ASV-CFG-003", "ASV-CFG-004", "ASV-CFG-005", "ASV-CFG-007"], success_detail="Config fields are present and shaped safely.", confidence="Compiler / authoring rule"),
             self._checklist_entry("Agent identity", "Service vs Employee agent semantics", ["ASV-CFG-002"], success_detail="Agent type and default_agent_user relationship is valid.", confidence="Compiler / platform rule"),
             self._checklist_entry("Agent identity", "Topic system override syntax", ["ASV-CFG-006"], success_detail="Topic-level system overrides use the documented nested form.", na_detail="No topic-level system override shorthand detected.", applicable=bool(self.topic_inline_system_lines), confidence="Docs alignment / future-proofing"),
