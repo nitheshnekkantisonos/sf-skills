@@ -1,12 +1,15 @@
 # Salesforce Skills for Agentic Coding Tools
 
-> 💙 **Community-powered agentic coding knowledge, shared by a Salesforce Certified Technical Architect (CTA)**
+> 💙 **Community-powered agentic coding knowledge — shared by a Salesforce Certified Technical Architect (CTA), forked and maintained for internal use at Sonos by Nithesh Nekkanti**
 
-[![Author](https://img.shields.io/badge/Author-Jag_Valaiyapathy-blue?logo=github)](https://github.com/Jaganpro)
+[![Maintainer](https://img.shields.io/badge/Maintainer-Nithesh_Nekkanti-blue?logo=github)](https://github.com/nitheshnekkantisonos)
+[![Original Author](https://img.shields.io/badge/Original_Author-Jag_Valaiyapathy-lightgrey?logo=github)](https://github.com/Jaganpro)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Skills](https://img.shields.io/badge/Skills-25-4F46E5)](#available-skills)
 [![Claude Code Agents](https://img.shields.io/badge/Claude_Code_Agents-7-059669)](#agent-team)
 [![Standard](https://img.shields.io/badge/Agent_Skills-Compatible-0F766E)](https://agentskills.io)
+
+> **Fork notice:** This is a maintained fork of [Jaganpro/sf-skills](https://github.com/Jaganpro/sf-skills) (MIT License). Original work © 2024–2026 [Jag Valaiyapathy](https://github.com/Jaganpro). This fork adds project-specific repo knowledge, custom utilities, and internal conventions.
 
 A reusable skill library for **Salesforce-focused coding agents**—covering Apex, Flow, LWC, SOQL, metadata, integration, testing, deployment, and Agentforce workflows.
 
@@ -40,26 +43,26 @@ The library is organized by capability area so you can scan quickly, pick the ri
 
 | If you want... | Use this | Best for |
 |---|---|---|
-| Skills only, any supported coding agent | <code>npx skills add Jaganpro/sf-skills</code> | Codex, Gemini CLI, OpenCode, Amp, Claude Code without local hooks |
-| Full Claude Code experience | <code>curl -sSL https://raw.githubusercontent.com/Jaganpro/sf-skills/main/tools/install.sh &#124; bash</code> | Hooks, agents, LSP, guardrails, org preflight |
-| Manual / Windows / CI-friendly install | <code>curl -sSL https://raw.githubusercontent.com/Jaganpro/sf-skills/main/tools/install.py &#124; python3</code> | Direct installer control without bash wrapper |
+| Skills only, any supported coding agent | <code>npx skills add nitheshnekkantisonos/sf-skills</code> | Codex, Gemini CLI, OpenCode, Amp, Claude Code without local hooks |
+| Full Claude Code experience | <code>curl -sSL https://raw.githubusercontent.com/nitheshnekkantisonos/sf-skills/main/tools/install.sh &#124; bash</code> | Hooks, agents, LSP, guardrails, org preflight |
+| Manual / Windows / CI-friendly install | <code>curl -sSL https://raw.githubusercontent.com/nitheshnekkantisonos/sf-skills/main/tools/install.py &#124; python3</code> | Direct installer control without bash wrapper |
 
 ### Any AI Coding Agent
 
 > Requires [Node.js 18+](https://nodejs.org/) (provides the `npx` command)
 
 ```bash
-npx skills add Jaganpro/sf-skills
+npx skills add nitheshnekkantisonos/sf-skills
 ```
 
 Works with Claude Code, Codex, Gemini CLI, OpenCode, Amp, and [40+ agents](https://agentskills.io).
 
 ```bash
 # Install a single skill
-npx skills add Jaganpro/sf-skills --skill sf-apex
+npx skills add nitheshnekkantisonos/sf-skills --skill sf-apex
 
 # List available skills before installing
-npx skills add Jaganpro/sf-skills --list
+npx skills add nitheshnekkantisonos/sf-skills --list
 ```
 
 ### Claude Code (Full Experience)
@@ -67,7 +70,7 @@ npx skills add Jaganpro/sf-skills --list
 > **Using Claude Code?** This path is recommended — `npx` installs skills only, while the installer adds the full local experience: skills + agents + hooks + LSP + guardrails.
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/Jaganpro/sf-skills/main/tools/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/nitheshnekkantisonos/sf-skills/main/tools/install.sh | bash
 ```
 
 This installs 25 skills, 7 specialist agents, a shared hook system, and the local LSP engine. It also configures guardrails, auto-validation on Write/Edit, org preflight checks, and background LSP prewarm.
@@ -77,7 +80,7 @@ This installs 25 skills, 7 specialist agents, a shared hook system, and the loca
 ### Direct Python Installer (manual / Windows / CI)
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/Jaganpro/sf-skills/main/tools/install.py | python3
+curl -sSL https://raw.githubusercontent.com/nitheshnekkantisonos/sf-skills/main/tools/install.py | python3
 ```
 
 Use this path when you want to:
@@ -522,7 +525,7 @@ This is the working mental model for the ecosystem: foundation and integration s
 All skills follow the [Agent Skills open standard](https://agentskills.io). Install with `npx skills add` for any supported agent:
 
 ```bash
-npx skills add Jaganpro/sf-skills
+npx skills add nitheshnekkantisonos/sf-skills
 ```
 
 | Tool | Status | Install Method | |
@@ -534,7 +537,7 @@ npx skills add Jaganpro/sf-skills
 | **Amp CLI** | ✅ Compatible | `npx skills add` or `.claude/skills/` | ![Amp](https://img.shields.io/badge/Sourcegraph-Amp-FF5543?logo=sourcegraph&logoColor=white) |
 | **Droid CLI** | ✅ Compatible | `npx skills add` | ![Factory](https://img.shields.io/badge/Factory.ai-Droid-6366F1?logo=robot&logoColor=white) |
 
-> 🤝 **Call for Volunteers!** This repo is community-driven. We need testers on different CLIs — [open an issue](https://github.com/Jaganpro/sf-skills/issues) to get started.
+> 🤝 **Call for Volunteers!** This repo is community-driven. We need testers on different CLIs — [open an issue](https://github.com/nitheshnekkantisonos/sf-skills/issues) to get started.
 
 </details>
 
@@ -624,12 +627,16 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 | Contributor | Area | Skills |
 |---|---|---|
+| [Nithesh Nekkanti](https://github.com/nitheshnekkantisonos) | Fork maintainer — repo knowledge, internal conventions, custom utilities | All (fork-level enhancements) |
 | [David Ryan (weytani)](https://github.com/weytani) | Industries Common Core | sf-industry-commoncore-omnistudio-analyze, sf-industry-commoncore-datamapper, sf-industry-commoncore-integration-procedure, sf-industry-commoncore-omniscript, sf-industry-commoncore-flexcard |
 
 ## Issues & Support
 
-- [GitHub Issues](https://github.com/Jaganpro/sf-skills/issues)
+- [GitHub Issues (fork)](https://github.com/nitheshnekkantisonos/sf-skills/issues)
+- [GitHub Issues (upstream)](https://github.com/Jaganpro/sf-skills/issues)
 
 ## License
 
-MIT License - Copyright (c) 2024-2026 Jag Valaiyapathy
+MIT License — Copyright (c) 2024–2026 [Jag Valaiyapathy](https://github.com/Jaganpro) (original author)
+
+Fork modifications © 2026 [Nithesh Nekkanti](https://github.com/nitheshnekkantisonos)
