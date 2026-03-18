@@ -25,10 +25,10 @@
 
 ```bash
 # Install as part of sf-skills
-npx skills add Jaganpro/sf-skills
+npx skills add nitheshnekkantisonos/sf-skills
 
 # Or install just this skill
-npx skills add Jaganpro/sf-skills --skill sf-ai-agentscript
+npx skills add nitheshnekkantisonos/sf-skills --skill sf-ai-agentscript
 ```
 
 ## Quick Start

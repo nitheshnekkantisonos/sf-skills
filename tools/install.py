@@ -3,7 +3,7 @@
 sf-skills Unified Installer for Claude Code
 
 Usage:
-    curl -sSL https://raw.githubusercontent.com/Jaganpro/sf-skills/main/tools/install.py | python3
+    curl -sSL https://raw.githubusercontent.com/nitheshnekkantisonos/sf-skills/main/tools/install.py | python3
 
     # Or with options:
     python3 install.py                # Interactive install
@@ -89,7 +89,7 @@ NPX_SKILL_LOCK = Path.home() / ".agents" / ".skill-lock.json"
 NPX_SKILLS_DIR = Path.home() / ".agents" / "skills"
 
 # GitHub repository info
-GITHUB_OWNER = "Jaganpro"
+GITHUB_OWNER = "nitheshnekkantisonos"
 GITHUB_REPO = "sf-skills"
 GITHUB_API_URL = f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPO}"
 GITHUB_RAW_URL = f"https://raw.githubusercontent.com/{GITHUB_OWNER}/{GITHUB_REPO}/main"
@@ -3412,7 +3412,7 @@ Profile management:
   python3 install.py --profile use ent --dry-run  # Preview switch
 
 Curl one-liner:
-  curl -sSL https://raw.githubusercontent.com/Jaganpro/sf-skills/main/tools/install.py | python3
+  curl -sSL https://raw.githubusercontent.com/nitheshnekkantisonos/sf-skills/main/tools/install.py | python3
         """
     )
 

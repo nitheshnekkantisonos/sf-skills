@@ -199,4 +199,4 @@ sf project retrieve start --metadata GenAiPromptTemplate:YourTemplateName -o TAR
 
 ---
 
-*Consolidated from @kunello's [PR #20](https://github.com/Jaganpro/sf-skills/pull/20) research on Agent Script Recipes action configuration patterns.*
+*Consolidated from @kunello's [PR #20](https://github.com/nitheshnekkantisonos/sf-skills/pull/20) research on Agent Script Recipes action configuration patterns.*

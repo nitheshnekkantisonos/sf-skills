@@ -43,7 +43,7 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 DEFAULT_CORPUS_ROOT = Path.home() / ".sf-docs"
-USER_AGENT = "sf-docs-sync/0.1 (+https://github.com/Jaganpro/sf-skills)"
+USER_AGENT = "sf-docs-sync/0.1 (+https://github.com/nitheshnekkantisonos/sf-skills)"
 
 
 def now_iso() -> str:
