@@ -177,6 +177,14 @@ For full agent DevOps details, including `Agent:` pseudo metadata, publish/activ
 
 ---
 
+## Project Context — Repo Knowledge
+
+**Before deployment, be aware of the project's custom metadata and settings that affect runtime behavior.** Review the repo knowledge base for configuration dependencies.
+
+Refer: [shared/repo-knowledge.md](../../shared/repo-knowledge.md)
+
+---
+
 ## Score Guide
 
 | Score | Meaning |

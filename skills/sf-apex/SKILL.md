@@ -218,6 +218,14 @@ Full guide: [references/troubleshooting.md](references/troubleshooting.md#lsp-ba
 
 ---
 
+## Project Context — Repo Knowledge
+
+**Before writing new utilities, helpers, or patterns — check the repo knowledge base first.** Reuse what already exists.
+
+Refer: [shared/repo-knowledge.md](../../shared/repo-knowledge.md)
+
+---
+
 ## Score Guide
 
 | Score | Meaning |

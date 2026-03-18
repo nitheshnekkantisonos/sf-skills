@@ -161,6 +161,14 @@ Next step: <deploy, register, test, or implement>
 
 ---
 
+## Project Context — Repo Knowledge
+
+**Before writing new callout utilities or auth helpers — check the repo knowledge base first.** Reuse what already exists.
+
+Refer: [shared/repo-knowledge.md](../../shared/repo-knowledge.md)
+
+---
+
 ## Score Guide
 
 | Score | Meaning |
