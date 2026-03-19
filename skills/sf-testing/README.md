@@ -15,10 +15,10 @@ Comprehensive Salesforce testing skill with test execution, code coverage analys
 
 ```bash
 # Install as part of sf-skills
-npx skills add nitheshnekkantisonos/sf-skills
+npx skills add ./
 
 # Or install just this skill
-npx skills add nitheshnekkantisonos/sf-skills --skill sf-testing
+npx skills add ./ --skill sf-testing
 ```
 
 ## Quick Start

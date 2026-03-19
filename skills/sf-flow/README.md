@@ -16,10 +16,10 @@ Creates and validates Salesforce Flows with 110-point scoring and Spring '26 bes
 
 ```bash
 # Install as part of sf-skills
-npx skills add nitheshnekkantisonos/sf-skills
+npx skills add ./
 
 # Or install just this skill
-npx skills add nitheshnekkantisonos/sf-skills --skill sf-flow
+npx skills add ./ --skill sf-flow
 ```
 
 ## Quick Start

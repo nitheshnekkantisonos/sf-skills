@@ -3,7 +3,8 @@
 sf-skills Unified Installer for Claude Code
 
 Usage:
-    curl -sSL https://raw.githubusercontent.com/nitheshnekkantisonos/sf-skills/main/tools/install.py | python3
+    python3 tools/install.py                  # Install from local clone
+    python3 tools/install.py --local /path    # Install from specific local path
 
     # Or with options:
     python3 install.py                # Interactive install
@@ -2143,7 +2144,8 @@ def cmd_cleanup(dry_run: bool = False) -> int:
     return 0
 
 
-def cmd_install(dry_run: bool = False, force: bool = False, called_from_bash: bool = False) -> int:
+def cmd_install(dry_run: bool = False, force: bool = False, called_from_bash: bool = False,
+                local_source: Optional[Path] = None) -> int:
     """
     Install sf-skills.
 
@@ -2151,6 +2153,7 @@ def cmd_install(dry_run: bool = False, force: bool = False, called_from_bash: bo
         dry_run: Preview changes without applying
         force: Skip confirmation prompts
         called_from_bash: Suppress redundant output (bash wrapper handles UX)
+        local_source: Path to a local repo clone (skip GitHub download)
 
     Returns:
         Exit code (0 = success)
@@ -2223,17 +2226,23 @@ def cmd_install(dry_run: bool = False, force: bool = False, called_from_bash: bo
     with tempfile.TemporaryDirectory() as tmp_dir:
         tmp_path = Path(tmp_dir)
 
-        if not download_repo_zip(tmp_path):
-            print_step(1, 5, "Download failed", "fail")
-            return 1
+        # Local source: use the repo clone directly (no download)
+        if local_source:
+            source_dir = local_source
+            print_step(1, 5, "Using local source", "done")
+            print_substep(f"Source: {source_dir}")
+        else:
+            if not download_repo_zip(tmp_path):
+                print_step(1, 5, "Download failed", "fail")
+                return 1
 
-        # Find extracted directory
-        extracted = list(tmp_path.glob(f"{GITHUB_REPO}-*"))
-        if not extracted:
-            print_error("Could not find extracted files")
-            return 1
+            # Find extracted directory
+            extracted = list(tmp_path.glob(f"{GITHUB_REPO}-*"))
+            if not extracted:
+                print_error("Could not find extracted files")
+                return 1
 
-        source_dir = extracted[0]
+            source_dir = extracted[0]
 
         # Get version from skills-registry.json
         registry_file = source_dir / SKILLS_REGISTRY
@@ -2246,12 +2255,13 @@ def cmd_install(dry_run: bool = False, force: bool = False, called_from_bash: bo
                 pass
 
         # Fetch commit SHA for content-aware update detection
-        commit_sha = fetch_latest_commit_sha()
+        commit_sha = fetch_latest_commit_sha() if not local_source else None
 
-        print_step(1, 5, f"Downloaded sf-skills v{version}", "done")
-        print_substep("Downloaded from GitHub")
-        if commit_sha:
-            print_substep(f"Commit: {commit_sha[:8]}...")
+        if not local_source:
+            print_step(1, 5, f"Downloaded sf-skills v{version}", "done")
+            print_substep("Downloaded from GitHub")
+            if commit_sha:
+                print_substep(f"Commit: {commit_sha[:8]}...")
 
         # Step 2: Detect and cleanup existing installations
         print_step(2, 5, "Detecting existing installations...", "...")
@@ -3411,8 +3421,11 @@ Profile management:
   python3 install.py --profile delete old         # Delete a profile
   python3 install.py --profile use ent --dry-run  # Preview switch
 
-Curl one-liner:
+Curl one-liner (fallback if not running from local clone):
   curl -sSL https://raw.githubusercontent.com/nitheshnekkantisonos/sf-skills/main/tools/install.py | python3
+
+Local install (recommended):
+  python3 tools/install.py
         """
     )
 
@@ -3432,6 +3445,8 @@ Curl one-liner:
                         help="Restore settings.json from latest backup")
     parser.add_argument("--profile", nargs='*', metavar="ACTION",
                         help="Profile management: list|save|use|show|delete [name]")
+    parser.add_argument("--local", metavar="PATH",
+                        help="Install from a local repo clone instead of downloading from GitHub")
     parser.add_argument("--dry-run", action="store_true",
                         help="Preview changes without applying")
     parser.add_argument("--force", "-f", action="store_true",
@@ -3505,10 +3520,18 @@ Curl one-liner:
             force_update=args.force_update
         ))
     else:
+        local_source = None
+        if args.local:
+            local_source = Path(args.local).resolve()
+            if not local_source.is_dir() or not (local_source / "skills").is_dir():
+                print_error(f"Invalid local source: {local_source}")
+                print_info("Path must point to the root of a sf-skills repo clone (containing a skills/ directory)")
+                sys.exit(1)
         sys.exit(cmd_install(
             dry_run=args.dry_run,
             force=args.force,
-            called_from_bash=args.called_from_bash
+            called_from_bash=args.called_from_bash,
+            local_source=local_source
         ))
 
 

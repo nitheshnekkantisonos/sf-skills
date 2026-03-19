@@ -15,10 +15,10 @@ Comprehensive Agentforce testing skill with test execution, coverage analysis, a
 
 ```bash
 # Install as part of sf-skills
-npx skills add nitheshnekkantisonos/sf-skills
+npx skills add ./
 
 # Or install just this skill
-npx skills add nitheshnekkantisonos/sf-skills --skill sf-ai-agentforce-testing
+npx skills add ./ --skill sf-ai-agentforce-testing
 ```
 
 ## Quick Start

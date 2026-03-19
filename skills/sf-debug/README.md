@@ -15,10 +15,10 @@ Salesforce debugging and troubleshooting skill with log analysis, governor limit
 
 ```bash
 # Install as part of sf-skills
-npx skills add nitheshnekkantisonos/sf-skills
+npx skills add ./
 
 # Or install just this skill
-npx skills add nitheshnekkantisonos/sf-skills --skill sf-debug
+npx skills add ./ --skill sf-debug
 ```
 
 ## Quick Start

@@ -14,10 +14,10 @@ Salesforce metadata generation and org-querying skill with 120-point scoring. Bu
 
 ```bash
 # Install as part of sf-skills
-npx skills add nitheshnekkantisonos/sf-skills
+npx skills add ./
 
 # Or install just this skill
-npx skills add nitheshnekkantisonos/sf-skills --skill sf-metadata
+npx skills add ./ --skill sf-metadata
 ```
 
 ## Quick Start

@@ -3,6 +3,9 @@
 # sf-skills Installer for Claude Code - Newbie-Friendly Edition
 #
 # Usage:
+#   bash tools/install.sh              (from repo root — recommended)
+#
+# Fallback (downloads from GitHub):
 #   curl -sSL https://raw.githubusercontent.com/nitheshnekkantisonos/sf-skills/main/tools/install.sh | bash
 #
 # Or download and run manually:
@@ -504,6 +507,25 @@ check_node() {
 # ============================================================================
 
 download_and_run_installer() {
+    # Detect if running from a local repo clone
+    local script_dir
+    script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    local repo_root="$(dirname "$script_dir")"
+
+    if [[ -f "$script_dir/install.py" && -d "$repo_root/skills" ]]; then
+        print_step "Installing from local repo clone..."
+        print_success "Source: $repo_root"
+
+        print_step "Running installation..."
+        echo ""
+
+        # Run Python installer with local source flag
+        python3 "$script_dir/install.py" --force --called-from-bash --local "$repo_root"
+        local result=$?
+        return $result
+    fi
+
+    # Fallback: download from GitHub if not running from local clone
     print_step "Downloading sf-skills installer..."
 
     local tmp_installer="/tmp/sf-skills-install-$$.py"

@@ -16,10 +16,10 @@ Creates comprehensive Salesforce integrations with 120-point scoring. Build secu
 
 ```bash
 # Install as part of sf-skills
-npx skills add nitheshnekkantisonos/sf-skills
+npx skills add ./
 
 # Or install just this skill
-npx skills add nitheshnekkantisonos/sf-skills --skill sf-integration
+npx skills add ./ --skill sf-integration
 ```
 
 ## Quick Start

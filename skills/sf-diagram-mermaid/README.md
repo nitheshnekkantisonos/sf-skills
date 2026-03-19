@@ -24,10 +24,10 @@
 
 ```bash
 # Install as part of sf-skills
-npx skills add nitheshnekkantisonos/sf-skills
+npx skills add ./
 
 # Or install just this skill
-npx skills add nitheshnekkantisonos/sf-skills --skill sf-diagram-mermaid
+npx skills add ./ --skill sf-diagram-mermaid
 ```
 
 ## Quick Start

@@ -14,12 +14,12 @@ Salesforce data operations skill for Claude Code. Provides SOQL expertise, test 
 ## Installation
 
 ```bash
-npx skills add nitheshnekkantisonos/sf-skills --skill sf-data
+npx skills add ./ --skill sf-data
 ```
 
 Or install the complete sf-skills suite:
 ```bash
-npx skills add nitheshnekkantisonos/sf-skills
+npx skills add ./
 ```
 
 ## Usage

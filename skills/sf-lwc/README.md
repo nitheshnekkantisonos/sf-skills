@@ -15,10 +15,10 @@ Lightning Web Components development skill with PICKLES architecture methodology
 
 ```bash
 # Install as part of sf-skills
-npx skills add nitheshnekkantisonos/sf-skills
+npx skills add ./
 
 # Or install just this skill
-npx skills add nitheshnekkantisonos/sf-skills --skill sf-lwc
+npx skills add ./ --skill sf-lwc
 ```
 
 ## Quick Start

@@ -14,10 +14,10 @@ Comprehensive Salesforce DevOps automation using sf CLI v2. Deploy metadata, man
 
 ```bash
 # Install as part of sf-skills
-npx skills add nitheshnekkantisonos/sf-skills
+npx skills add ./
 
 # Or install just this skill
-npx skills add nitheshnekkantisonos/sf-skills --skill sf-deploy
+npx skills add ./ --skill sf-deploy
 ```
 
 ## Quick Start

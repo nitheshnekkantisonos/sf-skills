@@ -39,38 +39,29 @@ The library is organized by capability area so you can scan quickly, pick the ri
 
 ## 🚀 Installation
 
+### Prerequisites
+
+Clone this repo first:
+
+```bash
+git clone https://github.com/nitheshnekkantisonos/sf-skills.git
+cd sf-skills
+```
+
 ### Choose Your Path
 
 | If you want... | Use this | Best for |
 |---|---|---|
-| Skills only, any supported coding agent | <code>npx skills add nitheshnekkantisonos/sf-skills</code> | Codex, Gemini CLI, OpenCode, Amp, Claude Code without local hooks |
-| Full Claude Code experience | <code>curl -sSL https://raw.githubusercontent.com/nitheshnekkantisonos/sf-skills/main/tools/install.sh &#124; bash</code> | Hooks, agents, LSP, guardrails, org preflight |
-| Manual / Windows / CI-friendly install | <code>curl -sSL https://raw.githubusercontent.com/nitheshnekkantisonos/sf-skills/main/tools/install.py &#124; python3</code> | Direct installer control without bash wrapper |
+| Full Claude Code experience | <code>bash tools/install.sh</code> | Hooks, agents, LSP, guardrails, org preflight |
+| Manual / Windows / CI-friendly install | <code>python3 tools/install.py</code> | Direct installer control without bash wrapper |
+| Skills only, any supported coding agent | <code>npx skills add ./</code> | Codex, Gemini CLI, OpenCode, Amp, Claude Code without local hooks |
 
-### Any AI Coding Agent
+### Claude Code (Full Experience — Recommended)
 
-> Requires [Node.js 18+](https://nodejs.org/) (provides the `npx` command)
-
-```bash
-npx skills add nitheshnekkantisonos/sf-skills
-```
-
-Works with Claude Code, Codex, Gemini CLI, OpenCode, Amp, and [40+ agents](https://agentskills.io).
+> **Using Claude Code?** This path is recommended — it installs the full local experience: skills + agents + hooks + LSP + guardrails.
 
 ```bash
-# Install a single skill
-npx skills add nitheshnekkantisonos/sf-skills --skill sf-apex
-
-# List available skills before installing
-npx skills add nitheshnekkantisonos/sf-skills --list
-```
-
-### Claude Code (Full Experience)
-
-> **Using Claude Code?** This path is recommended — `npx` installs skills only, while the installer adds the full local experience: skills + agents + hooks + LSP + guardrails.
-
-```bash
-curl -sSL https://raw.githubusercontent.com/nitheshnekkantisonos/sf-skills/main/tools/install.sh | bash
+bash tools/install.sh
 ```
 
 This installs 25 skills, 7 specialist agents, a shared hook system, and the local LSP engine. It also configures guardrails, auto-validation on Write/Edit, org preflight checks, and background LSP prewarm.
@@ -80,7 +71,7 @@ This installs 25 skills, 7 specialist agents, a shared hook system, and the loca
 ### Direct Python Installer (manual / Windows / CI)
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/nitheshnekkantisonos/sf-skills/main/tools/install.py | python3
+python3 tools/install.py
 ```
 
 Use this path when you want to:
@@ -88,6 +79,24 @@ Use this path when you want to:
 - run on Windows without the bash wrapper
 - script installs in CI or managed environments
 - access advanced installer commands immediately
+
+### Any AI Coding Agent
+
+> Requires [Node.js 18+](https://nodejs.org/) (provides the `npx` command)
+
+```bash
+npx skills add ./
+```
+
+Works with Claude Code, Codex, Gemini CLI, OpenCode, Amp, and [40+ agents](https://agentskills.io).
+
+```bash
+# Install a single skill
+npx skills add ./ --skill sf-apex
+
+# List available skills before installing
+npx skills add ./ --list
+```
 
 ### Updating
 
@@ -522,10 +531,11 @@ This is the working mental model for the ecosystem: foundation and integration s
 
 ### CLI Compatibility
 
-All skills follow the [Agent Skills open standard](https://agentskills.io). Install with `npx skills add` for any supported agent:
+All skills follow the [Agent Skills open standard](https://agentskills.io). Install from your local clone:
 
 ```bash
-npx skills add nitheshnekkantisonos/sf-skills
+cd /path/to/sf-skills
+npx skills add ./
 ```
 
 | Tool | Status | Install Method | |
@@ -632,7 +642,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ## Issues & Support
 
-- [GitHub Issues (fork)](https://github.com/nitheshnekkantisonos/sf-skills/issues)
 - [GitHub Issues (upstream)](https://github.com/Jaganpro/sf-skills/issues)
 
 ## License

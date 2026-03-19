@@ -14,10 +14,10 @@ Generates and reviews Salesforce Apex code with 2025 best practices and 150-poin
 
 ```bash
 # Install as part of sf-skills
-npx skills add nitheshnekkantisonos/sf-skills
+npx skills add ./
 
 # Or install just this skill
-npx skills add nitheshnekkantisonos/sf-skills --skill sf-apex
+npx skills add ./ --skill sf-apex
 ```
 
 ## Quick Start

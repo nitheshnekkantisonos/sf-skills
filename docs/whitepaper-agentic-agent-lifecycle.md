@@ -1046,13 +1046,13 @@ Droid CLI          Factory.ai        npx skills add
 **Any AI coding agent:**
 
 ```bash
-npx skills add nitheshnekkantisonos/sf-skills
+npx skills add ./
 ```
 
 **Claude Code (full experience with hooks, agents, LSP, guardrails):**
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/nitheshnekkantisonos/sf-skills/main/tools/install.sh | bash
+bash tools/install.sh
 ```
 
 ---
@@ -1093,10 +1093,10 @@ Every tool used in this paper is available right now:
 
 ```bash
 # Install sf-skills (any AI coding agent)
-npx skills add nitheshnekkantisonos/sf-skills
+npx skills add ./
 
 # Or full Claude Code experience
-curl -sSL https://raw.githubusercontent.com/nitheshnekkantisonos/sf-skills/main/tools/install.sh | bash
+bash tools/install.sh
 ```
 
 ### Links
