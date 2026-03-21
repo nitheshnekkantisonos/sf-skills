@@ -8,7 +8,7 @@
 | Topic and action design | 25 | Strong routing descriptions, scoped topics, actions mapped to the right topic |
 | Metadata quality | 20 | Valid GenAiFunction / GenAiPlugin structure, correct target types, clean I/O definitions |
 | Integration patterns | 15 | Dependencies sequenced correctly, cross-skill orchestration used appropriately |
-| Prompt / AI usage | 10 | PromptTemplate or Models API used only where it adds value |
+| Prompt / AI usage | 10 | GenAiPromptTemplate or Models API used only where it adds value |
 | Deployment readiness | 10 | Validation complete, dependencies deployed, publish/activate flow understood |
 
 ## Thresholds

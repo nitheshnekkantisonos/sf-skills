@@ -9,7 +9,9 @@
 
 ## Overview
 
-Prompt Template Actions let agents invoke Salesforce Prompt Templates via the `generatePromptResponse://` protocol. The agent passes structured inputs to the template and receives a generated `promptResponse` output — keeping content generation in the template while the agent manages conversation flow.
+Prompt Template Actions let agents invoke Salesforce Prompt Builder templates via the `generatePromptResponse://` protocol. The agent passes structured inputs to the template and receives a generated `promptResponse` output — keeping content generation in the template while the agent manages conversation flow.
+
+> **Terminology:** in Setup, users usually say **Prompt Template**. In source metadata, the current metadata type is **`GenAiPromptTemplate`**.
 
 **When to use**: Personalized responses, summarization, content generation, recommendations — anything where an LLM prompt template produces better output than static Flow logic.
 
@@ -180,9 +182,9 @@ When the target prompt template is in **Draft** status, `sf agent publish author
 | Bare definition (no I/O) | `Metadata API request failed: Metadata retrieval failed:` | Template can't be resolved (Draft) |
 | Bare definition (retry) | `Internal Error, try again later` | Template can't be resolved (Draft) |
 
-**`sf agent validate authoring-bundle` passes regardless of template status** — it does not check whether the target template is Active. This gives false confidence before publish.
+**`sf agent validate authoring-bundle` passes regardless of template status** — it does not check whether the target template is published / active. This gives false confidence before publish.
 
-**Fix**: Activate the template in **Setup > Prompt Builder** before publishing. The original Agent Script syntax (with `"Input:X"` inputs and `promptResponse` output) is correct — it will publish successfully once the template is Active.
+**Fix**: Publish or activate the template in **Setup > Prompt Builder** before publishing the agent. The original Agent Script syntax (with `"Input:X"` inputs and `promptResponse` output) is correct — it will publish successfully once the template is available for runtime use.
 
 **Pre-publish check**:
 ```bash
@@ -201,18 +203,18 @@ sf project retrieve start --metadata GenAiPromptTemplate:YourTemplateName -o TAR
 |-------|-------|-----|
 | `SyntaxError` on input binding | Missing quotes on parameter name | Use `"Input:email"` not `Input:email` |
 | Template not found | Wrong protocol or template name | Verify `generatePromptResponse://ExactTemplateName` |
-| Empty `promptResponse` | Template inactive or missing required inputs | Activate template in Setup, check all `is_required: True` inputs are bound |
+| Empty `promptResponse` | Template not published / active, or missing required inputs | Publish the template in Setup, check all `is_required: True` inputs are bound |
 | Blank agent reply even though template ran | `is_displayable: True` on `promptResponse` | Set `is_displayable: False` and let the planner synthesize the reply |
 | Planner behaves like the prompt output is missing | Output is hidden but not planner-visible | Set `is_used_by_planner: True` on the output that should drive the reply or routing |
 | Input not mapped | API name mismatch | Input field name after `Input:` must exactly match template's input API name |
-| `invalid input/output parameters found` | Target template is in **Draft** status | Activate the template in Setup > Prompt Builder — see "Draft Template Publish Errors" above |
-| `Internal Error` with bare action definition | Missing I/O blocks AND/OR Draft template | Add `inputs:`/`outputs:` blocks and ensure template is Active |
+| `invalid input/output parameters found` | Target template is in **Draft** status | Publish the template in Setup > Prompt Builder — see "Draft Template Publish Errors" above |
+| `Internal Error` with bare action definition | Missing I/O blocks AND/OR Draft template | Add `inputs:`/`outputs:` blocks and ensure the template is published / active |
 
 ---
 
 ## Checklist
 
-- [ ] Template exists in org and is **active** (Draft templates cause misleading publish errors)
+- [ ] Template exists in org and is **published / active** (Draft templates cause misleading publish errors)
 - [ ] Input field API names match template configuration exactly
 - [ ] All `is_required: True` inputs are bound (via `...`, `@variables`, or fixed)
 - [ ] `promptResponse` output is captured with `set`
@@ -222,4 +224,4 @@ sf project retrieve start --metadata GenAiPromptTemplate:YourTemplateName -o TAR
 
 ---
 
-*Consolidated from @kunello's [PR #20](https://github.com/Jaganpro/sf-skills/pull/20) research on Agent Script Recipes action configuration patterns.*
+*Consolidated from repository prompt-template integration research and validated action configuration patterns.*

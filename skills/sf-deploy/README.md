@@ -1,13 +1,14 @@
 # sf-deploy
 
-Comprehensive Salesforce DevOps automation using sf CLI v2. Deploy metadata, manage orgs, and set up CI/CD pipelines.
+Comprehensive Salesforce DevOps automation using sf CLI v2. Validate, deploy, verify, and hand off cleanly to post-deploy activities.
 
 ## Features
 
 - **Deployment Management**: Execute, validate, and monitor deployments
 - **DevOps Automation**: CI/CD pipelines, automated testing workflows
 - **Org Management**: Authentication, scratch orgs, environment management
-- **Quality Assurance**: Tests, code coverage, pre-production validation
+- **Quality Assurance**: Dry-run validation, tests, code coverage, pre-production verification
+- **Post-Deploy Handoff**: Guide users to the next safe step after validation or deployment
 - **Troubleshooting**: Debug failures, analyze logs, provide solutions
 
 ## Installation
@@ -58,6 +59,15 @@ sf project deploy report --job-id [id] --target-org [alias]
 sf project deploy cancel --job-id [id] --target-org [alias]
 ```
 
+## Recommended post-validation flow
+
+After a successful dry run, guide the user to the next safe step:
+1. deploy now
+2. assign permission sets
+3. create test data with `sf-data`
+4. run tests or smoke checks
+5. combine multiple post-deploy steps in order
+
 ## Orchestration Order
 
 ```
@@ -67,18 +77,19 @@ sf-metadata → sf-flow → sf-deploy → sf-data
 **Within sf-deploy**:
 1. Objects/Fields
 2. Permission Sets
-3. Flows (as Draft)
-4. Apex
+3. Apex
+4. Flows (as Draft)
 5. Activate Flows
 
 ## Best Practices
 
 | Rule | Details |
 |------|---------|
-| Always --dry-run first | Validate before actual deployment |
+| Always `--dry-run` first | Validate before actual deployment |
 | Deploy order matters | Objects → Permissions → Code |
-| Test levels | Use RunLocalTests for production |
+| Test levels | Use `RunLocalTests` for production |
 | Flow activation | Deploy as Draft, activate manually |
+| Post-deploy data | Hand off to `sf-data` rather than mixing raw data creation into deploy logic |
 
 ## Cross-Skill Integration
 
@@ -86,10 +97,14 @@ sf-metadata → sf-flow → sf-deploy → sf-data
 |---------------|-------------|
 | sf-metadata | Create objects/fields BEFORE deploy |
 | sf-testing | Run tests AFTER deployment |
-| sf-data | Insert test data AFTER deployment |
+| sf-data | Create describe-validated test data AFTER deployment |
 
 ## Documentation
 
+- [SKILL.md](SKILL.md) - Full workflow and orchestration guidance
+- [references/orchestration.md](references/orchestration.md) - Deployment sequencing
+- [references/deployment-workflows.md](references/deployment-workflows.md) - CI/CD and workflow examples
+- [references/deploy.sh](references/deploy.sh) - Sample deployment script
 
 ## Requirements
 
@@ -100,4 +115,4 @@ sf-metadata → sf-flow → sf-deploy → sf-data
 ## License
 
 MIT License. See LICENSE file.
-Copyright (c) 2024-2025 Jag Valaiyapathy
+Copyright (c) 2024-2026 Jag Valaiyapathy

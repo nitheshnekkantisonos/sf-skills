@@ -161,9 +161,11 @@ Before `sf agent publish`, verify action targets exist and are active:
 | `apex://X` | `SELECT Name FROM ApexClass WHERE Name = 'X'` |
 | `retriever://X` | `SELECT DeveloperName FROM DataCloudRetriever WHERE DeveloperName = 'X'` |
 | `externalService://X` | `SELECT DeveloperName FROM ExternalServiceRegistration WHERE DeveloperName = 'X'` |
-| `generatePromptResponse://X` | `SELECT DeveloperName FROM PromptTemplate WHERE DeveloperName = 'X' AND Status = 'Active'` |
+| `generatePromptResponse://X` | `SELECT DeveloperName FROM PromptTemplate WHERE DeveloperName = 'X' AND Status IN ('Active', 'Published')` |
 
 Run these via: `sf data query -q "QUERY" -o ORG --json`
+
+> **Prompt template note**: the queryable object name may still appear as `PromptTemplate`, while the current source metadata type is `GenAiPromptTemplate`.
 
 ### Direct Action Invocation (Debugging)
 
@@ -602,14 +604,14 @@ actions:
 
 **Input/Output Schemas**: Use `input/schema.json` and `output/schema.json` files in the GenAiFunction bundle directory. Do NOT use inline XML elements like `<genAiFunctionInputs>`, `<genAiFunctionOutputs>`, `<genAiFunctionParameters>`, or `<capability>` — these are NOT valid in the Metadata API XML schema (API v66.0).
 
-### Prompt Template Types
+### Prompt Builder Template Types
 
-| Type | Use Case |
+| Current metadata value | Typical use case |
 |------|----------|
-| `flexPrompt` | General purpose, maximum flexibility |
-| `salesGeneration` | Sales content (emails, proposals) |
-| `fieldCompletion` | Suggest field values |
-| `recordSummary` | Summarize record data |
+| `einstein_gpt__flex` | General purpose, maximum flexibility |
+| `einstein_gpt__salesEmail` | Sales-oriented generated content |
+| `einstein_gpt__fieldCompletion` | Suggest field values |
+| `einstein_gpt__recordSummary` | Summarize record data |
 
 ### Template Variable Types
 

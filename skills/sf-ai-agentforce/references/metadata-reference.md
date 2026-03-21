@@ -26,13 +26,26 @@ Use it when:
 - multiple functions belong to one business domain
 - you want cleaner packaging for Builder-based actions
 
-## PromptTemplate integration
+## Prompt Builder template integration
 
-Use PromptTemplate-backed actions when:
+Use Prompt Builder templates when:
 - the output is generated content
 - the user needs a draft, summary, rewrite, or recommendation
 
-Do not use PromptTemplate as a substitute for deterministic business logic.
+Do not use prompt templates as a substitute for deterministic business logic.
+
+### Current source format
+For modern metadata work, use:
+- metadata type: `GenAiPromptTemplate`
+- folder: `genAiPromptTemplates/`
+- suffix: `.genAiPromptTemplate-meta.xml`
+- versioned content under `templateVersions`
+
+### High-signal rules
+- Treat **Prompt Template** as the UI term and **`GenAiPromptTemplate`** as the metadata type.
+- Flex templates should stay within the **5-input maximum**.
+- Prompt content should reference inputs with the current merge-field shape such as `{!$Input:TargetRecord}`.
+- Publish / activate the template version before wiring downstream actions that depend on it.
 
 ## Models API
 
@@ -54,12 +67,14 @@ Supporting metadata first:
 - objects / fields
 - Apex
 - Flows
-- PromptTemplates / GenAiFunction / GenAiPlugin
+- `GenAiPromptTemplate` / `GenAiFunction` / `GenAiPlugin`
 - then publish the agent
 
 ## Deep references
 
-- Prompt templates: [prompt-templates.md](prompt-templates.md)
+- Builder workflow: [builder-workflow.md](builder-workflow.md)
+- GenAI prompt metadata: [genaiprompttemplate.md](genaiprompttemplate.md)
+- Prompt terminology: [prompt-templates.md](prompt-templates.md)
 - Models API: [models-api.md](models-api.md)
 - Custom Lightning types: [custom-lightning-types.md](custom-lightning-types.md)
 - CLI lifecycle: [cli-commands.md](cli-commands.md)

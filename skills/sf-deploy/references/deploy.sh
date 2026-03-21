@@ -8,7 +8,7 @@
 set -e  # Exit on error
 
 TARGET_ORG=${1:-"myorg"}
-PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}/..")" && pwd)"
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 echo "═══════════════════════════════════════════════════════════════════"
 echo "  DEPLOYMENT TO: $TARGET_ORG"
@@ -18,6 +18,14 @@ echo "════════════════════════�
 echo "📋 Pre-flight checks..."
 sf --version || { echo "❌ sf CLI not found"; exit 1; }
 sf org display --target-org "$TARGET_ORG" || { echo "❌ Cannot connect to org"; exit 1; }
+
+# Step 0.5: Dry-run validation first
+echo "🧪 Step 0.5: Running dry-run validation..."
+sf project deploy start \
+    --dry-run \
+    --source-dir "$PROJECT_DIR/force-app/main/default" \
+    --target-org "$TARGET_ORG" \
+    --wait 30
 
 # Step 1: Deploy Custom Objects/Fields
 echo "📦 Step 1: Deploying objects and fields..."
@@ -53,7 +61,8 @@ echo "════════════════════════�
 echo "  ✅ DEPLOYMENT COMPLETE"
 echo "═══════════════════════════════════════════════════════════════════"
 echo ""
-echo "Next Steps:"
+echo "Recommended Next Steps:"
 echo "  1. Assign permission sets: sf org assign permset --name PermSetName --target-org $TARGET_ORG"
-echo "  2. Activate flows: Edit XML status to Active, redeploy"
-echo "  3. Run test data: sf apex run --file scripts/data/create-test-data.apex --target-org $TARGET_ORG"
+echo "  2. Activate flows after validation"
+echo "  3. Create test data with sf-data or describe-first sf data commands"
+echo "  4. Run smoke tests / targeted verification"

@@ -1,17 +1,17 @@
 # Prompt Template Action Pattern
-# Invoke Salesforce PromptTemplates directly from Agent Script
+# Invoke Salesforce Prompt Builder templates directly from Agent Script
 #
 # ★ When To Use This Pattern:
 #   - Generate dynamic AI content (summaries, emails, recommendations)
 #   - Use Einstein Prompt Builder templates from agents
 #   - Combine structured data with LLM generation
-#   - Leverage existing PromptTemplate investments
+#   - Leverage existing Prompt Builder template investments
 #
 # ★ Key Insights:
 #   - Target uses generatePromptResponse:// protocol (not flow://)
 #   - Input names MUST have "Input:" prefix (critical!)
 #   - Output field is always named "promptResponse"
-#   - PromptTemplate must be deployed BEFORE the agent
+#   - In source metadata, use GenAiPromptTemplate and deploy it BEFORE the agent
 #
 # ★ Important Limitation:
 #   - Template API name must exactly match target
@@ -89,7 +89,7 @@ topic schedule_generation:
 			description: "Generate a personalized daily schedule using AI."
 			inputs:
 				# ★ CRITICAL: Input names must have "Input:" prefix
-				# These map to {!email} and {!timezone} in the PromptTemplate
+				# These map to {!$Input:email} and {!$Input:timezone} in the Prompt Builder template
 				"Input:email": string
 					description: "User's email address for preference lookup"
 					is_required: True
@@ -175,17 +175,17 @@ topic email_generation:
 # ★ Insight: Prompt Template Integration Checklist
 #
 # BEFORE PUBLISHING AGENT:
-#   1. Create PromptTemplate metadata file
-#   2. Deploy PromptTemplate: sf project deploy start -m "PromptTemplate:Template_Name"
-#   3. Verify template exists: sf org list metadata -m PromptTemplate
+#   1. Create GenAiPromptTemplate metadata file
+#   2. Deploy template metadata: sf project deploy start -m "GenAiPromptTemplate:Template_Name"
+#   3. Verify the template is published / active before publishing the agent
 #
 # INPUT MAPPING:
-#   Agent Script "Input:fieldName" → PromptTemplate {!fieldName}
-#   "Input:email"                  → {!email}
-#   "Input:customerName"           → {!customerName}
+#   Agent Script "Input:fieldName" → Prompt Builder input reference {!$Input:fieldName}
+#   "Input:email"                  → {!$Input:email}
+#   "Input:customerName"           → {!$Input:customerName}
 #
 # COMMON ERRORS:
-#   - HTTP 404: PromptTemplate not deployed yet
+#   - HTTP 404: GenAiPromptTemplate metadata not deployed yet
 #   - Blank response: prompt output is marked is_displayable: True instead of False
 #   - Missing synthesis: prompt output is hidden but not planner-visible
 #   - "property X not found": Input name doesn't match template variable

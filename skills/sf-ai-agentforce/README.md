@@ -1,19 +1,19 @@
 # sf-ai-agentforce
 
-Standard Agentforce platform skill for Setup UI-based agent building, PromptTemplate metadata, Einstein Models API, GenAiFunction/GenAiPlugin setup, and custom Lightning types.
+Standard Agentforce platform skill for **Setup UI / Agent Builder** work: Builder-managed topics and actions, `GenAiFunction` / `GenAiPlugin`, **Prompt Builder templates stored as `GenAiPromptTemplate` metadata**, Einstein Models API, and custom Lightning types.
 
-> **For code-first Agent Script DSL development**, use [sf-ai-agentscript](../sf-ai-agentscript/) instead.
+> **For code-first Agent Script DSL development**, use [sf-ai-agentscript](../sf-ai-agentscript/).
 
 ## What This Skill Covers
 
 | Area | Description |
 |------|-------------|
 | **Agent Builder** | Creating and configuring agents via Setup UI / Agentforce Builder |
-| **GenAiFunction** | Metadata XML for registering Flow, Apex, and Prompt Template actions |
+| **GenAiFunction** | Metadata XML for registering Flow, Apex, and Prompt Builder actions |
 | **GenAiPlugin** | Grouping multiple GenAiFunctions into reusable action sets |
-| **PromptTemplate** | Einstein Prompt Builder templates for AI-generated content |
+| **GenAiPromptTemplate** | Current Metadata API type for Prompt Builder templates |
 | **Models API** | Native LLM access in Apex via `aiplatform.ModelsAPI` |
-| **Custom Lightning Types** | LightningTypeBundle for custom agent action UIs |
+| **Custom Lightning Types** | `LightningTypeBundle` for custom agent action UIs |
 
 ## What This Skill Does NOT Cover
 
@@ -38,14 +38,22 @@ Skill: sf-ai-agentforce
 Request: "Set up a GenAiFunction for my Apex discount calculator"
 ```
 
+## Key Current-State Guidance
+
+- In conversation, users may say **Prompt Template**.
+- In source metadata, use **`GenAiPromptTemplate`**.
+- Prefer `genAiPromptTemplates/*.genAiPromptTemplate-meta.xml` for source-driven Prompt Builder work.
+- Flex templates should be designed around the **5-input maximum**.
+
 ## Documentation
 
 | Document | Description |
 |----------|-------------|
 | [SKILL.md](SKILL.md) | Entry point — full skill reference |
-| [references/prompt-templates.md](references/prompt-templates.md) | PromptTemplate metadata and Einstein Prompt Builder |
+| [references/genaiprompttemplate.md](references/genaiprompttemplate.md) | Current `GenAiPromptTemplate` metadata guidance |
+| [references/prompt-templates.md](references/prompt-templates.md) | Terminology guide: Prompt Template vs `GenAiPromptTemplate` |
 | [references/models-api.md](references/models-api.md) | Einstein Models API (`aiplatform.ModelsAPI`) |
-| [references/custom-lightning-types.md](references/custom-lightning-types.md) | LightningTypeBundle for custom agent UIs |
+| [references/custom-lightning-types.md](references/custom-lightning-types.md) | `LightningTypeBundle` for custom agent UIs |
 
 ## Orchestration
 

@@ -1,46 +1,50 @@
 <!-- Parent: sf-metadata/SKILL.md -->
 
-# Permission Set Auto-Generation (Phase 3.5)
+# Permission Set Auto-Generation
 
-After creating Custom Objects or Fields, ALWAYS prompt the user for Permission Set generation.
+When creating custom objects or fields, default to generating or updating a Permission Set unless the user explicitly opts out.
 
-## Prompt Template
+## Core rule
 
-```
-AskUserQuestion:
-  question: "Would you like me to generate a Permission Set for [ObjectName__c] field access?"
-  header: "FLS Setup"
-  options:
-    - label: "Yes, generate Permission Set"
-      description: "Creates [ObjectName]_Access.permissionset-meta.xml with object CRUD and field access"
-    - label: "No, I'll handle FLS manually"
-      description: "Skip Permission Set generation - you'll configure FLS via Setup or Profile"
-```
+**Object CRUD does not make custom fields visible.**
+New metadata work should normally include both:
+- `<objectPermissions>` for the object
+- `<fieldPermissions>` for eligible custom fields
 
-## Generation Rules
+## Default workflow
 
-| Field Type | Include in Permission Set? | Notes |
-|------------|---------------------------|-------|
-| Required fields | NO | Auto-visible, Salesforce rejects in Permission Set |
-| Optional fields | YES | Include with `editable: true, readable: true` |
-| Formula fields | YES | Include with `editable: false, readable: true` |
-| Roll-Up Summary | YES | Include with `editable: false, readable: true` |
-| Master-Detail | NO | Controlled by parent object permissions |
-| Name field | NO | Always visible, cannot be in Permission Set |
+1. **Collect field information** from the metadata being created or changed
+2. **Build or update a Permission Set by default** for the affected object
+3. **Include eligible custom fields** with the correct read/edit behavior
+4. **Exclude only fields that Salesforce treats as system-managed or always-available in Permission Set metadata**
+5. **Write the Permission Set** to `force-app/main/default/permissionsets/[ObjectName]_Access.permissionset-meta.xml`
+6. **Tell the user what was included and excluded**
 
-## Workflow
+## Eligible field guidance
 
-1. **Collect field information** from created metadata
-2. **Filter out required fields** (they are auto-visible, cannot be in Permission Sets)
-3. **Filter out formula fields** (can only be readable, not editable)
-4. **Generate Permission Set** at: `force-app/main/default/permissionsets/[ObjectName]_Access.permissionset-meta.xml`
+| Field type / category | Include in Permission Set? | Guidance |
+|---|---|---|
+| Optional custom fields | YES | `readable=true`, `editable=true` |
+| Formula fields | YES | `readable=true`, `editable=false` |
+| Roll-up summary fields | YES | `readable=true`, `editable=false` |
+| Universally required custom fields | Usually NO | Salesforce commonly treats these as always-available / excluded in modern metadata retrievals |
+| Master-Detail relationship fields | Usually NO | Commonly treated as parent-controlled / excluded in Permission Set metadata |
+| Name / system-managed fields | NO | Do not generate explicit field permissions |
 
-## Example Auto-Generated Permission Set
+## Generated output expectations
+
+A generated Permission Set should:
+- include object permissions for the target object
+- include field permissions for eligible custom fields
+- use read-only field permissions for calculated fields
+- clearly document any excluded fields and why they were skipped
+
+## Example generated Permission Set
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
-    <description>Auto-generated: Grants access to Customer_Feedback__c and its fields</description>
+    <description>Auto-generated: Grants access to Customer_Feedback__c and eligible custom fields</description>
     <hasActivationRequired>false</hasActivationRequired>
     <label>Customer Feedback Access</label>
 
@@ -54,13 +58,24 @@ AskUserQuestion:
         <viewAllRecords>true</viewAllRecords>
     </objectPermissions>
 
-    <!-- NOTE: Required fields are EXCLUDED (auto-visible) -->
-    <!-- NOTE: Formula fields have editable=false -->
-
     <fieldPermissions>
         <editable>true</editable>
         <field>Customer_Feedback__c.Optional_Field__c</field>
         <readable>true</readable>
     </fieldPermissions>
+
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>Customer_Feedback__c.Score_Band__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
 </PermissionSet>
 ```
+
+## Opt-out guidance
+
+If the user explicitly says they do **not** want a Permission Set generated, still call out the exact FLS follow-up they must handle manually.
+
+## Implementation note
+
+The generator script under `hooks/scripts/generate_permission_set.py` should be treated as the default automation path for this workflow.

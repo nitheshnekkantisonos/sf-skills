@@ -1,14 +1,14 @@
 # sf-data
 
-Salesforce data operations skill for Claude Code. Provides SOQL expertise, test data factories, bulk operations, and comprehensive validation with 130-point scoring.
+Salesforce data operations skill for Claude Code. Create, validate, bulk-load, clean up, and troubleshoot org data with a describe-first workflow.
 
 ## Features
 
 - **CRUD Operations**: Create, read, update, delete records via sf CLI
-- **SOQL Expertise**: Complex relationship queries, polymorphic fields, aggregations
-- **Test Data Factories**: Bulk-ready Apex factories for standard objects
+- **Describe-First Validation**: Inspect required fields, picklists, and createable fields before data creation
+- **CLI-First Test Data**: Prefer `sf data` commands for straightforward seed data
 - **Bulk Operations**: Import/export via Bulk API 2.0
-- **Record Tracking & Cleanup**: Savepoint/rollback, cleanup scripts
+- **Record Tracking & Cleanup**: Savepoint/rollback, cleanup scripts, delete-by-pattern workflows
 - **130-Point Validation**: Automated scoring across 7 categories
 
 ## Installation
@@ -41,6 +41,13 @@ Request: "Create 251 test Account records with varying Industries for trigger te
 | Delete | "Delete all test records with Name LIKE 'Test%'" |
 | Cleanup | "Generate cleanup script for all records created today" |
 
+## Recommended workflow
+
+1. Describe the target object when schema constraints are uncertain
+2. Validate required fields, picklist values, and createable fields
+3. Choose CLI, tree import, bulk import, or anonymous Apex intentionally
+4. Verify results and provide cleanup instructions
+
 ## Validation Scoring (130 Points)
 
 | Category | Points | Focus |
@@ -60,7 +67,7 @@ Request: "Create 251 test Account records with varying Industries for trigger te
 Skill(skill="sf-metadata")
 Request: "Describe Invoice__c in org dev - show all fields"
 ```
-Then use sf-data with accurate field names.
+Then use sf-data with accurate field names and permitted values.
 
 ### From sf-apex / sf-flow
 ```
@@ -81,9 +88,15 @@ sf-data/
 │   ├── json/                  # JSON tree templates
 │   └── cleanup/               # Cleanup scripts
 ├── hooks/                     # Validation hooks
-├── references/                      # Documentation
-└── references/                  # Usage examples
+└── references/                # Documentation and examples
 ```
+
+## Key documentation
+
+- [SKILL.md](SKILL.md) - Full workflow and orchestration guidance
+- [references/test-data-best-practices.md](references/test-data-best-practices.md) - Describe-first validation and retry strategy
+- [references/sf-cli-data-commands.md](references/sf-cli-data-commands.md) - sf CLI command patterns
+- [references/cleanup-rollback-guide.md](references/cleanup-rollback-guide.md) - Cleanup strategies
 
 ## sf CLI Commands Wrapped
 
@@ -108,4 +121,4 @@ sf-data/
 ## License
 
 MIT License. See LICENSE file.
-Copyright (c) 2024-2025 Jag Valaiyapathy
+Copyright (c) 2024-2026 Jag Valaiyapathy

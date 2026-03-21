@@ -13,7 +13,7 @@ This guide covers the complete deployment lifecycle for Agentforce agents, inclu
 
 **Related Skills:**
 - `sf-ai-agentscript` - Agent Script authoring and publishing (recommended for new agents)
-- `sf-ai-agentforce` - Agentforce platform setup (Agent Builder, PromptTemplate, Models API)
+- `sf-ai-agentforce` - Agentforce platform setup (Agent Builder, Prompt Builder / GenAiPromptTemplate, Models API)
 - `sf-deploy` - This skill - deployment orchestration
 
 ---

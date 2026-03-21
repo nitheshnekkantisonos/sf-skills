@@ -8,7 +8,7 @@ description: >
   (use sf-testing), or metadata deployment (use sf-deploy).
 license: MIT
 metadata:
-  version: "1.1.0"
+  version: "1.2.0"
   author: "Jag Valaiyapathy"
   scoring: "130 points across 7 categories"
 ---
@@ -66,6 +66,7 @@ Ask for or infer:
 - For automation testing, prefer **251+ records** when bulk behavior matters.
 - Always think about cleanup before creating large or noisy datasets.
 - Never use real PII in generated test data.
+- Prefer **CLI-first** for straightforward CRUD; use anonymous Apex when the operation truly needs server-side orchestration.
 
 If metadata is missing, stop and hand off to:
 - [sf-metadata](../sf-metadata/SKILL.md) or [sf-deploy](../sf-deploy/SKILL.md)
@@ -77,7 +78,31 @@ If metadata is missing, stop and hand off to:
 ### 1. Verify prerequisites
 Confirm object / field availability, org auth, and required parent records.
 
-### 2. Choose the smallest correct mechanism
+### 2. Run describe-first pre-flight validation when schema is uncertain
+Before creating or updating records, use object describe data to validate:
+- required fields
+- createable vs non-createable fields
+- picklist values
+- relationship fields and parent requirements
+
+Example pattern:
+```bash
+sf sobject describe --sobject ObjectName --target-org <alias> --json
+```
+
+Helpful filters:
+```bash
+# Required + createable fields
+jq '.result.fields[] | select(.nillable==false and .createable==true) | {name, type}'
+
+# Valid picklist values for one field
+jq '.result.fields[] | select(.name=="StageName") | .picklistValues[].value'
+
+# Fields that cannot be set on create
+jq '.result.fields[] | select(.createable==false) | .name'
+```
+
+### 3. Choose the smallest correct mechanism
 | Need | Default approach |
 |---|---|
 | small one-off CRUD | `sf data` single-record commands |
@@ -86,7 +111,7 @@ Confirm object / field availability, org auth, and required parent records.
 | reusable test dataset | factory / anonymous Apex script |
 | reversible experiment | cleanup script or savepoint-based approach |
 
-### 3. Execute or generate assets
+### 4. Execute or generate assets
 Use the built-in templates under `assets/` when they fit:
 - `assets/factories/`
 - `assets/bulk/`
@@ -95,10 +120,19 @@ Use the built-in templates under `assets/` when they fit:
 - `assets/csv/`
 - `assets/json/`
 
-### 4. Verify results
+### 5. Verify results
 Check counts, relationships, and record IDs after creation or update.
 
-### 5. Leave cleanup guidance
+### 6. Apply a bounded retry strategy
+If creation fails:
+1. try the primary CLI shape once
+2. retry once with corrected parameters
+3. re-run describe / validate assumptions
+4. pivot to a different mechanism or provide a manual workaround
+
+Do **not** repeat the same failing command indefinitely.
+
+### 7. Leave cleanup guidance
 Provide exact cleanup commands or rollback assets whenever data was created.
 
 ---
@@ -112,8 +146,10 @@ Provide exact cleanup commands or rollback assets whenever data was created.
 
 ### Data integrity
 - include required fields
+- validate picklist values before creation
 - verify parent IDs and relationship integrity
 - account for validation rules and duplicate constraints
+- exclude non-createable fields from input payloads
 
 ### Cleanup discipline
 Prefer one of:
@@ -129,10 +165,11 @@ Prefer one of:
 | Error | Likely cause | Default fix direction |
 |---|---|---|
 | `INVALID_FIELD` | wrong field API name or FLS issue | verify schema and access |
-| `REQUIRED_FIELD_MISSING` | mandatory field omitted | include required values |
+| `REQUIRED_FIELD_MISSING` | mandatory field omitted | include required values from describe data |
 | `INVALID_CROSS_REFERENCE_KEY` | bad parent ID | create / verify parent first |
 | `FIELD_CUSTOM_VALIDATION_EXCEPTION` | validation rule blocked the record | use valid test data or adjust setup |
-| `DUPLICATE_VALUE` | unique-field conflict | query existing data first |
+| invalid picklist value | guessed value instead of describe-backed value | inspect picklist values first |
+| non-writeable field error | field is not createable / updateable | remove it from the payload |
 | bulk limits / timeouts | wrong tool for the volume | switch to bulk / staged import |
 
 ---
@@ -175,6 +212,7 @@ Cleanup: <exact delete or rollback guidance>
 
 ### Start here
 - [references/sf-cli-data-commands.md](references/sf-cli-data-commands.md)
+- [references/test-data-best-practices.md](references/test-data-best-practices.md)
 - [references/orchestration.md](references/orchestration.md)
 - [references/test-data-patterns.md](references/test-data-patterns.md)
 - [references/test-data-factory-usage.md](references/test-data-factory-usage.md)
