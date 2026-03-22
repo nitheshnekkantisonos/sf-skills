@@ -56,105 +56,123 @@ SHARED_HOOKS_DIR = SCRIPT_DIR.parent  # shared/hooks/
 # Skills are at ~/.claude/skills/ in the native layout
 SKILLS_ROOT = Path.home() / ".claude" / "skills"
 
+# Default and heavy validator timeouts (seconds)
+DEFAULT_TIMEOUT = 10
+HEAVY_TIMEOUT = 30
+
 # File pattern to validator mapping
-# Each entry: (regex_pattern, skill_name, validator_path_relative_to_project_root)
+# Each entry: (regex_pattern, skill_name, validator_path, timeout_seconds)
 VALIDATOR_REGISTRY: List[tuple] = [
     # Agent Script files (.agent)
     (
         r"\.agent$",
         "sf-ai-agentscript",
-        "sf-ai-agentscript/hooks/scripts/agentscript-syntax-validator.py"
+        "sf-ai-agentscript/hooks/scripts/agentscript-syntax-validator.py",
+        DEFAULT_TIMEOUT,
     ),
 
     # Apex class files (.cls) - LSP syntax validation
     (
         r"\.cls$",
         "sf-apex",
-        "sf-apex/hooks/scripts/apex-lsp-validate.py"
+        "sf-apex/hooks/scripts/apex-lsp-validate.py",
+        HEAVY_TIMEOUT,
     ),
 
     # Apex class files (.cls) - 150-point scoring + Code Analyzer
     (
         r"\.cls$",
         "sf-apex",
-        "sf-apex/hooks/scripts/post-tool-validate.py"
+        "sf-apex/hooks/scripts/post-tool-validate.py",
+        HEAVY_TIMEOUT,
     ),
 
     # Apex trigger files (.trigger) - LSP syntax validation
     (
         r"\.trigger$",
         "sf-apex",
-        "sf-apex/hooks/scripts/apex-lsp-validate.py"
+        "sf-apex/hooks/scripts/apex-lsp-validate.py",
+        HEAVY_TIMEOUT,
     ),
 
     # Apex trigger files (.trigger) - 150-point scoring + Code Analyzer
     (
         r"\.trigger$",
         "sf-apex",
-        "sf-apex/hooks/scripts/post-tool-validate.py"
+        "sf-apex/hooks/scripts/post-tool-validate.py",
+        HEAVY_TIMEOUT,
     ),
 
     # SOQL query files (.soql) - 100-point scoring + Live Query Plan
     (
         r"\.soql$",
         "sf-soql",
-        "sf-soql/hooks/scripts/post-tool-validate.py"
+        "sf-soql/hooks/scripts/post-tool-validate.py",
+        DEFAULT_TIMEOUT,
     ),
 
     # Flow metadata files (.flow-meta.xml)
     (
         r"\.flow-meta\.xml$",
         "sf-flow",
-        "sf-flow/hooks/scripts/post-tool-validate.py"
+        "sf-flow/hooks/scripts/post-tool-validate.py",
+        DEFAULT_TIMEOUT,
     ),
 
     # LWC JavaScript files - LSP syntax validation (in lwc/ folders)
     (
         r"/lwc/[^/]+/[^/]+\.js$",
         "sf-lwc",
-        "sf-lwc/hooks/scripts/lwc-lsp-validate.py"
+        "sf-lwc/hooks/scripts/lwc-lsp-validate.py",
+        HEAVY_TIMEOUT,
     ),
 
     # LWC JavaScript files - SLDS 2 scoring (in lwc/ folders)
     (
         r"/lwc/[^/]+/[^/]+\.js$",
         "sf-lwc",
-        "sf-lwc/hooks/scripts/post-tool-validate.py"
+        "sf-lwc/hooks/scripts/post-tool-validate.py",
+        HEAVY_TIMEOUT,
     ),
 
     # LWC HTML templates (in lwc/ folders)
     (
         r"/lwc/[^/]+/[^/]+\.html$",
         "sf-lwc",
-        "sf-lwc/hooks/scripts/template_validator.py"
+        "sf-lwc/hooks/scripts/template_validator.py",
+        DEFAULT_TIMEOUT,
     ),
 
     # Custom Object metadata
     (
         r"\.object-meta\.xml$",
         "sf-metadata",
-        "sf-metadata/hooks/scripts/validate_metadata.py"
+        "sf-metadata/hooks/scripts/validate_metadata.py",
+        DEFAULT_TIMEOUT,
     ),
 
     # Custom Field metadata
     (
         r"\.field-meta\.xml$",
         "sf-metadata",
-        "sf-metadata/hooks/scripts/validate_metadata.py"
+        "sf-metadata/hooks/scripts/validate_metadata.py",
+        DEFAULT_TIMEOUT,
     ),
 
     # Permission Set metadata
     (
         r"\.permissionset-meta\.xml$",
         "sf-metadata",
-        "sf-metadata/hooks/scripts/validate_metadata.py"
+        "sf-metadata/hooks/scripts/validate_metadata.py",
+        DEFAULT_TIMEOUT,
     ),
 
     # Integration configuration (Named Credentials, External Services)
     (
         r"\.(namedCredential|externalServiceRegistration)-meta\.xml$",
         "sf-integration",
-        "sf-integration/hooks/scripts/validate_integration.py"
+        "sf-integration/hooks/scripts/validate_integration.py",
+        DEFAULT_TIMEOUT,
     ),
 
 ]
@@ -164,14 +182,15 @@ def find_validators_for_file(file_path: str) -> List[Dict]:
     """Find all validators that match the given file path."""
     validators = []
 
-    for pattern, skill_name, validator_path in VALIDATOR_REGISTRY:
+    for pattern, skill_name, validator_path, timeout in VALIDATOR_REGISTRY:
         if re.search(pattern, file_path, re.IGNORECASE):
             full_validator_path = SKILLS_ROOT / validator_path
             if full_validator_path.exists():
                 validators.append({
                     "skill": skill_name,
                     "validator": str(full_validator_path),
-                    "pattern": pattern
+                    "pattern": pattern,
+                    "timeout": timeout
                 })
 
     return validators
@@ -258,7 +277,7 @@ def main():
     # Run each validator and collect results
     results = []
     for validator_info in validators:
-        output = run_validator(validator_info["validator"], hook_input)
+        output = run_validator(validator_info["validator"], hook_input, timeout=validator_info["timeout"])
         results.append({
             "skill": validator_info["skill"],
             "output": output

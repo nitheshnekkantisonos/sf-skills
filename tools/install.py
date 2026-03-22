@@ -1683,7 +1683,7 @@ def get_hooks_config() -> Dict[str, Any]:
                     {
                         "type": "command",
                         "command": f"{python_cmd} {scripts_path}/validator-dispatcher.py",
-                        "timeout": 10000
+                        "timeout": 70000
                     }
                 ],
             }
