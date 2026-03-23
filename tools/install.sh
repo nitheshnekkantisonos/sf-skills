@@ -635,8 +635,6 @@ show_next_steps() {
         echo ""
     fi
 
-    echo -e "  📖 Documentation: ${CYAN}${DOCS_URL}${NC}"
-
     if [[ "$env_type" == "enterprise" ]]; then
         echo -e "  3. ${BOLD}Save your enterprise profile${NC}"
         echo "     python3 ~/.claude/sf-skills-install.py --profile save enterprise"
@@ -650,7 +648,6 @@ show_next_steps() {
         echo ""
     fi
 
-    echo -e "  📖 Documentation: ${CYAN}${DOCS_URL}${NC}"
     echo ""
 }
 
