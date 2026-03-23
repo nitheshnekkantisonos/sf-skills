@@ -47,14 +47,35 @@ All actions in Agent Script support these properties:
 | `description` | String | Explains the output parameter | v1.3.0 |
 | `label` | String | Display name in UI | v2.2.0 |
 | `filter_from_agent` | Boolean | `True` = hide from user display (GA standard name) | v1.3.0 |
-| `is_displayable` | Boolean | `False` = hide from user (compile-valid alias for `filter_from_agent`) | v2.2.0 |
+| `is_displayable` | Boolean | `False` = hide from user (compile-valid alias for `filter_from_agent`). Prefer this on prompt outputs when the planner still needs the value | v2.2.0 |
 | `is_used_by_planner` | Boolean | `True` = LLM can reason about this value for routing decisions | v2.2.0 |
 | `developer_name` | String | Overrides the parameter's developer name | — |
 | `complex_data_type_name` | String | Lightning data type mapping | v2.1.0 |
 
 > **`filter_from_agent` vs `is_displayable`**: Both control the same behavior. `filter_from_agent: True` is the GA standard name (used in official documentation). `is_displayable: False` is a compile-valid alias that achieves the same result.
 
-> ⚠️ **`filter_from_agent` and `is_used_by_planner` are mutually exclusive**: Do NOT use both on the same output field. The combination causes `InvalidFormatError` which invalidates the entire action definition, triggering cascading `ACTION_NOT_IN_SCOPE` errors on every reference to that action. Use `filter_from_agent: True` alone to hide outputs from the customer. See [known-issues.md](known-issues.md#issue-40) Issue 40.
+> ⚠️ **Prompt-template exception**: On `prompt://` / `generatePromptResponse://` targets, prefer `is_displayable: False` + `is_used_by_planner: True` when the planner should synthesize the reply. `is_displayable: True` is a blank-response trap for prompt outputs.
+
+> ⚠️ **`filter_from_agent` and `is_used_by_planner` are mutually exclusive**: Do NOT use both on the same output field. The combination causes `InvalidFormatError` which invalidates the entire action definition, triggering cascading `ACTION_NOT_IN_SCOPE` errors on every reference to that action. Use `filter_from_agent: True` alone to hide outputs from the customer. See [known-issues.md](known-issues.md#issue-40-filter-planner-conflict) Issue 40.
+
+### Output Access Follows the Output Schema
+
+Do not assume `@outputs.X` is always a scalar.
+
+```agentscript
+# Scalar output
+set @variables.status = @outputs.status
+
+# Structured/wrapper output
+set @variables.raw_result = @outputs.output
+set @variables.result_text = @outputs.output.value   # only if the schema exposes 'value'
+```
+
+**Guidance:**
+- Direct assignment is safe for scalar outputs (`string`, `number`, `boolean`).
+- If an action returns `object` or another structured type, inspect the output schema before comparing or assigning it.
+- `.value` is a common wrapper field, but not a universal rule.
+- When a deterministic branch depends on the result, flatten the Flow/Apex output so the agent receives an explicit scalar.
 
 ### Example with All Properties
 
@@ -74,7 +95,7 @@ actions:
             description: "Transaction reference"
          card_last_four: string
             description: "Last 4 digits of card"
-            filter_from_agent: True     # Hide from LLM context
+            filter_from_agent: True     # Hide from direct customer display
       target: "flow://Process_Payment"
       available_when: @variables.cart_total > 0
 ```
@@ -140,9 +161,11 @@ Before `sf agent publish`, verify action targets exist and are active:
 | `apex://X` | `SELECT Name FROM ApexClass WHERE Name = 'X'` |
 | `retriever://X` | `SELECT DeveloperName FROM DataCloudRetriever WHERE DeveloperName = 'X'` |
 | `externalService://X` | `SELECT DeveloperName FROM ExternalServiceRegistration WHERE DeveloperName = 'X'` |
-| `generatePromptResponse://X` | `SELECT DeveloperName FROM PromptTemplate WHERE DeveloperName = 'X' AND Status = 'Active'` |
+| `generatePromptResponse://X` | `SELECT DeveloperName FROM PromptTemplate WHERE DeveloperName = 'X' AND Status IN ('Active', 'Published')` |
 
 Run these via: `sf data query -q "QUERY" -o ORG --json`
+
+> **Prompt template note**: the queryable object name may still appear as `PromptTemplate`, while the current source metadata type is `GenAiPromptTemplate`.
 
 ### Direct Action Invocation (Debugging)
 
@@ -159,7 +182,7 @@ Useful for isolating whether failures are in the action target or the agent fram
 | Method | Syntax | Behavior | AiAuthoringBundle | GenAiPlannerBundle |
 |--------|--------|----------|-------------------|-------------------|
 | **Actions Block** | `actions:` in `reasoning:` | LLM chooses which to execute | ✅ Works | ✅ Works |
-| **Deterministic** | `run @actions.name` | Always executes when code path is reached | ⚠️ Partial (see below) | ✅ Works |
+| **Deterministic** | `run @actions.name` | Always executes when code path is reached **if `name` resolves to a topic-level target-backed action definition** | ⚠️ Partial (see below) | ✅ Works |
 
 ### Deployment Method Capabilities
 
@@ -184,7 +207,7 @@ before_reasoning:
    run @actions.log_turn    # ❌ May not execute as expected
 ```
 
-> **Note**: The Dec 2025 finding that `run` was "NOT supported" has been superseded. As of Jan 2026, `run` works in post-action chains and procedural instruction blocks. It does NOT work reliably in `before_reasoning:`.
+> **Note**: The Dec 2025 finding that `run` was "NOT supported" has been superseded. As of Jan 2026, `run` works in post-action chains and procedural instruction blocks **when it targets a topic-level action definition with `target:`**. It does NOT work reliably in `before_reasoning:`. Do **not** use `run` for utilities / delegations (`@utils.setVariables`, `@utils.transition`, `@topic.X`) even if they are written under an `actions:` block — those are not deterministic `run` targets.
 
 **`{!@actions.name}` interpolation in instructions (Updated Feb 2026)**
 
@@ -581,14 +604,14 @@ actions:
 
 **Input/Output Schemas**: Use `input/schema.json` and `output/schema.json` files in the GenAiFunction bundle directory. Do NOT use inline XML elements like `<genAiFunctionInputs>`, `<genAiFunctionOutputs>`, `<genAiFunctionParameters>`, or `<capability>` — these are NOT valid in the Metadata API XML schema (API v66.0).
 
-### Prompt Template Types
+### Prompt Builder Template Types
 
-| Type | Use Case |
+| Current metadata value | Typical use case |
 |------|----------|
-| `flexPrompt` | General purpose, maximum flexibility |
-| `salesGeneration` | Sales content (emails, proposals) |
-| `fieldCompletion` | Suggest field values |
-| `recordSummary` | Summarize record data |
+| `einstein_gpt__flex` | General purpose, maximum flexibility |
+| `einstein_gpt__salesEmail` | Sales-oriented generated content |
+| `einstein_gpt__fieldCompletion` | Suggest field values |
+| `einstein_gpt__recordSummary` | Summarize record data |
 
 ### Template Variable Types
 

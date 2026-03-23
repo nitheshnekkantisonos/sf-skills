@@ -3,21 +3,21 @@ name: sf-ai-agentforce
 description: >
   Agentforce platform agent building via Setup UI.
   TRIGGER when: user maintains or configures agents via the legacy Setup UI / Agent Builder path,
-  creates topics/actions, writes PromptTemplates, or touches .genAiFunction/.genAiPlugin/.promptTemplate
-  metadata XML files.
+  creates topics/actions, works with Prompt Builder templates, or touches .genAiFunction,
+  .genAiPlugin, or .genAiPromptTemplate metadata XML files.
   DO NOT TRIGGER when: Agent Script DSL .agent files (use sf-ai-agentscript),
   agent testing (use sf-ai-agentforce-testing), or persona design
   (use sf-ai-agentforce-persona).
 license: MIT
 compatibility: "Requires API v66.0+ (Spring '26)"
 metadata:
-  version: "2.1.0"
+  version: "2.2.0"
   author: "Jag Valaiyapathy"
 ---
 
 # sf-ai-agentforce: Standard Agentforce Platform Development
 
-Use this skill for the **Setup UI / Agent Builder** path: declarative topics, Builder-managed actions, GenAiFunction / GenAiPlugin metadata, PromptTemplate integration, Models API usage from Apex, and custom Lightning types.
+Use this skill for the **Setup UI / Agent Builder** path: declarative topics, Builder-managed actions, `GenAiFunction` / `GenAiPlugin` metadata, **Prompt Builder templates stored as `GenAiPromptTemplate` metadata**, Models API usage from Apex, and custom Lightning types.
 
 > For new code-first agent development, prefer [sf-ai-agentscript](../sf-ai-agentscript/SKILL.md).
 
@@ -26,8 +26,8 @@ Use this skill for the **Setup UI / Agent Builder** path: declarative topics, Bu
 Use `sf-ai-agentforce` when the user is:
 - maintaining existing Builder-based agents
 - working in Setup → Agentforce → Agents
-- creating or fixing `GenAiFunction`, `GenAiPlugin`, or `PromptTemplate` metadata
-- wiring Builder topics to Flow / Apex / Prompt Template actions
+- creating or fixing `GenAiFunction`, `GenAiPlugin`, or `GenAiPromptTemplate` metadata
+- wiring Builder topics to Flow / Apex / Prompt Builder actions
 - using Models API or LightningTypeBundle in the context of Builder-based agents
 
 Do **not** use it for:
@@ -42,7 +42,7 @@ Do **not** use it for:
 Ask for or infer:
 - whether this is a Builder / Setup UI project or a code-first Agent Script project
 - agent type: Service Agent or Employee Agent
-- whether the work targets topics, actions, PromptTemplates, Models API, or custom Lightning types
+- whether the work targets topics, actions, Prompt Builder templates, Models API, or custom Lightning types
 - what supporting Flow / Apex / metadata dependencies already exist
 - whether the user needs authoring help, publish help, or troubleshooting
 
@@ -59,16 +59,14 @@ If the user is starting from scratch and wants strong control over flow/state, r
 
 ---
 
-## Recommended Workflow
-
 ## Builder Workflow Summary
 
 1. Confirm this is a **Builder / Setup UI** project
 2. Pick Service Agent vs Employee Agent
 3. Define topics with strong descriptions, scope, and instructions
-4. Prepare supporting actions (Flow, Apex, PromptTemplate)
+4. Prepare supporting actions (Flow, Apex, Prompt Builder template)
 5. Configure inputs / outputs carefully
-6. Validate dependencies
+6. Validate dependencies and template status
 7. Publish, then activate
 
 Expanded workflow: [references/builder-workflow.md](references/builder-workflow.md)
@@ -88,14 +86,21 @@ Topic descriptions are routing instructions for the planner. They must be:
 |---|---|---|
 | Flow | safest default for Builder actions | `GenAiFunction` |
 | Apex | complex business logic via `@InvocableMethod` | `GenAiFunction` |
-| Prompt Template | generated summaries / drafts / recommendations | `GenAiFunction` |
+| Prompt Builder template | generated summaries / drafts / recommendations | `GenAiFunction` |
+
+### Prompt Template vs GenAiPromptTemplate
+- **Prompt Template** is the plain-English / UI term used in Prompt Builder.
+- **`GenAiPromptTemplate`** is the current Metadata API type for source-driven template work.
+- Prefer current source format: `genAiPromptTemplates/*.genAiPromptTemplate-meta.xml`.
+- For flexible Prompt Builder templates, plan around the **5-input maximum** and consolidate inputs when needed.
+- Prompt content should reference inputs with the current merge-field shape, e.g. `{!$Input:TargetRecord}` or `{!$Input:AdditionalContext}`.
 
 ### Supporting metadata deploys first
 Before publishing the agent itself, deploy the supporting stack:
 1. metadata / fields if needed
 2. Apex if needed
 3. Flows if needed
-4. PromptTemplate / GenAiFunction / GenAiPlugin
+4. `GenAiPromptTemplate` / `GenAiFunction` / `GenAiPlugin`
 5. then publish the agent
 
 ### Publish does not activate
@@ -116,8 +121,15 @@ Use when registering a single callable action. Validate:
 ### GenAiPlugin
 Use when grouping related functions into one logical package.
 
-### PromptTemplate
+### GenAiPromptTemplate
 Use for generated content, not deterministic business rules.
+
+Prefer the current metadata shape:
+- metadata type: `GenAiPromptTemplate`
+- folder: `genAiPromptTemplates/`
+- file suffix: `.genAiPromptTemplate-meta.xml`
+- content lives under `templateVersions`
+- use published template versions before wiring actions that depend on them
 
 ### Models API
 Use when the solution belongs in Apex-driven AI orchestration rather than Builder-only actions.
@@ -125,13 +137,15 @@ Use when the solution belongs in Apex-driven AI orchestration rather than Builde
 ### Custom Lightning Types
 Use when the action needs richer structured input or output presentation.
 
-Expanded reference: [references/metadata-reference.md](references/metadata-reference.md)
+Expanded references:
+- [references/metadata-reference.md](references/metadata-reference.md)
+- [references/genaiprompttemplate.md](references/genaiprompttemplate.md)
 
 ---
 
 ## Cross-Skill Integration
 
-## Recommended Orchestration Order
+### Recommended Orchestration Order
 
 ```text
 sf-metadata → sf-apex → sf-flow → sf-ai-agentforce → sf-deploy
@@ -152,7 +166,8 @@ sf-metadata → sf-apex → sf-flow → sf-ai-agentforce → sf-deploy
 | Symptom | Likely cause | Read next |
 |---|---|---|
 | Action not available in Builder | target metadata missing or not deployed | [references/metadata-reference.md](references/metadata-reference.md) |
-| Prompt output is poor | PromptTemplate shape / bindings are weak | [references/prompt-templates.md](references/prompt-templates.md) |
+| Prompt action fails during publish or activation | template is Draft, missing inputs, or old metadata shape is being used | [references/genaiprompttemplate.md](references/genaiprompttemplate.md) |
+| Need more than 5 template inputs | flex template input limit hit | [references/genaiprompttemplate.md](references/genaiprompttemplate.md) |
 | Apex AI logic times out | Models API work placed in the wrong context | [references/models-api.md](references/models-api.md) |
 | Rich input/output UI not rendering | Lightning type config or prerequisites are incomplete | [references/custom-lightning-types.md](references/custom-lightning-types.md) |
 | Agent publishes but is not usable | forgot explicit activation | [references/cli-commands.md](references/cli-commands.md) |
@@ -164,9 +179,10 @@ sf-metadata → sf-apex → sf-flow → sf-ai-agentforce → sf-deploy
 ### Start here
 - [references/builder-workflow.md](references/builder-workflow.md)
 - [references/metadata-reference.md](references/metadata-reference.md)
+- [references/genaiprompttemplate.md](references/genaiprompttemplate.md)
 - [references/cli-commands.md](references/cli-commands.md)
 
-### Deep technical docs
+### Terminology and template planning
 - [references/prompt-templates.md](references/prompt-templates.md)
 - [references/models-api.md](references/models-api.md)
 - [references/custom-lightning-types.md](references/custom-lightning-types.md)

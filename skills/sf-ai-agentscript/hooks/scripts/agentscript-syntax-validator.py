@@ -738,11 +738,16 @@ class AgentScriptValidator:
                                         "section": current_io["name"],
                                         "line": i,
                                         "has_filter_from_agent": False,
+                                        "filter_from_agent_value": None,
+                                        "has_is_displayable": False,
+                                        "is_displayable_value": None,
                                         "has_is_used_by_planner": False,
+                                        "is_used_by_planner_value": None,
                                         "filter_from_agent_line": None,
+                                        "is_displayable_line": None,
                                         "is_used_by_planner_line": None,
                                     }
-                                    current_action["io_fields"].append(current_io_field.copy())
+                                    current_action["io_fields"].append(current_io_field)
                                     if field_type == "date":
                                         current_action["date_io_lines"].append((i, field_name, current_io["name"]))
                                     if field_name in self.RESERVED_FIELD_NAMES:
@@ -750,15 +755,24 @@ class AgentScriptValidator:
                                     continue
 
                             if current_io_field and indent > current_io_field["indent"]:
-                                if stripped.startswith("is_displayable:") and self._clean_scalar_value(stripped.split(":", 1)[1].strip()) == "True":
-                                    current_action["prompt_output_display_lines"].append((i, current_io_field["name"]))
+                                if stripped.startswith("is_displayable:"):
+                                    value = self._clean_scalar_value(stripped.split(":", 1)[1].strip())
+                                    current_io_field["has_is_displayable"] = True
+                                    current_io_field["is_displayable_value"] = value
+                                    current_io_field["is_displayable_line"] = i
+                                    if value == "True":
+                                        current_action["prompt_output_display_lines"].append((i, current_io_field["name"]))
                                 if stripped.startswith("is_required:") and self._clean_scalar_value(stripped.split(":", 1)[1].strip()) == "True":
                                     current_action["required_input_lines"].append((i, current_io_field["name"]))
                                 if stripped.startswith("filter_from_agent:"):
+                                    value = self._clean_scalar_value(stripped.split(":", 1)[1].strip())
                                     current_io_field["has_filter_from_agent"] = True
+                                    current_io_field["filter_from_agent_value"] = value
                                     current_io_field["filter_from_agent_line"] = i
                                 if stripped.startswith("is_used_by_planner:"):
+                                    value = self._clean_scalar_value(stripped.split(":", 1)[1].strip())
                                     current_io_field["has_is_used_by_planner"] = True
+                                    current_io_field["is_used_by_planner_value"] = value
                                     current_io_field["is_used_by_planner_line"] = i
                                 continue
 
@@ -831,9 +845,13 @@ class AgentScriptValidator:
         self._check_multiple_available_when()
         self._check_confirmation_runtime_gap()
         self._check_prompt_output_displayability()
+        self._check_prompt_hidden_outputs_need_planner()
         self._check_date_type_in_action_io()
         self._check_filter_planner_conflict()
         self._check_is_required_advisories()
+        self._check_user_input_string_matching()
+        self._check_string_method_portability()
+        self._check_structured_output_scalar_assignment()
         self._check_invalid_else_if()
         self._check_nested_if_blocks()
         self._check_empty_conditional_bodies()
@@ -1245,14 +1263,14 @@ class AgentScriptValidator:
                 self._add_error(i, f"Bare action name '{match.group(1)}' in run. Use '@actions.{match.group(1)}' explicitly.", "ASV-RUN-003")
 
     def _check_run_resolution_to_definition_scope(self):
-        definition_names: Dict[str, Set[str]] = {}
-        reasoning_names: Dict[str, Set[str]] = {}
+        definition_actions: Dict[str, Dict[str, Dict]] = {}
+        reasoning_actions: Dict[str, Dict[str, Dict]] = {}
         for action in self.action_definitions:
             owner = action.get("owner") or ""
             if action.get("scope") == "definition":
-                definition_names.setdefault(owner, set()).add(action["name"])
+                definition_actions.setdefault(owner, {})[action["name"]] = action
             elif action.get("scope") == "reasoning":
-                reasoning_names.setdefault(owner, set()).add(action["name"])
+                reasoning_actions.setdefault(owner, {})[action["name"]] = action
 
         pattern = re.compile(r"^\s*run\s+@actions\.([A-Za-z_][A-Za-z0-9_]*)\b")
         for i, line in enumerate(self.lines, 1):
@@ -1263,12 +1281,43 @@ class AgentScriptValidator:
             owner = self.line_owner.get(i)
             if not owner:
                 continue
-            if action_name in reasoning_names.get(owner, set()) and action_name not in definition_names.get(owner, set()):
+
+            definition_action = definition_actions.get(owner, {}).get(action_name)
+            reasoning_action = reasoning_actions.get(owner, {}).get(action_name)
+
+            if definition_action:
+                if not definition_action.get("target"):
+                    kind = definition_action.get("kind") or "action"
+                    self._add_error(
+                        i,
+                        f"run @actions.{action_name} resolves to a non-target-backed '{kind}' action in '{owner}'. Deterministic 'run' only works for topic-level action definitions that declare 'target:'. Use direct 'set' / 'transition to', or let reasoning.actions invoke the utility/delegation instead.",
+                        "ASV-RUN-014",
+                    )
+                continue
+
+            if reasoning_action:
                 self._add_error(
                     i,
-                    f"run @actions.{action_name} resolves to a reasoning-only utility/delegation in '{owner}'. 'run' should target topic-level action definitions with 'target:'.",
+                    f"run @actions.{action_name} resolves to a reasoning-only utility/delegation in '{owner}'. Deterministic 'run' only works for topic-level action definitions that declare 'target:'.",
                     "ASV-RUN-014",
                 )
+                continue
+
+            available_targets = sorted(
+                action["name"]
+                for action in definition_actions.get(owner, {}).values()
+                if action.get("target")
+            )
+            available_suffix = (
+                f" Available deterministic targets in '{owner}': {', '.join(available_targets)}."
+                if available_targets
+                else ""
+            )
+            self._add_error(
+                i,
+                f"run @actions.{action_name} does not resolve to a topic-level target-backed action definition in '{owner}'. Deterministic 'run' requires a topic-level action with 'target:'.{available_suffix}",
+                "ASV-RUN-014",
+            )
 
     def _check_action_metadata_context(self):
         for action in self.action_definitions:
@@ -1322,6 +1371,33 @@ class AgentScriptValidator:
                     "ASV-RUN-005",
                 )
 
+    def _check_prompt_hidden_outputs_need_planner(self):
+        for action in self.action_definitions:
+            target = action.get("target") or ""
+            if not (target.startswith("prompt://") or target.startswith("generatePromptResponse://")):
+                continue
+            for field in action.get("io_fields", []):
+                if field.get("section") != "outputs":
+                    continue
+
+                hidden_via_display = field.get("has_is_displayable") and field.get("is_displayable_value") == "False"
+                hidden_via_filter = field.get("has_filter_from_agent") and field.get("filter_from_agent_value") == "True"
+                planner_visible = field.get("has_is_used_by_planner") and field.get("is_used_by_planner_value") == "True"
+
+                if hidden_via_display and not planner_visible:
+                    self._add_warning(
+                        field.get("is_displayable_line") or field.get("line") or action.get("line") or 1,
+                        f"Prompt output '{field['name']}' is hidden with 'is_displayable: False' but is not marked 'is_used_by_planner: True'. If this output should influence the reply or routing, make it planner-visible as well.",
+                        "ASV-RUN-025",
+                    )
+
+                if hidden_via_filter and not planner_visible:
+                    self._add_warning(
+                        field.get("filter_from_agent_line") or field.get("line") or action.get("line") or 1,
+                        f"Prompt output '{field['name']}' uses 'filter_from_agent: True'. That hides the field from direct display, but prompt outputs often also need planner visibility to influence the reply. If the planner needs this value, prefer 'is_displayable: False' + 'is_used_by_planner: True' on the prompt output instead of 'filter_from_agent'.",
+                        "ASV-RUN-025",
+                    )
+
     def _check_date_type_in_action_io(self):
         for action in self.action_definitions:
             for line, field_name, section in action["date_io_lines"]:
@@ -1350,6 +1426,78 @@ class AgentScriptValidator:
                     f"Input '{field_name}' uses 'is_required: True', but that is only a planner hint. Add an 'available when' guard if this input must gate execution.",
                     "ASV-RUN-007",
                 )
+
+    def _check_user_input_string_matching(self):
+        for i, line in enumerate(self.lines, 1):
+            stripped = line.strip()
+            if not (stripped.startswith("if ") or stripped.startswith("available when")):
+                continue
+            if "@system_variables.user_input" not in stripped:
+                continue
+            if re.search(r"\b(contains|startswith|endswith)\b", stripped):
+                self._add_warning(
+                    i,
+                    "Raw '@system_variables.user_input' substring/prefix matching is brittle for deterministic routing. Normalize the utterance with Flow/Apex/classifier logic first, then branch on an explicit boolean or enum.",
+                    "ASV-RUN-023",
+                )
+
+    def _check_string_method_portability(self):
+        for i, line in enumerate(self.lines, 1):
+            stripped = line.strip()
+            if not (stripped.startswith("if ") or stripped.startswith("available when")):
+                continue
+            if "@system_variables.user_input" in stripped:
+                continue
+            if re.search(r"\b(contains|startswith|endswith)\b", stripped):
+                self._add_warning(
+                    i,
+                    "String-method guards (`contains` / `startswith` / `endswith`) are not portable enough for control-flow-critical validation. Prefer a Flow/Apex/classifier action that returns an explicit scalar when routing or policy depends on the result.",
+                    "ASV-RUN-024",
+                )
+
+    def _check_structured_output_scalar_assignment(self):
+        structured_outputs_by_owner: Dict[str, Dict[str, List[Dict]]] = {}
+        for action in self.action_definitions:
+            if action.get("scope") != "definition":
+                continue
+            owner = action.get("owner") or ""
+            for field in action.get("io_fields", []):
+                if field.get("section") != "outputs":
+                    continue
+                field_type = (field.get("type") or "").lower()
+                if field_type == "object" or field_type.startswith("list["):
+                    structured_outputs_by_owner.setdefault(owner, {}).setdefault(field.get("name") or "", []).append(field)
+
+        assignment_pattern = re.compile(
+            r"^\s*set\s+@variables\.([A-Za-z_][A-Za-z0-9_]*)\s*=\s*@outputs\.([A-Za-z_][A-Za-z0-9_]*)(?![\.\[])",
+        )
+
+        for i, line in enumerate(self.lines, 1):
+            match = assignment_pattern.match(line)
+            if not match:
+                continue
+            variable_name, output_name = match.groups()
+            owner = self.line_owner.get(i)
+            if not owner:
+                continue
+
+            structured_fields = structured_outputs_by_owner.get(owner, {}).get(output_name, [])
+            if not structured_fields:
+                continue
+
+            variable_def = self.variable_by_name.get(variable_name)
+            if not variable_def:
+                continue
+            variable_type = (variable_def.get("type") or "").lower()
+            if variable_type == "object" or variable_type.startswith("list["):
+                continue
+
+            structured_type = structured_fields[0].get("type") or "object"
+            self._add_warning(
+                i,
+                f"@outputs.{output_name} is declared as '{structured_type}' in '{owner}', but it is being assigned directly to scalar variable '@variables.{variable_name}' ({variable_type}). Do not assume structured outputs are scalars; access a concrete field (for example '@outputs.{output_name}.value' only if the schema exposes 'value') or flatten the output in Flow/Apex first.",
+                "ASV-RUN-026",
+            )
 
     def _check_invalid_else_if(self):
         pattern = re.compile(r"^\s*else\s+if\b")
@@ -1879,15 +2027,17 @@ class AgentScriptValidator:
             self._checklist_entry("Targets & permissions", "Connection route flow readiness", ["ASV-ORG-007"], success_detail="All connection route Flows exist and have an active version.", na_detail="No outbound connection route Flows detected.", applicable=bool(route_targets), confidence="Proven publish blocker"),
             self._checklist_entry("Targets & permissions", "Other target protocol review", ["ASV-ORG-005"], success_detail="All detected target protocols are fully supported by automatic checks.", na_detail="No non-apex/non-flow targets detected.", applicable=bool(targets["other"]), confidence="Manual review"),
             self._checklist_entry("Runtime gotchas", "Collection / set gotchas", ["ASV-RUN-001", "ASV-RUN-002"], success_detail="No known collection/set gotchas detected.", confidence="Compiler / deploy rule"),
-            self._checklist_entry("Runtime gotchas", "Action invocation syntax", ["ASV-RUN-003", "ASV-RUN-014"], success_detail="run statements reference valid topic-level @actions definitions.", confidence="Compiler / resolution rule"),
+            self._checklist_entry("Runtime gotchas", "Action invocation syntax", ["ASV-RUN-003", "ASV-RUN-014"], success_detail="run statements resolve only to topic-level target-backed @actions definitions.", confidence="Compiler / resolution rule"),
             self._checklist_entry("Runtime gotchas", "Utility action metadata", ["ASV-RUN-004"], success_detail="@utils.transition metadata usage is valid.", confidence="Compiler rule"),
             self._checklist_entry("Runtime gotchas", "Target action schema completeness", ["ASV-RUN-011"], success_detail="Target-backed actions declare outputs: blocks for publish safety.", na_detail="No target-backed action definitions detected.", applicable=has_targets, confidence="Publish blocker"),
             self._checklist_entry("Runtime gotchas", "Multiple available-when portability", ["ASV-RUN-012"], success_detail="Actions avoid duplicate available-when clauses.", na_detail="No actions detected.", applicable=bool(self.action_definitions), confidence="Org-dependent behavior"),
             self._checklist_entry("Runtime gotchas", "Confirmation dialog reliability", ["ASV-RUN-013"], success_detail="No risky require_user_confirmation usage detected.", na_detail="No target-backed action definitions detected.", applicable=bool(self.action_definitions), confidence="Runtime gap"),
-            self._checklist_entry("Runtime gotchas", "Prompt output displayability", ["ASV-RUN-005"], success_detail="Prompt outputs avoid risky displayability settings.", na_detail="No prompt targets detected.", applicable=prompt_targets_present, confidence="Runtime gotcha"),
+            self._checklist_entry("Runtime gotchas", "Prompt output displayability", ["ASV-RUN-005", "ASV-RUN-025"], success_detail="Prompt outputs use safe display/planner visibility settings.", na_detail="No prompt targets detected.", applicable=prompt_targets_present, confidence="Runtime gotcha"),
             self._checklist_entry("Runtime gotchas", "Action I/O date typing", ["ASV-RUN-006"], success_detail="No risky 'date' action I/O declarations detected.", na_detail="No action I/O declarations detected.", applicable=bool(self.action_definitions), confidence="Runtime gotcha"),
             self._checklist_entry("Runtime gotchas", "Output visibility conflict", ["ASV-RUN-020"], success_detail="No filter_from_agent + is_used_by_planner conflicts detected.", na_detail="No action output declarations detected.", applicable=bool(self.action_definitions), confidence="Blocking / cascade risk"),
             self._checklist_entry("Runtime gotchas", "Planner-required input hints", ["ASV-RUN-007"], success_detail="Required inputs are either guarded or not using the risky planner-only hint.", na_detail="No action inputs detected.", applicable=bool(self.action_definitions), confidence="Planner behavior"),
+            self._checklist_entry("Runtime gotchas", "Deterministic string-guard portability", ["ASV-RUN-023", "ASV-RUN-024"], success_detail="No brittle raw-user-input or string-method guards detected.", confidence="Portability warning"),
+            self._checklist_entry("Runtime gotchas", "Structured output access", ["ASV-RUN-026"], success_detail="Structured outputs are not being assigned directly into scalar variables.", na_detail="No structured-output direct assignments detected.", applicable=bool(self.action_definitions), confidence="Schema / runtime warning"),
             self._checklist_entry("Runtime gotchas", "Agent-type-specific messaging/context patterns", ["ASV-RUN-008", "ASV-RUN-017"], success_detail="No agent-type-specific Messaging/context issues detected.", na_detail="No employee/service-agent-only Messaging/context checks apply.", applicable=employee_agent or service_agent, confidence="Runtime / portability"),
             self._checklist_entry("Runtime gotchas", "Welcome/error message stability", ["ASV-RUN-015", "ASV-RUN-016"], success_detail="System welcome/error messages avoid known interpolation/line-break pitfalls.", na_detail="No obvious welcome/error message patterns detected.", applicable=bool(self.welcome_error_interpolation_lines or self.welcome_error_multiline_lines), confidence="Runtime drift"),
             self._checklist_entry("Runtime gotchas", "Escalation fallback resilience", ["ASV-RUN-018"], success_detail="Escalation usage includes an obvious fallback or latch pattern.", na_detail="No @utils.escalate usage detected.", applicable="@utils.escalate" in self.content, confidence="Heuristic warning"),

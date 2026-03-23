@@ -8,7 +8,7 @@ description: >
   metadata (use sf-deploy), or Flow XML (use sf-flow).
 license: MIT
 metadata:
-  version: "1.1.0"
+  version: "1.2.0"
   author: "Jag Valaiyapathy"
   scoring: "120 points across 6 categories"
 ---
@@ -39,7 +39,9 @@ Ask for or infer:
 - metadata type(s) involved
 - target object / field / package directory
 - target org alias if querying is required
-- whether permission-set or FLS follow-up will be needed
+- whether new custom objects or fields should also include **permission-set / FLS generation**
+
+Unless the user explicitly opts out, assume new custom objects or fields need permission-set follow-up.
 
 ---
 
@@ -71,8 +73,12 @@ Check:
 - security / FLS implications
 - downstream deployment dependencies
 
-### 4. Plan permission impact
-When new fields or objects are created, account for permission-set follow-up and layout visibility.
+### 4. Plan permission impact by default
+When new custom fields or objects are created:
+- default to generating or updating a Permission Set unless the user opts out
+- include `fieldPermissions` for **eligible custom fields**
+- note any metadata categories that are excluded because Salesforce treats them as system-managed or always-available
+- remember that object CRUD alone does **not** make custom fields visible
 
 ### 5. Hand off deployment
 Use [sf-deploy](../sf-deploy/SKILL.md) when the user needs the metadata rolled out.
@@ -82,7 +88,10 @@ Use [sf-deploy](../sf-deploy/SKILL.md) when the user needs the metadata rolled o
 ## High-Signal Rules
 
 - field-level security is often the hidden blocker after deployment
+- **object permissions ≠ field permissions**
 - prefer permission sets over profile-centric access patterns
+- generate Permission Set follow-up by default for new custom objects and fields
+- include `fieldPermissions` for eligible custom fields instead of leaving FLS as a manual afterthought
 - avoid hardcoded IDs in formulas or metadata logic
 - validation rules should have intentional bypass strategy when operationally necessary
 - create metadata before attempting Flow or data tasks that depend on it

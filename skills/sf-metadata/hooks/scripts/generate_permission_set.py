@@ -2,10 +2,12 @@
 """
 Permission Set Generator for sf-metadata plugin.
 
-Generates Permission Set XML for custom objects, automatically filtering out:
-- Required fields (auto-visible, cannot be in Permission Sets)
-- Name fields (always visible)
-- Master-Detail fields (controlled by parent)
+Generates Permission Set XML for custom objects, automatically including
+eligible custom fields and filtering out categories Salesforce commonly
+excludes from Permission Set metadata in modern API versions:
+- Universally required fields
+- Name fields / always-visible fields
+- Master-Detail fields
 
 Usage:
     python3 generate_permission_set.py <object_directory> [--output <path>]
@@ -130,7 +132,7 @@ def scan_fields(object_dir: str) -> List[Dict]:
 
 def filter_fields_for_permission_set(fields: List[Dict], object_name: str) -> Tuple[List[Dict], List[Dict]]:
     """
-    Filter fields to determine which should be included in Permission Set.
+    Filter fields to determine which should be included in the generated Permission Set.
 
     Returns:
         (included_fields, excluded_fields)
@@ -141,13 +143,14 @@ def filter_fields_for_permission_set(fields: List[Dict], object_name: str) -> Tu
     for field in fields:
         exclude_reason = None
 
-        # Rule 1: Required fields are auto-visible
+        # Rule 1: Universally required fields are commonly excluded from
+        # Permission Set metadata in modern API versions.
         if field['required']:
-            exclude_reason = "Required field (auto-visible)"
+            exclude_reason = "Required field (commonly excluded from Permission Set metadata)"
 
-        # Rule 2: Master-Detail fields controlled by parent
+        # Rule 2: Master-Detail fields are commonly treated as parent-controlled.
         elif field['is_master_detail']:
-            exclude_reason = "Master-Detail (controlled by parent)"
+            exclude_reason = "Master-Detail field (commonly parent-controlled / excluded)"
 
         # Rule 3: Name field is always visible
         elif field['api_name'].lower() == 'name':
@@ -171,7 +174,7 @@ def generate_permission_set_xml(object_name: str, included_fields: List[Dict]) -
 
     xml_content = f'''<?xml version="1.0" encoding="UTF-8"?>
 <PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
-    <description>Auto-generated: Grants full access to {label_name} object and its non-required fields</description>
+    <description>Auto-generated: Grants full access to {label_name} object and eligible custom fields</description>
     <hasActivationRequired>false</hasActivationRequired>
     <label>{label_name} Access</label>
 
@@ -191,7 +194,7 @@ def generate_permission_set_xml(object_name: str, included_fields: List[Dict]) -
     if included_fields:
         xml_content += '''
     <!-- Field Permissions -->
-    <!-- NOTE: Required fields are EXCLUDED (auto-visible in Salesforce) -->
+    <!-- NOTE: Some field categories are excluded because Salesforce commonly omits them from Permission Set metadata -->
     <!-- NOTE: Formula/Roll-Up fields have editable=false -->
 '''
         for field in sorted(included_fields, key=lambda x: x['api_name']):
@@ -213,7 +216,7 @@ def generate_permission_set_xml(object_name: str, included_fields: List[Dict]) -
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Generate Permission Set for a custom object with required field filtering'
+        description='Generate Permission Set for a custom object using eligible-field filtering'
     )
     parser.add_argument(
         'object_dir',

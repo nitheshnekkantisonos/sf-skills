@@ -78,7 +78,7 @@ What do you need?
 | `bundle-meta.xml` | AiAuthoringBundle metadata |
 | `genai-function-*.xml` | Action metadata |
 | `genai-plugin.xml` | Plugin grouping |
-| `*-prompt-template.xml` | PromptTemplate |
+| `*.genAiPromptTemplate-meta.xml` | GenAiPromptTemplate |
 | `http-callout-flow.xml` | Flow template |
 
 ---

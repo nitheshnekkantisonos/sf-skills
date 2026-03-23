@@ -7,10 +7,10 @@ This reference expands the Setup UI / Agent Builder workflow for `sf-ai-agentfor
 1. Confirm this is a **Setup UI / Builder** project, not Agent Script
 2. Identify agent type: Service Agent vs Employee Agent
 3. Define topics and topic scope
-4. Prepare supporting actions (Flow, Apex, PromptTemplate)
+4. Prepare supporting actions (Flow, Apex, Prompt Builder template)
 5. Configure action inputs and outputs
 6. Configure agent-level instructions and messages
-7. Validate supporting metadata
+7. Validate supporting metadata and template status
 8. Publish and activate
 
 ## Builder checklist
@@ -23,7 +23,14 @@ This reference expands the Setup UI / Agent Builder workflow for `sf-ai-agentfor
 ### Actions
 - Flow actions are the safest default for Builder-based agents
 - Apex actions must expose `@InvocableMethod`
-- PromptTemplate actions should be used when the goal is generated content, not deterministic business logic
+- Prompt Builder templates should be used when the goal is generated content, not deterministic business logic
+
+### Prompt Builder templates
+- In the UI, users will usually say **Prompt Template**
+- In source metadata, use **`GenAiPromptTemplate`**
+- Prefer `genAiPromptTemplates/*.genAiPromptTemplate-meta.xml`
+- Flex templates should stay within the **5-input maximum**
+- Use published template versions before wiring dependent actions
 
 ### Inputs / Outputs
 - Input names must match the target contract exactly
@@ -49,6 +56,7 @@ Publishing does **not** activate the new version automatically.
 
 - CLI lifecycle: [cli-commands.md](cli-commands.md)
 - Metadata details: [metadata-reference.md](metadata-reference.md)
-- Prompt templates: [prompt-templates.md](prompt-templates.md)
+- GenAI prompt metadata: [genaiprompttemplate.md](genaiprompttemplate.md)
+- Prompt terminology: [prompt-templates.md](prompt-templates.md)
 - Models API: [models-api.md](models-api.md)
 - Custom Lightning types: [custom-lightning-types.md](custom-lightning-types.md)

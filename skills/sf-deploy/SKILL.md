@@ -8,7 +8,7 @@ description: >
   XML (use sf-metadata), or querying org data (use sf-data).
 license: MIT
 metadata:
-  version: "2.2.0"
+  version: "2.3.0"
   author: "Jag Valaiyapathy"
 ---
 
@@ -39,6 +39,7 @@ Delegate elsewhere when the user is:
 - On non-source-tracking orgs, deploy/retrieve commands require an explicit scope such as `--source-dir`, `--metadata`, or `--manifest`.
 - Prefer **`--dry-run` first** before real deploys.
 - For Flows, deploy safely and activate only after validation.
+- Keep test-data creation guidance delegated to **`sf-data`** after metadata is validated or deployed.
 
 ### Default deployment order
 | Phase | Metadata |
@@ -83,7 +84,15 @@ sf project deploy start --dry-run --source-dir force-app --target-org <alias> --
 ```
 Use manifest- or metadata-scoped validation when the change set is targeted.
 
-### 3. Deploy the smallest correct scope
+### 3. If validation succeeds, offer the next safe workflow
+After a successful validation, guide the user to the correct next action:
+1. deploy now
+2. assign permission sets
+3. create test data via [sf-data](../sf-data/SKILL.md)
+4. run tests / smoke checks
+5. orchestrate multiple post-deploy steps in order
+
+### 4. Deploy the smallest correct scope
 ```bash
 # source-dir deploy
 sf project deploy start --source-dir force-app --target-org <alias> --wait 30 --json
@@ -95,13 +104,13 @@ sf project deploy start --manifest manifest/package.xml --target-org <alias> --t
 sf project deploy quick --job-id <validation-job-id> --target-org <alias> --json
 ```
 
-### 4. Verify
+### 5. Verify
 ```bash
 sf project deploy report --job-id <job-id> --target-org <alias> --json
 ```
 Then verify tests, Flow state, permission assignments, and smoke-test behavior.
 
-### 5. Report clearly
+### 6. Report clearly
 Summarize what deployed, what failed, what was skipped, and what the next safe action is.
 
 Output template: [references/deployment-report-template.md](references/deployment-report-template.md)
@@ -144,7 +153,7 @@ Deep reference: [references/deployment-workflows.md](references/deployment-workf
 
 Use this skill to orchestrate **deployment/publish sequencing** around agents, but use the agent-specific skills for authoring decisions:
 - [sf-ai-agentscript](../sf-ai-agentscript/SKILL.md) for `.agent` authoring and validation
-- [sf-ai-agentforce](../sf-ai-agentforce/SKILL.md) for Agent Builder / PromptTemplate / metadata config
+- [sf-ai-agentforce](../sf-ai-agentforce/SKILL.md) for Agent Builder / Prompt Builder / metadata config
 
 For full agent DevOps details, including `Agent:` pseudo metadata, publish/activate, and sync-between-orgs, see:
 - [references/agent-deployment-guide.md](references/agent-deployment-guide.md)
@@ -158,7 +167,7 @@ For full agent DevOps details, including `Agent:` pseudo metadata, publish/activ
 | custom object / field creation | [sf-metadata](../sf-metadata/SKILL.md) | define metadata before deploy |
 | Apex compile / review / fixes | [sf-apex](../sf-apex/SKILL.md) | code authoring and repair |
 | Flow creation / repair | [sf-flow](../sf-flow/SKILL.md) | Flow authoring and activation guidance |
-| test data or seed records | [sf-data](../sf-data/SKILL.md) | realistic validation data |
+| test data or seed records | [sf-data](../sf-data/SKILL.md) | describe-first data setup and cleanup |
 | Agent Script build/publish readiness | [sf-ai-agentscript](../sf-ai-agentscript/SKILL.md) | agent-specific correctness |
 
 ---

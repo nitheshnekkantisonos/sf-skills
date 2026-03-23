@@ -3,13 +3,13 @@
 sf-skills Unified Installer for Claude Code
 
 Usage:
-    python3 tools/install.py                  # Install from local clone
-    python3 tools/install.py --local /path    # Install from specific local path
+    curl -sSL https://raw.githubusercontent.com/Jaganpro/sf-skills/main/tools/install.py | python3
 
     # Or with options:
     python3 install.py                # Interactive install
     python3 install.py --update       # Check version + content changes
     python3 install.py --force-update # Force reinstall even if up-to-date
+    python3 install.py --with-datacloud-runtime  # Install optional Data Cloud runtime too
     python3 install.py --uninstall    # Remove sf-skills
     python3 install.py --status       # Show installation status
     python3 install.py --cleanup      # Remove legacy artifacts
@@ -48,6 +48,7 @@ import tempfile
 import time
 import urllib.request
 import urllib.error
+import venv
 import zipfile
 from datetime import datetime
 from pathlib import Path
@@ -90,7 +91,7 @@ NPX_SKILL_LOCK = Path.home() / ".agents" / ".skill-lock.json"
 NPX_SKILLS_DIR = Path.home() / ".agents" / "skills"
 
 # GitHub repository info
-GITHUB_OWNER = "nitheshnekkantisonos"
+GITHUB_OWNER = "Jaganpro"
 GITHUB_REPO = "sf-skills"
 GITHUB_API_URL = f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPO}"
 GITHUB_RAW_URL = f"https://raw.githubusercontent.com/{GITHUB_OWNER}/{GITHUB_REPO}/main"
@@ -102,6 +103,17 @@ LSP_ENGINE_SRC_DIR = "shared/lsp-engine"
 SKILLS_REGISTRY = "shared/hooks/skills-registry.json"
 AGENTS_DIR = "agents"  # FDE + PS agent definitions
 AGENT_PREFIXES = ("fde-", "ps-")  # Agent file prefixes managed by installer
+SF_DOCS_REQUIREMENTS = Path("skills") / "sf-docs" / "requirements.txt"
+SF_DOCS_BROWSER = "chromium"
+SF_DOCS_RUNTIME_DIR = CLAUDE_DIR / ".sf-docs-runtime"
+SF_DOCS_RUNTIME_VENV = SF_DOCS_RUNTIME_DIR / "venv"
+SF_DOCS_PLAYWRIGHT_BROWSERS_DIR = SF_DOCS_RUNTIME_DIR / "ms-playwright"
+
+# Optional Data Cloud runtime (community-managed, not vendored into sf-skills)
+DATACLOUD_RUNTIME_REPO = "https://github.com/gthoppae/sf-cli-plugin-data360.git"
+DATACLOUD_RUNTIME_BASE_DIR = Path.home() / ".sf-community-tools" / "datacloud"
+DATACLOUD_RUNTIME_PLUGIN_DIR = DATACLOUD_RUNTIME_BASE_DIR / "sf-cli-plugin-data360"
+DATACLOUD_RUNTIME_COMMANDS = ("git", "node", "yarn", "npx", "sf")
 
 # Temp file patterns to clean
 TEMP_FILE_PATTERNS = [
@@ -127,6 +139,189 @@ def get_python_command() -> str:
             return f'"{exe}"'
         return exe
     return "python3"
+
+
+def _sf_docs_runtime_python_path() -> Path:
+    candidates = [
+        SF_DOCS_RUNTIME_VENV / "bin" / "python",
+        SF_DOCS_RUNTIME_VENV / "bin" / "python3",
+        SF_DOCS_RUNTIME_VENV / "Scripts" / "python.exe",
+    ]
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return candidates[0] if os.name != "nt" else candidates[-1]
+
+
+def _sf_docs_runtime_env() -> Dict[str, str]:
+    env = os.environ.copy()
+    env.setdefault("PLAYWRIGHT_BROWSERS_PATH", str(SF_DOCS_PLAYWRIGHT_BROWSERS_DIR))
+    env.setdefault("SF_DOCS_RUNTIME_ROOT", str(SF_DOCS_RUNTIME_DIR))
+    return env
+
+
+def _python_module_available(python_executable: Path, module_name: str) -> bool:
+    if not python_executable.exists():
+        return False
+    try:
+        result = subprocess.run(
+            [
+                str(python_executable),
+                "-c",
+                (
+                    "import importlib.util, sys; "
+                    f"sys.exit(0 if importlib.util.find_spec({module_name!r}) else 1)"
+                ),
+            ],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=30,
+            env=_sf_docs_runtime_env(),
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return result.returncode == 0
+
+
+def _playwright_browser_installed(python_executable: Path, browser_name: str = SF_DOCS_BROWSER) -> bool:
+    if not python_executable.exists():
+        return False
+    code = f"""
+from pathlib import Path
+from playwright.sync_api import sync_playwright
+with sync_playwright() as p:
+    browser = getattr(p, {browser_name!r})
+    raise SystemExit(0 if Path(browser.executable_path).exists() else 1)
+"""
+    try:
+        result = subprocess.run(
+            [str(python_executable), "-c", code],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=60,
+            env=_sf_docs_runtime_env(),
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return result.returncode == 0
+
+
+def get_sf_docs_runtime_status() -> Dict[str, Any]:
+    python_path = _sf_docs_runtime_python_path()
+    python_exists = python_path.exists()
+    playwright_ok = _python_module_available(python_path, "playwright") if python_exists else False
+    stealth_ok = _python_module_available(python_path, "playwright_stealth") if python_exists else False
+    browser_ok = _playwright_browser_installed(python_path, SF_DOCS_BROWSER) if playwright_ok else False
+    return {
+        "runtimeDir": SF_DOCS_RUNTIME_DIR,
+        "venvDir": SF_DOCS_RUNTIME_VENV,
+        "pythonPath": python_path,
+        "pythonExists": python_exists,
+        "playwright": playwright_ok,
+        "stealth": stealth_ok,
+        "browser": browser_ok,
+    }
+
+
+def _create_sf_docs_runtime_venv() -> Tuple[bool, str]:
+    try:
+        SF_DOCS_RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
+        builder = venv.EnvBuilder(with_pip=True, clear=False)
+        builder.create(str(SF_DOCS_RUNTIME_VENV))
+        return True, f"Created sf-docs runtime venv at {SF_DOCS_RUNTIME_VENV}"
+    except Exception as exc:
+        return False, f"Failed to create sf-docs runtime venv: {exc}"
+
+
+def install_sf_docs_runtime(source_dir: Path, dry_run: bool = False) -> Tuple[bool, List[str]]:
+    """Install sf-docs browser-extraction dependencies into an isolated runtime venv."""
+    notes: List[str] = []
+    requirements_file = source_dir / SF_DOCS_REQUIREMENTS
+    if not requirements_file.exists():
+        return False, [f"sf-docs runtime requirements missing: {requirements_file}"]
+
+    status_before = get_sf_docs_runtime_status()
+    runtime_python = Path(status_before["pythonPath"])
+
+    if dry_run:
+        if status_before["pythonExists"]:
+            notes.append(f"sf-docs runtime venv already present: {SF_DOCS_RUNTIME_VENV}")
+        else:
+            notes.append(f"Would create sf-docs runtime venv: {SF_DOCS_RUNTIME_VENV}")
+        notes.append("Would sync sf-docs Python packages from requirements.txt")
+        if status_before["browser"]:
+            notes.append(f"Playwright {SF_DOCS_BROWSER} browser already installed in sf-docs runtime")
+        else:
+            notes.append(f"Would install Playwright {SF_DOCS_BROWSER} browser in sf-docs runtime")
+        return True, notes
+
+    if not status_before["pythonExists"]:
+        ok, message = _create_sf_docs_runtime_venv()
+        notes.append(message)
+        if not ok:
+            return False, notes
+        runtime_python = _sf_docs_runtime_python_path()
+    else:
+        notes.append(f"sf-docs runtime venv already present: {SF_DOCS_RUNTIME_VENV}")
+
+    pip_cmd = [
+        str(runtime_python),
+        "-m",
+        "pip",
+        "install",
+        "--disable-pip-version-check",
+        "--upgrade",
+        "-r",
+        str(requirements_file),
+    ]
+    try:
+        pip_result = subprocess.run(
+            pip_cmd,
+            capture_output=True,
+            text=True,
+            timeout=1800,
+            env=_sf_docs_runtime_env(),
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        return False, notes + [f"Failed to install sf-docs Python packages: {exc}"]
+    if pip_result.returncode != 0:
+        tail = (pip_result.stderr or pip_result.stdout or "pip install failed").strip().splitlines()[-1]
+        return False, notes + [f"Failed to install sf-docs Python packages: {tail}"]
+    notes.append("Synced sf-docs Python packages into isolated runtime venv")
+
+    status_after_pip = get_sf_docs_runtime_status()
+    if not status_after_pip["playwright"]:
+        return False, notes + ["sf-docs runtime is missing Playwright after pip install"]
+
+    if not status_after_pip["browser"]:
+        browser_cmd = [str(runtime_python), "-m", "playwright", "install", SF_DOCS_BROWSER]
+        try:
+            browser_result = subprocess.run(
+                browser_cmd,
+                capture_output=True,
+                text=True,
+                timeout=1800,
+                env=_sf_docs_runtime_env(),
+            )
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            return False, notes + [f"Failed to install Playwright {SF_DOCS_BROWSER} browser: {exc}"]
+        if browser_result.returncode != 0:
+            tail = (browser_result.stderr or browser_result.stdout or "playwright install failed").strip().splitlines()[-1]
+            return False, notes + [f"Failed to install Playwright {SF_DOCS_BROWSER} browser: {tail}"]
+        notes.append(f"Installed Playwright {SF_DOCS_BROWSER} browser into sf-docs runtime")
+    else:
+        notes.append(f"Playwright {SF_DOCS_BROWSER} browser already installed in sf-docs runtime")
+
+    status_final = get_sf_docs_runtime_status()
+    if not status_final["playwright"] or not status_final["browser"]:
+        return False, notes + ["sf-docs runtime verification failed after install"]
+
+    if status_final["stealth"]:
+        notes.append("playwright-stealth available in sf-docs runtime")
+    else:
+        notes.append("playwright-stealth not installed in sf-docs runtime")
+
+    return True, notes
 
 
 # ============================================================================
@@ -444,6 +639,121 @@ def update_metadata_fields(**updates: Any) -> None:
         return
     data.update(updates)
     META_FILE.write_text(json.dumps(data, indent=2))
+
+
+def _command_exists(command: str) -> bool:
+    """Return True when a command is available on PATH."""
+    return shutil.which(command) is not None
+
+
+def _run_command(cmd: List[str], cwd: Optional[Path] = None,
+                 timeout: int = 300) -> Tuple[bool, str]:
+    """Run an external command and capture stderr/stdout for troubleshooting."""
+    try:
+        result = subprocess.run(
+            cmd,
+            cwd=str(cwd) if cwd else None,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            check=False,
+        )
+    except subprocess.TimeoutExpired:
+        return False, f"Timed out after {timeout}s: {' '.join(cmd)}"
+    except OSError as exc:
+        return False, f"Failed to start {' '.join(cmd)}: {exc}"
+
+    if result.returncode == 0:
+        return True, (result.stdout or result.stderr or "").strip()
+
+    output = (result.stderr or result.stdout or "").strip()
+    if output:
+        output = output.splitlines()[-1]
+    return False, output or f"Command failed with exit code {result.returncode}: {' '.join(cmd)}"
+
+
+def get_datacloud_runtime_status() -> Dict[str, Any]:
+    """Detect whether the optional community Data Cloud runtime is available."""
+    sf_available = _command_exists("sf")
+    runtime_available = False
+    runtime_note = "sf CLI not found"
+
+    if sf_available:
+        runtime_available, runtime_note = _run_command(["sf", "data360", "man"], timeout=30)
+
+    managed_checkout = DATACLOUD_RUNTIME_PLUGIN_DIR.exists()
+    managed_git_checkout = (DATACLOUD_RUNTIME_PLUGIN_DIR / ".git").exists()
+
+    return {
+        "available": runtime_available,
+        "note": runtime_note,
+        "pluginDir": DATACLOUD_RUNTIME_PLUGIN_DIR,
+        "managedCheckout": managed_checkout,
+        "managedGitCheckout": managed_git_checkout,
+        "missingCommands": [cmd for cmd in DATACLOUD_RUNTIME_COMMANDS if not _command_exists(cmd)],
+    }
+
+
+def install_datacloud_runtime(dry_run: bool = False) -> Tuple[bool, List[str]]:
+    """Install or update the optional community Data Cloud runtime."""
+    notes: List[str] = []
+    status_before = get_datacloud_runtime_status()
+
+    missing = status_before["missingCommands"]
+    if missing:
+        return False, [
+            "Data Cloud runtime requires these commands on PATH: " + ", ".join(missing)
+        ]
+
+    if dry_run:
+        if status_before["available"] and not status_before["managedGitCheckout"]:
+            notes.append("Community `sf data360` runtime already detected in sf CLI; installer would keep the existing setup")
+            return True, notes
+        if status_before["managedGitCheckout"]:
+            notes.append(f"Would update managed Data Cloud runtime checkout: {DATACLOUD_RUNTIME_PLUGIN_DIR}")
+        else:
+            notes.append(f"Would clone Data Cloud runtime into: {DATACLOUD_RUNTIME_PLUGIN_DIR}")
+        notes.append("Would run yarn install")
+        notes.append("Would compile the runtime with npx tsc")
+        notes.append("Would link the runtime into sf via `sf plugins link .`")
+        notes.append("Would verify with `sf data360 man`")
+        return True, notes
+
+    if status_before["available"] and not status_before["managedGitCheckout"]:
+        notes.append("Community `sf data360` runtime already detected in sf CLI; leaving the existing setup unchanged")
+        return True, notes
+
+    DATACLOUD_RUNTIME_BASE_DIR.mkdir(parents=True, exist_ok=True)
+
+    if status_before["managedGitCheckout"]:
+        ok, msg = _run_command(["git", "pull", "--ff-only"], cwd=DATACLOUD_RUNTIME_PLUGIN_DIR, timeout=300)
+        notes.append(f"{'Updated' if ok else 'Failed to update'} managed checkout: {msg or DATACLOUD_RUNTIME_PLUGIN_DIR}")
+        if not ok:
+            return False, notes
+    else:
+        if DATACLOUD_RUNTIME_PLUGIN_DIR.exists() and not status_before["managedGitCheckout"]:
+            safe_rmtree(DATACLOUD_RUNTIME_PLUGIN_DIR)
+        ok, msg = _run_command(
+            ["git", "clone", DATACLOUD_RUNTIME_REPO, str(DATACLOUD_RUNTIME_PLUGIN_DIR)],
+            timeout=600,
+        )
+        notes.append(f"{'Cloned' if ok else 'Failed to clone'} runtime checkout: {msg or DATACLOUD_RUNTIME_PLUGIN_DIR}")
+        if not ok:
+            return False, notes
+
+    for cmd, label, timeout in [
+        (["yarn", "install"], "Installed runtime dependencies", 1200),
+        (["npx", "tsc"], "Compiled runtime", 1200),
+        (["sf", "plugins", "link", "."], "Linked runtime into sf", 300),
+    ]:
+        ok, msg = _run_command(cmd, cwd=DATACLOUD_RUNTIME_PLUGIN_DIR, timeout=timeout)
+        notes.append(f"{label if ok else 'Failed: ' + label.lower()}: {msg or ''}".rstrip())
+        if not ok:
+            return False, notes
+
+    ok, msg = _run_command(["sf", "data360", "man"], timeout=30)
+    notes.append(f"{'Verified' if ok else 'Failed to verify'} Data Cloud runtime: {msg or 'sf data360 man'}")
+    return ok, notes
 
 
 # ============================================================================
@@ -1373,7 +1683,7 @@ def get_hooks_config() -> Dict[str, Any]:
                     {
                         "type": "command",
                         "command": f"{python_cmd} {scripts_path}/validator-dispatcher.py",
-                        "timeout": 10000
+                        "timeout": 70000
                     }
                 ],
             }
@@ -1561,6 +1871,10 @@ def cleanup_installed_files(dry_run: bool = False):
     # Remove LSP engine
     if LSP_DIR.exists() and not dry_run:
         safe_rmtree(LSP_DIR)
+
+    # Remove sf-docs isolated runtime
+    if SF_DOCS_RUNTIME_DIR.exists() and not dry_run:
+        safe_rmtree(SF_DOCS_RUNTIME_DIR)
 
     # Remove metadata and installer
     for f in [META_FILE, INSTALLER_FILE]:
@@ -2008,6 +2322,16 @@ def verify_installation() -> Tuple[bool, List[str]]:
             if not (LSP_DIR / wrapper).exists():
                 issues.append(f"Missing: lsp-engine/{wrapper}")
 
+    # Check sf-docs isolated runtime
+    sf_docs_runtime = get_sf_docs_runtime_status()
+    if not sf_docs_runtime["pythonExists"]:
+        issues.append(f"Missing sf-docs runtime venv: {SF_DOCS_RUNTIME_VENV}")
+    else:
+        if not sf_docs_runtime["playwright"]:
+            issues.append("sf-docs runtime missing Playwright")
+        if not sf_docs_runtime["browser"]:
+            issues.append(f"sf-docs runtime missing Playwright {SF_DOCS_BROWSER} browser")
+
     # Check settings.json has hooks
     if SETTINGS_FILE.exists():
         try:
@@ -2144,8 +2468,9 @@ def cmd_cleanup(dry_run: bool = False) -> int:
     return 0
 
 
-def cmd_install(dry_run: bool = False, force: bool = False, called_from_bash: bool = False,
-                local_source: Optional[Path] = None) -> int:
+def cmd_install(dry_run: bool = False, force: bool = False,
+                called_from_bash: bool = False,
+                with_datacloud_runtime: bool = False) -> int:
     """
     Install sf-skills.
 
@@ -2153,7 +2478,7 @@ def cmd_install(dry_run: bool = False, force: bool = False, called_from_bash: bo
         dry_run: Preview changes without applying
         force: Skip confirmation prompts
         called_from_bash: Suppress redundant output (bash wrapper handles UX)
-        local_source: Path to a local repo clone (skip GitHub download)
+        with_datacloud_runtime: Install the optional community sf data360 runtime
 
     Returns:
         Exit code (0 = success)
@@ -2177,10 +2502,11 @@ def cmd_install(dry_run: bool = False, force: bool = False, called_from_bash: bo
         # Show what will be installed
         print("""
   📦 WHAT WILL BE INSTALLED:
-     • 20 Salesforce skills (sf-apex, sf-flow, sf-metadata, ...)
+     • Salesforce skills (sf-apex, sf-flow, sf-datacloud, ...)
      • 10 hook scripts (guardrails, validation)
      • LSP engine (Apex, LWC, AgentScript language servers)
      • Automatic validation, guardrails, and org preflight checks
+     • Optional Data Cloud runtime on request (--with-datacloud-runtime)
 
   📍 INSTALL LOCATIONS:
      ~/.claude/skills/sf-*/     (skills — native Claude Code discovery)
@@ -2197,6 +2523,12 @@ def cmd_install(dry_run: bool = False, force: bool = False, called_from_bash: bo
 
     if state == InstallState.UNIFIED and not force:
         print_info(f"sf-skills already installed (v{current_version})")
+        if with_datacloud_runtime:
+            print_info("Installing optional Data Cloud runtime as requested...")
+            ok, notes = install_datacloud_runtime(dry_run=dry_run)
+            for note in notes:
+                print_substep(note)
+            return 0 if ok else 1
         print_info("Use --update to check for updates")
         return 0
 
@@ -2218,6 +2550,26 @@ def cmd_install(dry_run: bool = False, force: bool = False, called_from_bash: bo
             print("\nInstallation cancelled.")
             return 1
 
+    install_datacloud_runtime_requested = with_datacloud_runtime
+    datacloud_runtime_failure = False
+
+    should_offer_datacloud_runtime = (
+        state != InstallState.UNIFIED
+        and not install_datacloud_runtime_requested
+        and not force
+        and not dry_run
+    )
+    if should_offer_datacloud_runtime:
+        print_info("Optional add-on available: install the community `sf data360` runtime for the sf-datacloud family")
+        print_info("This is only needed if you plan to use the Data Cloud skill family for live org execution")
+        if sys.stdin.isatty():
+            install_datacloud_runtime_requested = confirm(
+                "Install the optional Data Cloud runtime now?",
+                default=False,
+            )
+        else:
+            print_info("Non-interactive install detected; use --with-datacloud-runtime to install the optional Data Cloud runtime")
+
     print()
 
     # Step 1: Download
@@ -2226,23 +2578,17 @@ def cmd_install(dry_run: bool = False, force: bool = False, called_from_bash: bo
     with tempfile.TemporaryDirectory() as tmp_dir:
         tmp_path = Path(tmp_dir)
 
-        # Local source: use the repo clone directly (no download)
-        if local_source:
-            source_dir = local_source
-            print_step(1, 5, "Using local source", "done")
-            print_substep(f"Source: {source_dir}")
-        else:
-            if not download_repo_zip(tmp_path):
-                print_step(1, 5, "Download failed", "fail")
-                return 1
+        if not download_repo_zip(tmp_path):
+            print_step(1, 5, "Download failed", "fail")
+            return 1
 
-            # Find extracted directory
-            extracted = list(tmp_path.glob(f"{GITHUB_REPO}-*"))
-            if not extracted:
-                print_error("Could not find extracted files")
-                return 1
+        # Find extracted directory
+        extracted = list(tmp_path.glob(f"{GITHUB_REPO}-*"))
+        if not extracted:
+            print_error("Could not find extracted files")
+            return 1
 
-            source_dir = extracted[0]
+        source_dir = extracted[0]
 
         # Get version from skills-registry.json
         registry_file = source_dir / SKILLS_REGISTRY
@@ -2255,13 +2601,12 @@ def cmd_install(dry_run: bool = False, force: bool = False, called_from_bash: bo
                 pass
 
         # Fetch commit SHA for content-aware update detection
-        commit_sha = fetch_latest_commit_sha() if not local_source else None
+        commit_sha = fetch_latest_commit_sha()
 
-        if not local_source:
-            print_step(1, 5, f"Downloaded sf-skills v{version}", "done")
-            print_substep("Downloaded from GitHub")
-            if commit_sha:
-                print_substep(f"Commit: {commit_sha[:8]}...")
+        print_step(1, 5, f"Downloaded sf-skills v{version}", "done")
+        print_substep("Downloaded from GitHub")
+        if commit_sha:
+            print_substep(f"Commit: {commit_sha[:8]}...")
 
         # Step 2: Detect and cleanup existing installations
         print_step(2, 5, "Detecting existing installations...", "...")
@@ -2321,6 +2666,21 @@ def cmd_install(dry_run: bool = False, force: bool = False, called_from_bash: bo
             if installer_source.exists():
                 shutil.copy2(installer_source, INSTALLER_FILE)
 
+            sf_docs_runtime_ok, sf_docs_runtime_notes = install_sf_docs_runtime(source_dir)
+            for note in sf_docs_runtime_notes:
+                print_substep(note)
+            if not sf_docs_runtime_ok:
+                print_warning("sf-docs browser runtime setup was incomplete; extraction helpers may need manual setup")
+
+            if install_datacloud_runtime_requested:
+                print_substep("Installing optional Data Cloud runtime...")
+                datacloud_runtime_ok, datacloud_runtime_notes = install_datacloud_runtime()
+                for note in datacloud_runtime_notes:
+                    print_substep(note)
+                if not datacloud_runtime_ok:
+                    datacloud_runtime_failure = True
+                    print_warning("Optional Data Cloud runtime setup did not complete successfully")
+
             # Re-exec detection: if the installer binary changed, hand off to the
             # new version for Steps 4-5. This solves the bootstrapping problem where
             # the OLD process's get_hooks_config() references deleted hooks.
@@ -2342,6 +2702,8 @@ def cmd_install(dry_run: bool = False, force: bool = False, called_from_bash: bo
                             _exec_args.append("--force")
                         if called_from_bash:
                             _exec_args.append("--called-from-bash")
+                        if install_datacloud_runtime_requested:
+                            _exec_args.append("--with-datacloud-runtime")
                         os.execv(sys.executable, _exec_args)
                         # os.execv replaces the process; unreachable below
                 except (IOError, OSError) as e:
@@ -2366,6 +2728,14 @@ def cmd_install(dry_run: bool = False, force: bool = False, called_from_bash: bo
             print_substep(f"{skill_count} skills would be installed")
             if agent_count > 0:
                 print_substep(f"{agent_count} agents would be installed (FDE + PS)")
+            _, sf_docs_runtime_notes = install_sf_docs_runtime(source_dir, dry_run=True)
+            for note in sf_docs_runtime_notes:
+                print_substep(note)
+            if install_datacloud_runtime_requested:
+                _, datacloud_runtime_notes = install_datacloud_runtime(dry_run=True)
+                print_substep("Would install optional Data Cloud runtime")
+                for note in datacloud_runtime_notes:
+                    print_substep(note)
 
         # Step 4: Configure Claude Code
         print_step(4, 5, "Configuring Claude Code...", "...")
@@ -2428,7 +2798,7 @@ def cmd_install(dry_run: bool = False, force: bool = False, called_from_bash: bo
    Version:  {version}
    Skills:   ~/.claude/skills/sf-*/
    Hooks:    ~/.claude/hooks/
-   sf-docs:  local corpus + Salesforce-aware retrieval
+   sf-docs:  official Salesforce docs guidance + browser helpers
 """)
         else:
             # Full message when run directly
@@ -2440,7 +2810,7 @@ def cmd_install(dry_run: bool = False, force: bool = False, called_from_bash: bo
    Skills:   ~/.claude/skills/sf-*/
    Hooks:    ~/.claude/hooks/
    LSP:      ~/.claude/lsp-engine/
-   sf-docs:  local corpus + Salesforce-aware retrieval
+   sf-docs:  official Salesforce docs guidance + browser helpers
 
    🚀 Next steps:
    1. Restart Claude Code (or start new session)
@@ -2453,6 +2823,16 @@ def cmd_install(dry_run: bool = False, force: bool = False, called_from_bash: bo
    • Status:    python3 ~/.claude/sf-skills-install.py --status
 ═══════════════════════════════════════════════════════════════════
 """)
+
+        if install_datacloud_runtime_requested:
+            datacloud_status = get_datacloud_runtime_status()
+            if datacloud_status["available"] and not datacloud_runtime_failure:
+                location = DATACLOUD_RUNTIME_PLUGIN_DIR if datacloud_status["managedGitCheckout"] else "already available in sf CLI"
+                print_info(f"Optional Data Cloud runtime ready ({location})")
+            else:
+                print_warning("sf-skills installed, but the optional Data Cloud runtime was not installed successfully")
+                print_info("Retry with: python3 ~/.claude/sf-skills-install.py --with-datacloud-runtime")
+                return 1
     else:
         print(f"\n{c('DRY RUN complete - no changes made', Colors.YELLOW)}\n")
 
@@ -2461,7 +2841,8 @@ def cmd_install(dry_run: bool = False, force: bool = False, called_from_bash: bo
 
 def cmd_finalize_install(version: str, commit_sha: Optional[str] = None,
                          dry_run: bool = False, force: bool = False,
-                         called_from_bash: bool = False) -> int:
+                         called_from_bash: bool = False,
+                         with_datacloud_runtime: bool = False) -> int:
     """
     Finalize installation (Steps 4-5 only).
 
@@ -2475,6 +2856,7 @@ def cmd_finalize_install(version: str, commit_sha: Optional[str] = None,
         dry_run: Preview changes without applying
         force: Skip confirmation prompts
         called_from_bash: Suppress redundant output
+        with_datacloud_runtime: Optional Data Cloud runtime was requested during install
 
     Returns:
         Exit code (0 = success)
@@ -2536,7 +2918,7 @@ def cmd_finalize_install(version: str, commit_sha: Optional[str] = None,
    Version:  {version}
    Skills:   ~/.claude/skills/sf-*/
    Hooks:    ~/.claude/hooks/
-   sf-docs:  local corpus + Salesforce-aware retrieval
+   sf-docs:  official Salesforce docs guidance + browser helpers
 """)
         else:
             print(f"""
@@ -2547,7 +2929,7 @@ def cmd_finalize_install(version: str, commit_sha: Optional[str] = None,
    Skills:   ~/.claude/skills/sf-*/
    Hooks:    ~/.claude/hooks/
    LSP:      ~/.claude/lsp-engine/
-   sf-docs:  local corpus + Salesforce-aware retrieval
+   sf-docs:  official Salesforce docs guidance + browser helpers
 
    🚀 Next steps:
    1. Restart Claude Code (or start new session)
@@ -2560,13 +2942,25 @@ def cmd_finalize_install(version: str, commit_sha: Optional[str] = None,
    • Status:    python3 ~/.claude/sf-skills-install.py --status
 ═══════════════════════════════════════════════════════════════════
 """)
+
+        if with_datacloud_runtime:
+            datacloud_status = get_datacloud_runtime_status()
+            if datacloud_status["available"]:
+                location = DATACLOUD_RUNTIME_PLUGIN_DIR if datacloud_status["managedGitCheckout"] else "already available in sf CLI"
+                print_info(f"Optional Data Cloud runtime ready ({location})")
+            else:
+                print_warning("sf-skills installed, but the optional Data Cloud runtime was not installed successfully")
+                print_info("Retry with: python3 ~/.claude/sf-skills-install.py --with-datacloud-runtime")
+                return 1
     else:
         print(f"\n{c('DRY RUN complete - no changes made', Colors.YELLOW)}\n")
 
     return 0
 
 
-def cmd_update(dry_run: bool = False, force: bool = False, force_update: bool = False) -> int:
+def cmd_update(dry_run: bool = False, force: bool = False,
+               force_update: bool = False,
+               with_datacloud_runtime: bool = False) -> int:
     """
     Check for and apply updates.
 
@@ -2579,6 +2973,7 @@ def cmd_update(dry_run: bool = False, force: bool = False, force_update: bool = 
         dry_run: Preview changes without applying
         force: Skip confirmation prompts
         force_update: Force reinstall even if up-to-date
+        with_datacloud_runtime: Install the optional community sf data360 runtime too
 
     Returns:
         Exit code (0 = success, 1 = error, 2 = no update available)
@@ -2618,7 +3013,11 @@ def cmd_update(dry_run: bool = False, force: bool = False, force_update: bool = 
             if not confirm("Reinstall sf-skills?"):
                 print("\nUpdate cancelled.")
                 return 1
-        return cmd_install(dry_run=dry_run, force=True)
+        return cmd_install(
+            dry_run=dry_run,
+            force=True,
+            with_datacloud_runtime=with_datacloud_runtime,
+        )
 
     # Handle network error
     if reason == UPDATE_REASON_ERROR:
@@ -2632,6 +3031,12 @@ def cmd_update(dry_run: bool = False, force: bool = False, force_update: bool = 
     # Handle up-to-date
     if reason == UPDATE_REASON_UP_TO_DATE:
         print_success("Already up to date!")
+        if with_datacloud_runtime:
+            print_info("Installing optional Data Cloud runtime as requested...")
+            ok, notes = install_datacloud_runtime(dry_run=dry_run)
+            for note in notes:
+                print_substep(note)
+            return 0 if ok else 1
         return 2
 
     # Display update reason
@@ -2650,7 +3055,11 @@ def cmd_update(dry_run: bool = False, force: bool = False, force_update: bool = 
             return 1
 
     # Run full install (will handle cleanup of old version)
-    return cmd_install(dry_run=dry_run, force=True)
+    return cmd_install(
+        dry_run=dry_run,
+        force=True,
+        with_datacloud_runtime=with_datacloud_runtime,
+    )
 
 
 def cmd_uninstall(dry_run: bool = False, force: bool = False) -> int:
@@ -2672,6 +3081,7 @@ def cmd_uninstall(dry_run: bool = False, force: bool = False) -> int:
     print(f"     • sf-* skills from {SKILLS_DIR}")
     print(f"     • {HOOKS_DIR}")
     print(f"     • {LSP_DIR}")
+    print(f"     • {SF_DOCS_RUNTIME_DIR} (sf-docs runtime)")
     print(f"     • sf-skills hooks from {SETTINGS_FILE}")
     print(f"     • FDE + PS agents from {CLAUDE_DIR / 'agents'}")
     print(f"     • {META_FILE}")
@@ -2822,7 +3232,25 @@ def cmd_status() -> int:
         print(f"LSP count:   {c('⚠️ Not installed', Colors.YELLOW)}")
 
     # sf-docs retrieval mode
-    print(f"sf-docs:     {c('✓', Colors.GREEN)} local corpus + Salesforce-aware retrieval")
+    print(f"sf-docs:     {c('✓', Colors.GREEN)} official Salesforce docs guidance + browser helpers")
+    sf_docs_runtime = get_sf_docs_runtime_status()
+    runtime_bits = [
+        f"venv={c('yes', Colors.GREEN) if sf_docs_runtime['pythonExists'] else c('no', Colors.YELLOW)}",
+        f"playwright={c('yes', Colors.GREEN) if sf_docs_runtime['playwright'] else c('no', Colors.YELLOW)}",
+        f"stealth={c('yes', Colors.GREEN) if sf_docs_runtime['stealth'] else c('optional', Colors.DIM)}",
+        f"{SF_DOCS_BROWSER}={c('yes', Colors.GREEN) if sf_docs_runtime['browser'] else c('no', Colors.YELLOW)}",
+    ]
+    print(f"sf-docs rt:  {'  '.join(runtime_bits)}")
+
+    # Optional Data Cloud runtime status
+    datacloud_runtime = get_datacloud_runtime_status()
+    if datacloud_runtime["available"]:
+        source = (str(DATACLOUD_RUNTIME_PLUGIN_DIR)
+                  if datacloud_runtime["managedGitCheckout"]
+                  else "already available in sf CLI")
+        print(f"Data Cloud:  {c('✓', Colors.GREEN)} optional sf data360 runtime ({source})")
+    else:
+        print(f"Data Cloud:  {c('optional runtime not installed', Colors.DIM)}")
 
     # Check settings.json
     if SETTINGS_FILE.exists():
@@ -3403,6 +3831,7 @@ Examples:
   python3 install.py               # Interactive install
   python3 install.py --update      # Check version + content changes
   python3 install.py --force-update  # Force reinstall even if up-to-date
+  python3 install.py --with-datacloud-runtime  # Install optional Data Cloud runtime too
   python3 install.py --uninstall   # Remove sf-skills
   python3 install.py --status      # Show installation status
   python3 install.py --cleanup     # Remove legacy artifacts
@@ -3421,11 +3850,8 @@ Profile management:
   python3 install.py --profile delete old         # Delete a profile
   python3 install.py --profile use ent --dry-run  # Preview switch
 
-Curl one-liner (fallback if not running from local clone):
-  curl -sSL https://raw.githubusercontent.com/nitheshnekkantisonos/sf-skills/main/tools/install.py | python3
-
-Local install (recommended):
-  python3 tools/install.py
+Curl one-liner:
+  curl -sSL https://raw.githubusercontent.com/Jaganpro/sf-skills/main/tools/install.py | python3
         """
     )
 
@@ -3445,10 +3871,10 @@ Local install (recommended):
                         help="Restore settings.json from latest backup")
     parser.add_argument("--profile", nargs='*', metavar="ACTION",
                         help="Profile management: list|save|use|show|delete [name]")
-    parser.add_argument("--local", metavar="PATH",
-                        help="Install from a local repo clone instead of downloading from GitHub")
     parser.add_argument("--dry-run", action="store_true",
                         help="Preview changes without applying")
+    parser.add_argument("--with-datacloud-runtime", action="store_true",
+                        help="Install the optional community sf data360 runtime for the sf-datacloud family")
     parser.add_argument("--force", "-f", action="store_true",
                         help="Skip confirmation prompts")
     parser.add_argument("--called-from-bash", action="store_true",
@@ -3499,7 +3925,8 @@ Local install (recommended):
             commit_sha=getattr(args, 'finalize_sha', None) or None,
             dry_run=args.dry_run,
             force=args.force,
-            called_from_bash=args.called_from_bash
+            called_from_bash=args.called_from_bash,
+            with_datacloud_runtime=args.with_datacloud_runtime,
         ))
     elif args.cleanup:
         sys.exit(cmd_cleanup(dry_run=args.dry_run))
@@ -3517,21 +3944,15 @@ Local install (recommended):
         sys.exit(cmd_update(
             dry_run=args.dry_run,
             force=args.force,
-            force_update=args.force_update
+            force_update=args.force_update,
+            with_datacloud_runtime=args.with_datacloud_runtime,
         ))
     else:
-        local_source = None
-        if args.local:
-            local_source = Path(args.local).resolve()
-            if not local_source.is_dir() or not (local_source / "skills").is_dir():
-                print_error(f"Invalid local source: {local_source}")
-                print_info("Path must point to the root of a sf-skills repo clone (containing a skills/ directory)")
-                sys.exit(1)
         sys.exit(cmd_install(
             dry_run=args.dry_run,
             force=args.force,
             called_from_bash=args.called_from_bash,
-            local_source=local_source
+            with_datacloud_runtime=args.with_datacloud_runtime,
         ))
 
 

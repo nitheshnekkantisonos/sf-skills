@@ -553,6 +553,8 @@ topic main:
 
 > 💡 `@system_variables` is a separate namespace from `@variables`. The `user_input` system variable contains the customer's most recent utterance.
 
+> ⚠️ Treat `@system_variables.user_input` as raw text, not a durable deterministic intent signal. Direct guards like `if @system_variables.user_input contains "never mind":` are brittle for control-flow-critical routing. Prefer a Flow, Apex, or classifier action that normalizes the utterance into a boolean or enum variable first.
+
 #### Common Linked Variable Sources
 
 Linked variables commonly reference these external source patterns:
@@ -581,6 +583,25 @@ variables:
 ```
 
 > 💡 `@MessagingSession` and `@MessagingEndUser` sources are available when the agent is deployed on a Messaging channel (Enhanced Chat, In-App, Web Chat). They are NOT available in Agent Builder Preview or `sf agent preview`.
+
+### Output Access Depends on the Declared Schema
+
+Do **not** assume `@outputs.X` is always a plain scalar. The correct access pattern depends on the action's declared output shape.
+
+```yaml
+# Scalar output → direct assignment is fine
+set @variables.order_status = @outputs.status
+
+# Structured output → keep it as an object, or access a concrete field
+set @variables.raw_result = @outputs.output
+set @variables.result_text = @outputs.output.value      # if the output schema exposes 'value'
+```
+
+**Guidance:**
+- If the output is declared as `string`, `number`, or `boolean`, direct assignment is fine.
+- If the output is declared as `object` or another structured type, inspect the schema before branching on it.
+- Some actions wrap their primary scalar under a field such as `.value`; others expose named properties directly.
+- When a deterministic branch depends on the result, the safest design is to flatten the target output in Flow/Apex so Agent Script receives an explicit scalar like `is_after_hours: boolean` instead of a wrapper object.
 
 ---
 
@@ -769,6 +790,8 @@ Agent Script expressions use a sandboxed subset of Python. Not all Python operat
 | Index access | `@variables.items[0]` |
 | String methods | `contains`, `startswith`, `endswith` |
 
+> ⚠️ **Portability warning**: `contains` / `startswith` / `endswith` may compile, but they are not the safest choice for control-flow-critical validation or intent routing. Use them only as light heuristics. For URL validation, cancellation detection, or anything that must deterministically gate behavior, prefer a Flow/Apex/classifier action that returns a normalized boolean or enum.
+
 **NOT Supported:**
 
 | Operation | Workaround |
@@ -826,15 +849,18 @@ actions:
 | Missing `default_agent_user` | Internal error on deploy | Add valid Einstein Agent User |
 | `@inputs` in `set` directive | Unknown deploy error | Use `@utils.setVariables` to capture inputs separately, then reference via `@variables` |
 | Bare action name (no prefix) | Action not found / ignored | Always use `@actions.action_name` in `run`, templates, and instruction text |
-| `run @actions.X` for utility | Action not found | `run @actions.X` resolves against topic-level `actions:` with `target:` — use `@utils.setVariables` directly, not via `run` |
+| `run @actions.X` for utility / delegation / unresolved action | `ACTION_NOT_IN_SCOPE`, action not found, or available-actions list excludes the name | `run @actions.X` resolves only to topic-level `actions:` that declare `target:`. Use direct `set` / `transition to` for deterministic utility behavior, or let `reasoning.actions:` invoke the utility. |
 | Null check vs empty string | Wrong comparison for null | Use `is None` for null checks, `== ""` for empty strings — they are different |
 | `is_required` not enforced | Planner invokes action without required inputs | Use `available when @variables.X is not None` guard instead. `is_required` is a hint, not a gate. See Issue 26 |
+| Raw `@system_variables.user_input contains/startswith/endswith` routing | Cancellation/revision intent checks behave inconsistently | Use a Flow/Apex/classifier action to normalize the utterance into a boolean or enum, then branch on `@variables.X`. See Issue 42 |
+| `contains` / `startswith` / `endswith` as critical validation gates | URL or string guards compile but behave unevenly across authoring/runtime contexts | Prefer an upstream validation action that returns an explicit scalar like `is_valid_url: boolean`. |
 | `date` type in action I/O | Runtime error `'Date'` | Use `object` + `complex_data_type_name: "lightning__dateType"` in action I/O. `date` works fine for variables. See Issue 28 |
 | `== []` or `set = []` in expressions | Parse error (`[` not allowed) | Use `len(@variables.list) == 0` for empty check; use temp empty var for reset. See Issue 33 |
-| `is_displayable: True` on prompt outputs | Agent returns blank/empty response | Set `is_displayable: False` and let the reasoner synthesize the output. See Issue 34 |
+| `is_displayable: True` on prompt outputs | Agent returns blank/empty response | Set `is_displayable: False` and let the reasoner synthesize the output. If the output should influence the response or routing, also set `is_used_by_planner: True`. See Issue 34 |
+| Structured output assigned directly to scalar variable | Comparisons fail or wrapper/object text leaks into state | Inspect the output schema and access a concrete property such as `.value` only when that field actually exists, or flatten the output in Flow/Apex first. |
 | Line breaks in topic `description:` | Script breaks with syntax error | Keep `description:` on a single line — no line breaks. See Issue 35 |
 | Variable name matches system context | "Field is already mapped to a Context Variable" | Avoid names like `Locale`, `Channel`, `Status`, `Origin` — use prefixed names like `customer_locale`. See Issue 36 |
-| `filter_from_agent` + `is_used_by_planner` on output | `InvalidFormatError` + cascading `ACTION_NOT_IN_SCOPE` | These are mutually exclusive. Use only `filter_from_agent: True`; remove `is_used_by_planner`. See Issue 40 |
+| `filter_from_agent` + `is_used_by_planner` on output | `InvalidFormatError` + cascading `ACTION_NOT_IN_SCOPE` | These are mutually exclusive. Use only `filter_from_agent: True`; remove `is_used_by_planner`. See [Issue 40](known-issues.md#issue-40-filter-planner-conflict). |
 | Lifecycle arithmetic on mutable number without null guard | Silent crash: `None + 1` → "unexpected error" | Add `if @variables.X is None: set @variables.X = 0` before arithmetic in `before_reasoning` / `after_reasoning`. See Issue 41 |
 
 ### `@inputs` in `set` — Deploy-Breaking Anti-Pattern
@@ -883,20 +909,56 @@ if @variables.data == "":
 
 > Use `is None` when a variable may not have been set at all. Use `== ""` when checking for an explicitly empty string value.
 
-### `run @actions.X` vs Reasoning-Level Utilities
+### `run @actions.X` Only Works for Topic-Level Target-Backed Actions
 
-`run @actions.X` resolves against the topic-level `actions:` block (definitions with `target:`). It does NOT work for reasoning-level utilities like `@utils.setVariables`.
+`run @actions.X` resolves only against topic-level `actions:` definitions that declare a real `target:`. It does **not** work for reasoning-level utilities, and it is also the wrong tool for topic-level utilities / delegations that do not have `target:`.
 
 ```yaml
-# ❌ WRONG — set_user_name is defined as @utils.setVariables, not a topic-level action
-run @actions.set_user_name   # "Action not found" error
+# ❌ WRONG — set_user_name is a reasoning-level utility, not a target-backed action
+run @actions.set_user_name   # ACTION_NOT_IN_SCOPE / action not found
 
-# ✅ CORRECT — use @utils.setVariables directly in reasoning.actions:
 reasoning:
    actions:
       set_user_name: @utils.setVariables
          with user_name=...
 ```
+
+```yaml
+# ❌ WRONG — go_help is topic-level, but it is still a utility transition (no target:)
+actions:
+   go_help: @utils.transition to @topic.help
+
+reasoning:
+   instructions: ->
+      run @actions.go_help   # not a valid deterministic run target
+```
+
+```yaml
+# ✅ CORRECT — use direct deterministic primitives for non-target utility behavior
+reasoning:
+   instructions: ->
+      set @variables.user_name = "Pat"
+      transition to @topic.help
+```
+
+```yaml
+# ✅ CORRECT — use run only for a topic-level target-backed action definition
+actions:
+   load_customer:
+      target: "flow://Load_Customer"
+      inputs:
+         customer_id: string
+      outputs:
+         customer_name: string
+
+reasoning:
+   instructions: ->
+      run @actions.load_customer
+         with customer_id = @variables.customer_id
+         set @variables.customer_name = @outputs.customer_name
+```
+
+**Rule of thumb:** if you want deterministic execution, `run` is correct **only** when the referenced action is a topic-level definition with `target:`. Otherwise use direct `set` / `transition to`, or let `reasoning.actions:` expose the utility for LLM-driven invocation.
 
 ---
 
