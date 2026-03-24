@@ -1649,7 +1649,20 @@ def get_hooks_config() -> Dict[str, Any]:
                 "hooks": [
                     {
                         "type": "prompt",
-                        "prompt": "You are a Salesforce CLI safety guardrail. Evaluate this command for: (1) hardcoded credentials, API keys, secrets, or passwords in arguments, (2) hardcoded 15 or 18-character Salesforce record IDs that vary between environments, (3) deprecated 'sfdx' commands that should use 'sf' instead, (4) API versions below v56. Only flag genuine issues — ignore these patterns when they appear inside quoted commit messages, echo statements, comments, or documentation strings. If the command is safe, respond with just 'ALLOW'. If dangerous, respond with 'BLOCK: <one-line reason>'.",
+                        "prompt": (
+                            "You are a Salesforce CLI safety guardrail. Evaluate this command for these issues:\n\n"
+                            "(1) BLOCK if: hardcoded credentials, API keys, secrets, tokens, or passwords appear as argument values "
+                            "(not inside echo/printf/commit message text).\n\n"
+                            "(2) BLOCK if: the command uses 'sfdx' instead of 'sf'. The sfdx CLI is deprecated — always use 'sf' equivalents "
+                            "(e.g., 'sf org list' not 'sfdx force:org:list').\n\n"
+                            "(3) BLOCK if: hardcoded 15 or 18-character Salesforce record IDs (starting with prefixes like 001, 003, 005, 00D, 0Xx, a0) "
+                            "appear in queries, commands, or arguments. These IDs vary between orgs/environments and should be queried dynamically. "
+                            "Exception: IDs inside echo/printf statements or test data setup scripts are acceptable.\n\n"
+                            "(4) BLOCK if: API version below v56 is specified via --api-version flag.\n\n"
+                            "Context rules: Do NOT flag patterns inside echo, printf, cat heredocs, git commit messages, or comments. "
+                            "These are output/documentation, not execution.\n\n"
+                            "Respond ONLY with 'ALLOW' if safe, or 'BLOCK: <one-line reason>' if any issue is found."
+                        ),
                         "timeout": 10
                     }
                 ],
