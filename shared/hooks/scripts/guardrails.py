@@ -33,10 +33,6 @@ except ImportError:
         except Exception:
             return {}
 
-# Configuration
-SCRIPT_DIR = Path(__file__).parent.parent
-REGISTRY_FILE = SCRIPT_DIR / "skills-registry.json"
-
 # Severity levels
 CRITICAL = "CRITICAL"
 MEDIUM = "MEDIUM"
@@ -86,18 +82,6 @@ MEDIUM_PATTERNS = [
 # =============================================================================
 # HELPER FUNCTIONS
 # =============================================================================
-
-def load_registry() -> dict:
-    """Load guardrails from skills-registry.json if available."""
-    try:
-        if REGISTRY_FILE.exists():
-            with open(REGISTRY_FILE, 'r') as f:
-                registry = json.load(f)
-                return registry.get("guardrails", {})
-    except (json.JSONDecodeError, IOError):
-        pass
-    return {}
-
 
 def is_sf_mcp_tool(tool_name: str) -> bool:
     """Check if the tool is a Salesforce MCP server tool."""
