@@ -31,7 +31,6 @@ The library is organized by capability area so you can scan quickly, pick the ri
 | ☁️ **Data Cloud** | [sf-datacloud](skills/sf-datacloud/), [sf-datacloud-connect](skills/sf-datacloud-connect/), [sf-datacloud-prepare](skills/sf-datacloud-prepare/), [sf-datacloud-harmonize](skills/sf-datacloud-harmonize/), [sf-datacloud-segment](skills/sf-datacloud-segment/), [sf-datacloud-act](skills/sf-datacloud-act/), [sf-datacloud-retrieve](skills/sf-datacloud-retrieve/) | Data Cloud connections, ingestion, harmonization, segmentation, activation, and retrieval.<br><sub>Beta / Community Preview · live execution uses the external community <code>sf data360</code> runtime</sub> |
 | 🤖 **AI & Automation** | [sf-ai-agentscript](skills/sf-ai-agentscript/), [sf-ai-agentforce](skills/sf-ai-agentforce/), [sf-ai-agentforce-testing](skills/sf-ai-agentforce-testing/), [sf-ai-agentforce-observability](skills/sf-ai-agentforce-observability/), [sf-ai-agentforce-persona](skills/sf-ai-agentforce-persona/) | Agent design, Agent Script, testing, observability, and persona design |
 | 🚀 **DevOps & Tooling** | [sf-deploy](skills/sf-deploy/), [sf-diagram-mermaid](skills/sf-diagram-mermaid/), [sf-diagram-nanobananapro](skills/sf-diagram-nanobananapro/) | Deployment automation, Mermaid diagrams, and visual artifacts |
-| 🏢 **Industries** | [sf-industry-commoncore-omnistudio-analyze](skills/sf-industry-commoncore-omnistudio-analyze/), [sf-industry-commoncore-datamapper](skills/sf-industry-commoncore-datamapper/), [sf-industry-commoncore-integration-procedure](skills/sf-industry-commoncore-integration-procedure/), [sf-industry-commoncore-callable-apex](skills/sf-industry-commoncore-callable-apex/), [sf-industry-commoncore-omniscript](skills/sf-industry-commoncore-omniscript/), [sf-industry-commoncore-flexcard](skills/sf-industry-commoncore-flexcard/) | OmniStudio: dependency analysis, Data Mappers, Integration Procedures, callable Apex, OmniScripts, and FlexCards |
 
 <a id="installation"></a>
 
@@ -41,36 +40,21 @@ The library is organized by capability area so you can scan quickly, pick the ri
 
 | If you want... | Use this | Best for |
 |---|---|---|
-| Skills only, any supported coding agent | <code>npx skills add Jaganpro/sf-skills</code> | Codex, Gemini CLI, OpenCode, Amp, Claude Code without local hooks |
-| Full Claude Code experience | <code>curl -sSL https://raw.githubusercontent.com/Jaganpro/sf-skills/main/tools/install.sh &#124; bash</code> | Hooks, agents, LSP, guardrails, org preflight |
-| Manual / Windows / CI-friendly install | <code>curl -sSL https://raw.githubusercontent.com/Jaganpro/sf-skills/main/tools/install.py &#124; python3</code> | Direct installer control without bash wrapper |
-
-### Any AI Coding Agent
-
-> Requires [Node.js 18+](https://nodejs.org/) (provides the `npx` command)
-
-```bash
-npx skills add Jaganpro/sf-skills
-```
-
-Works with Claude Code, Codex, Gemini CLI, OpenCode, Amp, and [40+ agents](https://agentskills.io).
-
-> **Note for Data Cloud users:** the `sf-datacloud-*` family uses an external community `sf data360` CLI runtime. Install sf-skills normally, then follow `skills/sf-datacloud/references/plugin-setup.md` if you plan to use the Data Cloud family.
-
-```bash
-# Install a single skill
-npx skills add Jaganpro/sf-skills --skill sf-apex
-
-# List available skills before installing
-npx skills add Jaganpro/sf-skills --list
-```
+| Full Claude Code experience | <code>bash ./tools/install.sh</code> | Hooks, agents, LSP, guardrails, org preflight |
+| Manual / Windows / CI-friendly install | <code>python3 ./tools/install.py</code> | Direct installer control without bash wrapper |
 
 ### Claude Code (Full Experience)
 
-> **Using Claude Code?** This path is recommended — `npx` installs skills only, while the installer adds the full local experience: skills + agents + hooks + LSP + guardrails.
+> The installer adds the full local experience: skills + agents + hooks + LSP + guardrails.
+
+> **Note for Data Cloud users:** the `sf-datacloud-*` family uses an external community `sf data360` CLI runtime. Install sf-skills normally, then follow `skills/sf-datacloud/references/plugin-setup.md` if you plan to use the Data Cloud family.
+
+From the root of your local clone:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/Jaganpro/sf-skills/main/tools/install.sh | bash
+git clone <your-fork-url> sf-skills   # if not already cloned
+cd sf-skills
+bash ./tools/install.sh
 ```
 
 This installs 33 skills, 7 specialist agents, a shared hook system, and the local LSP engine. It also configures guardrails, auto-validation on Write/Edit, org preflight checks, and background LSP prewarm.
@@ -81,14 +65,17 @@ This installs 33 skills, 7 specialist agents, a shared hook system, and the loca
 
 ### Direct Python Installer (manual / Windows / CI)
 
+From the root of your local clone:
+
 ```bash
-curl -sSL https://raw.githubusercontent.com/Jaganpro/sf-skills/main/tools/install.py | python3
+cd sf-skills
+python3 ./tools/install.py
 ```
 
 Want the optional Data Cloud runtime too?
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/Jaganpro/sf-skills/main/tools/install.py | python3 - --with-datacloud-runtime
+python3 ./tools/install.py --with-datacloud-runtime
 ```
 
 Use this path when you want to:
@@ -99,10 +86,18 @@ Use this path when you want to:
 
 ### Updating
 
+Pull the latest changes from the forked repo and re-run the installer:
+
+```bash
+cd sf-skills
+git pull
+bash ./tools/install.sh            # or: python3 ./tools/install.py
+```
+
 | Install Method | Check for Updates | Update |
 |----------------|-------------------|--------|
-| **npx** | `npx skills check` | `npx skills update` |
-| **install.py** | `python3 ~/.claude/sf-skills-install.py --status` | `python3 ~/.claude/sf-skills-install.py --update` |
+| **install.sh** | `python3 ~/.claude/sf-skills-install.py --status` | `cd sf-skills && git pull && bash ./tools/install.sh` |
+| **install.py** | `python3 ~/.claude/sf-skills-install.py --status` | `cd sf-skills && git pull && python3 ./tools/install.py` |
 
 ### Managing install.py
 
@@ -131,8 +126,6 @@ python3 ~/.claude/sf-skills-install.py --profile use enterprise
 python3 ~/.claude/sf-skills-install.py --profile show enterprise
 python3 ~/.claude/sf-skills-install.py --profile delete old
 ```
-
-> **Upgrading from `npx` to install.py?** Just run the installer command above — it auto-detects and migrates.
 
 ### What Gets Installed (install.py only)
 
@@ -358,10 +351,6 @@ This is the working mental model for the ecosystem: foundation and integration s
 
 ## 🔧 Prerequisites
 
-### Cross-CLI minimum
-
-- **Node.js 18+** — required for `npx skills add`
-
 ### Claude Code full install
 
 - **Claude Code** (latest version)
@@ -551,22 +540,17 @@ This is the working mental model for the ecosystem: foundation and integration s
 
 ### CLI Compatibility
 
-All skills follow the [Agent Skills open standard](https://agentskills.io). Install with `npx skills add` for any supported agent:
-
-```bash
-npx skills add Jaganpro/sf-skills
-```
+All skills follow the [Agent Skills open standard](https://agentskills.io). Install from your local clone using the bash or Python installer.
 
 | Tool | Status | Install Method | |
 |------|--------|----------------|--|
-| **Claude Code CLI** | ✅ Full Support | `npx skills add` or bash installer | ![Claude](https://img.shields.io/badge/Anthropic-Claude_Code-191919?logo=anthropic&logoColor=white) |
-| **OpenCode CLI** | ✅ Compatible | `npx skills add` | ![OpenCode](https://img.shields.io/badge/Open-Code-4B32C3?logo=github&logoColor=white) |
-| **Codex CLI** | ✅ Compatible | `npx skills add` | ![OpenAI](https://img.shields.io/badge/OpenAI-Codex-412991?logo=openai&logoColor=white) |
-| **Gemini CLI** | ✅ Compatible | `npx skills add` | ![Google](https://img.shields.io/badge/Google-Gemini_CLI-4285F4?logo=google&logoColor=white) |
-| **Amp CLI** | ✅ Compatible | `npx skills add` or `.claude/skills/` | ![Amp](https://img.shields.io/badge/Sourcegraph-Amp-FF5543?logo=sourcegraph&logoColor=white) |
-| **Droid CLI** | ✅ Compatible | `npx skills add` | ![Factory](https://img.shields.io/badge/Factory.ai-Droid-6366F1?logo=robot&logoColor=white) |
+| **Claude Code CLI** | ✅ Full Support | `bash ./tools/install.sh` (local clone) | ![Claude](https://img.shields.io/badge/Anthropic-Claude_Code-191919?logo=anthropic&logoColor=white) |
+| **OpenCode CLI** | ✅ Compatible | `bash ./tools/install.sh` (local clone) | ![OpenCode](https://img.shields.io/badge/Open-Code-4B32C3?logo=github&logoColor=white) |
+| **Codex CLI** | ✅ Compatible | `bash ./tools/install.sh` (local clone) | ![OpenAI](https://img.shields.io/badge/OpenAI-Codex-412991?logo=openai&logoColor=white) |
+| **Gemini CLI** | ✅ Compatible | `bash ./tools/install.sh` (local clone) | ![Google](https://img.shields.io/badge/Google-Gemini_CLI-4285F4?logo=google&logoColor=white) |
+| **Amp CLI** | ✅ Compatible | `bash ./tools/install.sh` (local clone) | ![Amp](https://img.shields.io/badge/Sourcegraph-Amp-FF5543?logo=sourcegraph&logoColor=white) |
+| **Droid CLI** | ✅ Compatible | `bash ./tools/install.sh` (local clone) | ![Factory](https://img.shields.io/badge/Factory.ai-Droid-6366F1?logo=robot&logoColor=white) |
 
-> 🤝 **Call for Volunteers!** This repo is community-driven. We need testers on different CLIs — [open an issue](https://github.com/Jaganpro/sf-skills/issues) to get started.
 
 </details>
 
@@ -579,8 +563,6 @@ sf-{capability}           # Cross-cutting (apex, flow, admin)
 sf-ai-{name}              # AI features (agentforce, copilot)
 sf-datacloud-{phase}      # Data Cloud family (connect, prepare, harmonize, segment, act, retrieve)
 sf-cloud-{name}           # Clouds (sales, service)
-sf-industry-{name}        # Industries (healthcare, finserv)
-sf-industry-commoncore-{name}  # Industries Common Core (omnistudio)
 ```
 
 ### 🔧 Cross-Cutting Skills
@@ -628,50 +610,14 @@ sf-industry-commoncore-{name}  # Industries Common Core (omnistudio)
 | 🎧 | `sf-cloud-service` | Cases, Omni-Channel, Knowledge | 📋 Planned |
 | 🌐 | `sf-cloud-experience` | Communities, Portals | 📋 Planned |
 
-### 🏢 Industries Common Core
-| | Skill | Description | Status |
-|--|-------|-------------|--------|
-| 🔍 | `sf-industry-commoncore-omnistudio-analyze` | Namespace detection, dependency mapping, impact analysis | ✅ Live |
-| 📊 | `sf-industry-commoncore-datamapper` | Data Mapper (DataRaptor) creation, 100-pt scoring | ✅ Live |
-| 🔗 | `sf-industry-commoncore-integration-procedure` | Integration Procedure orchestration, 110-pt scoring | ✅ Live |
-| ⚙️ | `sf-industry-commoncore-callable-apex` | System.Callable generation/review and Open Interface migration patterns | ✅ Live |
-| 📝 | `sf-industry-commoncore-omniscript` | OmniScript guided experiences, 120-pt scoring | ✅ Live |
-| 🃏 | `sf-industry-commoncore-flexcard` | FlexCard UI components, 130-pt scoring | ✅ Live |
-
-### 🏢 Industries
-| | Skill | Description | Status |
-|--|-------|-------------|--------|
-| 🏥 | `sf-industry-healthcare` | FHIR, Care Plans, Compliance | 📋 Planned |
-| 🏦 | `sf-industry-finserv` | KYC, AML, Wealth Management | 📋 Planned |
-| 💵 | `sf-industry-revenue` | CPQ, Billing, Revenue Lifecycle | 📋 Planned |
-
-**Current repo state:** 33 live skills today, with additional cloud, security, AI, and industry roadmap items still planned.
 
 </details>
 
-## Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test locally: `python3 tools/install.py --dry-run`
-5. Open a Pull Request
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
-
-## Contributors
-
-| Contributor | Area | Skills |
-|---|---|---|
-| August Krys | Agentforce metadata modernization, metadata/FLS improvements, data/deploy workflow updates | sf-ai-agentforce, sf-ai-agentscript, sf-metadata, sf-data, sf-deploy |
-| [Gnanasekaran Thoppae](https://github.com/gthoppae) | Data Cloud product family | sf-datacloud, sf-datacloud-connect, sf-datacloud-prepare, sf-datacloud-harmonize, sf-datacloud-segment, sf-datacloud-act, sf-datacloud-retrieve |
-| [David Ryan (weytani)](https://github.com/weytani) | Industries Common Core | sf-industry-commoncore-omnistudio-analyze, sf-industry-commoncore-datamapper, sf-industry-commoncore-integration-procedure, sf-industry-commoncore-omniscript, sf-industry-commoncore-flexcard |
-| [Shreyas Dhond, CTA (ShreyasD)](https://github.com/ShreyasD) | Primary contributor — Industries Common Core callable Apex | sf-industry-commoncore-callable-apex |
-
-## Issues & Support
-
-- [GitHub Issues](https://github.com/Jaganpro/sf-skills/issues)
 
 ## License
 
-MIT License - Copyright (c) 2024-2026 Jag Valaiyapathy
+MIT License — Copyright (c) 2024–2026 [Jag Valaiyapathy](https://github.com/Jaganpro) (original author)
+
+Fork modifications © 2026 [Nithesh Nekkanti](https://github.com/nitheshnekkantisonos)
