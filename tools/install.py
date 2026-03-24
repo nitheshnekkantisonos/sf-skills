@@ -1667,11 +1667,6 @@ def get_hooks_config() -> Dict[str, Any]:
                         "type": "command",
                         "command": f"{python_cmd} {scripts_path}/guardrails.py",
                         "timeout": 5000
-                    },
-                    {
-                        "type": "command",
-                        "command": f"{python_cmd} {scripts_path}/api-version-check.py",
-                        "timeout": 10000
                     }
                 ],
             },

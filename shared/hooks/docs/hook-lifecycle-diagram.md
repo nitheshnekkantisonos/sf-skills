@@ -31,7 +31,6 @@ flowchart TB
 
     subgraph hooks_pre["📌 PreToolUse Hooks"]
         H_GUARD["🛡️ guardrails.py"]
-        H_API["📊 api-version-check.py"]
     end
 
     subgraph hooks_post["📌 PostToolUse Hooks"]
@@ -59,7 +58,6 @@ flowchart TB
 
     %% PreToolUse hooks
     S3 -.-> H_GUARD
-    S3 -.-> H_API
 
     %% PostToolUse hooks
     S5 -.-> H_VALID
@@ -142,7 +140,7 @@ For terminals and viewers that don't render Mermaid:
 ┌─────────────────────────────────────────────────────────────────────────────────┐
 │  ⚙️ AGENTIC LOOP                              ┌───────────────────────────────┐ │
 │  ┌─────────────────────────────┐              │ 🛡️ guardrails.py             │ │
-│  │   CLAUDE CODE / LLM        │◀─────┐       │ 📊 api-version-check.py      │ │
+│  │   CLAUDE CODE / LLM        │◀─────┐       │                               │ │
 │  └──────────────┬──────────────┘      │       └───────────────────────────────┘ │
 │                 │                     │                      ▲                  │
 │                 ▼                     │       ┌──────────────┘                  │
@@ -201,7 +199,6 @@ For terminals and viewers that don't render Mermaid:
 | **SessionStart** | `org-preflight.py` | Validate SF org connectivity | State file |
 | **SessionStart** | `lsp-prewarm.py` | Spawn LSP servers in background | Background |
 | **PreToolUse** | `guardrails.py` | Block dangerous operations | BLOCK/MODIFY |
-| **PreToolUse** | `api-version-check.py` | Check API version compatibility | WARN |
 | **PostToolUse** | `validator-dispatcher.py` | Route to skill-specific validators | Feedback |
 
 ---
@@ -231,7 +228,7 @@ For terminals and viewers that don't render Mermaid:
 |-------|-----|---------|-------|
 | 🟦 Cyan-200 | `#a5f3fc` | Lifecycle event nodes | S1-S10 |
 | 🟩 Teal-200 | `#99f6e4` | SessionStart hooks | org-preflight, lsp-prewarm |
-| 🟧 Orange-200 | `#fed7aa` | Guards/Pre-checks | guardrails, api-version-check |
+| 🟧 Orange-200 | `#fed7aa` | Guards/Pre-checks | guardrails |
 | 🟣 Violet-200 | `#ddd6fe` | Validation | validator-dispatcher |
 | 🔵 Indigo-200 | `#c7d2fe` | Execution | LLM, EXEC |
 | 🟡 Amber-200 | `#fde68a` | Decision points | MORE WORK? |

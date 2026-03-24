@@ -85,7 +85,6 @@ flowchart TB
 
     subgraph hooks_pre["📌 PreToolUse Hooks"]
         H_GUARD["🛡️ guardrails.py"]
-        H_API["📊 api-version-check.py"]
     end
 
     subgraph hooks_post["📌 PostToolUse Hooks"]
@@ -122,7 +121,6 @@ flowchart TB
 
     %% PreToolUse hooks
     S4 -.-> H_GUARD
-    S4 -.-> H_API
 
     %% PostToolUse hooks
     S6 -.-> H_VALID
@@ -173,7 +171,6 @@ flowchart TB
 
     %% Node Styling - PreToolUse hooks (Orange-200)
     style H_GUARD fill:#fed7aa,stroke:#c2410c,color:#1f2937
-    style H_API fill:#fed7aa,stroke:#c2410c,color:#1f2937
 
     %% Node Styling - PostToolUse hooks (Violet-200)
     style H_VALID fill:#ddd6fe,stroke:#6d28d9,color:#1f2937

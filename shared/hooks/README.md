@@ -14,7 +14,6 @@ shared/hooks/
 │   ├── session-init.py               # Session initialization hook
 │   ├── lsp-prewarm.py                # LSP server pre-warming
 │   ├── org-preflight.py              # Org connectivity preflight check
-│   ├── api-version-check.py          # API version validation
 │   ├── naming_validator.py           # Naming convention enforcement
 │   ├── security_validator.py         # Security pattern detection
 │   └── stdin_utils.py               # Shared stdin reading utility
