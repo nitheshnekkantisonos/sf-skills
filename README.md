@@ -94,11 +94,6 @@ git pull
 bash ./tools/install.sh            # or: python3 ./tools/install.py
 ```
 
-| Install Method | Check for Updates | Update |
-|----------------|-------------------|--------|
-| **install.sh** | `python3 ~/.claude/sf-skills-install.py --status` | `cd sf-skills && git pull && bash ./tools/install.sh` |
-| **install.py** | `python3 ~/.claude/sf-skills-install.py --status` | `cd sf-skills && git pull && python3 ./tools/install.py` |
-
 ### Managing install.py
 
 > After sf-skills is installed, use the installed copy at `~/.claude/sf-skills-install.py` for normal updates. Use `tools/install.py` only when developing or testing from a cloned repo checkout.
