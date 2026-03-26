@@ -2677,15 +2677,17 @@ def cmd_install(dry_run: bool = False, force: bool = False,
     state, current_version = detect_state()
 
     if state == InstallState.UNIFIED and not force:
-        print_info(f"sf-skills already installed (v{current_version})")
         if with_datacloud_runtime:
-            print_info("Installing optional Data Cloud runtime as requested...")
-            ok, notes = install_datacloud_runtime(dry_run=dry_run)
-            for note in notes:
-                print_substep(note)
-            return 0 if ok else 1
-        print_info("Use --update to check for updates")
-        return 0
+            # Data Cloud runtime install requires up-to-date installer code
+            # (e.g., repo URL changes). Fall through to the full install path
+            # with force=True so the installer self-updates first.
+            print_info(f"sf-skills already installed (v{current_version})")
+            print_info("Running full install to ensure latest Data Cloud runtime config...")
+            force = True
+        else:
+            print_info(f"sf-skills already installed (v{current_version})")
+            print_info("Use --update to check for updates")
+            return 0
 
     if state == InstallState.UNIFIED and force:
         print_info(f"Reinstalling sf-skills (current: v{current_version})")
