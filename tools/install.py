@@ -760,6 +760,18 @@ def install_datacloud_runtime(dry_run: bool = False) -> Tuple[bool, List[str]]:
     DATACLOUD_RUNTIME_BASE_DIR.mkdir(parents=True, exist_ok=True)
 
     if status_before["managedGitCheckout"]:
+        # Ensure origin points to the correct (public) fork — earlier installs
+        # may have cloned from the private upstream repo.
+        _run_command(
+            ["git", "remote", "set-url", "origin", DATACLOUD_RUNTIME_REPO],
+            cwd=DATACLOUD_RUNTIME_PLUGIN_DIR, timeout=30,
+        )
+        # Discard lockfile / package.json drift from yarn install so that
+        # git pull --ff-only can fast-forward cleanly.
+        _run_command(
+            ["git", "checkout", "--", "."],
+            cwd=DATACLOUD_RUNTIME_PLUGIN_DIR, timeout=30,
+        )
         ok, msg = _run_command(["git", "pull", "--ff-only"], cwd=DATACLOUD_RUNTIME_PLUGIN_DIR, timeout=300)
         notes.append(f"{'Updated' if ok else 'Failed to update'} managed checkout: {msg or DATACLOUD_RUNTIME_PLUGIN_DIR}")
         if not ok:
