@@ -1242,10 +1242,14 @@ jq '[.steps[] | select(.stepType == "TransitionStep") | .data.to]' "$TRACES_PATH
 <p><strong>Activate command:</strong></p>
 
 <span class="code-label">bash</span>
-<pre class="code-block"><code class="language-bash">sf agent activate --api-name OrderSupport -o dev</code></pre>
+<pre class="code-block"><code class="language-bash"># Manual activation
+sf agent activate --api-name OrderSupport -o dev
+
+# CI / deterministic activation of a known BotVersion
+sf agent activate --api-name OrderSupport --version &lt;n&gt; -o dev --json</code></pre>
 
 <div class="callout callout--info">
-  <p><strong>Note:</strong> <code>sf agent activate</code> does not support <code>--json</code>. It prints a plain-text confirmation.</p>
+  <p><strong>Note:</strong> <code>sf agent activate</code> now supports <code>--json</code>. If you use <code>--json</code> without <code>--version</code>, the CLI activates the latest agent version. Prefer <code>--version</code> for CI/CD and reproducible rollouts.</p>
 </div>
 
 <p><strong>Important:</strong> Publishing does NOT activate. The new BotVersion is created as <code>Inactive</code>. Tests, preview, and end users continue hitting the previously active version until you explicitly activate.</p>
@@ -1574,12 +1578,35 @@ python3 ~/.claude/skills/sf-ai-agentforce-testing/hooks/scripts/multi_turn_test_
 <span class="code-label">bash</span>
 <pre class="code-block"><code class="language-bash"># Staging
 sf agent publish authoring-bundle --api-name OrderSupport -o staging --json
-sf agent activate --api-name OrderSupport -o staging
+sf agent activate --api-name OrderSupport --version &lt;n&gt; -o staging --json
 sf agent test run --api-name OrderSupportTest --wait 10 --result-format json --json -o staging
 
 # Production (after staging passes)
 sf agent publish authoring-bundle --api-name OrderSupport -o prod --json
-sf agent activate --api-name OrderSupport -o prod</code></pre>
+sf agent activate --api-name OrderSupport --version &lt;n&gt; -o prod --json</code></pre>
+
+<p>Use the explicit BotVersion number you intend to activate in each environment so pipeline activation stays deterministic.</p>
+
+<p><strong>CI/CD integration (GitHub Actions):</strong></p>
+
+<span class="code-label">yaml</span>
+<pre class="code-block"><code class="language-yaml">name: Agent Deployment
+on: [push]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Validate Agent
+        run: sf agent validate authoring-bundle --api-name OrderSupport -o staging --json
+      - name: Publish to Staging
+        run: sf agent publish authoring-bundle --api-name OrderSupport -o staging --json
+      - name: Activate
+        run: sf agent activate --api-name OrderSupport --version "$AGENT_VERSION" -o staging --json
+      - name: Run Tests
+        run: sf agent test run --api-name OrderSupportTest --wait 10 --result-format json --json -o staging</code></pre>
+
+<p>Set <code>AGENT_VERSION</code> in the workflow environment to the BotVersion number you intend to activate.</p>
 
 <hr>
 

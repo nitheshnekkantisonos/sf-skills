@@ -8,6 +8,9 @@
 | Create component | `sf template generate lightning component --name myComp --type lwc` |
 | Create FlexiPage | `sf template generate flexipage --name MyPage --template DefaultAppPage` |
 | Run all tests | `sf force lightning lwc test run` |
+| Preview a component locally | `sf lightning dev component --target-org my-sandbox` |
+| Preview an app locally | `sf lightning dev app --target-org my-sandbox` |
+| Preview an Experience Cloud site locally | `sf lightning dev site --target-org my-sandbox` |
 | Deploy component | `sf project deploy start --source-dir force-app/.../lwc/myComp` |
 | Create message channel | Manual XML: `force-app/.../messageChannels/MyChannel.messageChannel-meta.xml` |
 
@@ -174,15 +177,23 @@ sf project retrieve start \
 
 ### Preview Components Locally
 
-> **Note**: `sf lightning dev-server` was deprecated. Local Dev is now built into sf CLI.
+> **Note**: `sf lightning dev-server` was deprecated. In current SF CLI releases, Local Dev commands are installed just-in-time on first use via the Local Dev plugin.
 
 ```bash
-# Open component preview in browser (built into sf CLI, no plugin needed)
-sf org open --source-file force-app/main/default/lwc/myComp/myComp.js --target-org my-sandbox
+# Preview an LWC component in isolation
+sf lightning dev component --name myComp --target-org my-sandbox
 
-# Open specific Lightning page for testing
-sf org open --target-org my-sandbox --path /lightning/setup/FlexiPageList/home
+# Launch component preview and choose the component interactively
+sf lightning dev component --target-org my-sandbox
+
+# Preview a Lightning Experience app locally
+sf lightning dev app --target-org my-sandbox
+
+# Preview an Experience Cloud site locally
+sf lightning dev site --name "Partner Central" --target-org my-sandbox
 ```
+
+These commands start long-running local preview sessions with hot reload. Use `sf project deploy start` for changes that Local Dev can't reflect automatically.
 
 ---
 
@@ -320,12 +331,14 @@ sf force lightning lwc test run --coverage || exit 1
 sf project deploy start \
   --source-dir force-app/main/default/lwc \
   --target-org ci-sandbox \
-  --dry-run || exit 1
+  --dry-run \
+  --json || exit 1
 
 # Deploy if validation passes
 sf project deploy start \
   --source-dir force-app/main/default/lwc \
-  --target-org ci-sandbox
+  --target-org ci-sandbox \
+  --json
 ```
 
 ### Watch and Auto-Deploy

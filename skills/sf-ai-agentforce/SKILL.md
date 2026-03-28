@@ -105,6 +105,7 @@ Before publishing the agent itself, deploy the supporting stack:
 
 ### Publish does not activate
 After publish, run `sf agent activate` separately.
+For automation, prefer `sf agent activate --api-name <AgentName> --version <n> --target-org <alias> --json` so the rollout is deterministic and machine-readable.
 
 ---
 

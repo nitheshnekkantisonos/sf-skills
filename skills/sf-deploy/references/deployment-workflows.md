@@ -265,6 +265,8 @@ This file contains practical examples of common Salesforce deployment scenarios 
      --wait 30
    ```
 
+   > Current SF CLI releases support this combined pattern correctly, including runs where the manifest deploys one set of components while a destructive changes file deletes different components in the same operation.
+
 ---
 
 ## Example 8: Multi-Environment Deployment

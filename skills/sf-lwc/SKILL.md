@@ -128,14 +128,17 @@ Next step: <deploy, add controller, or run tests>
 Preview LWC components locally with hot reload — no deployment needed:
 
 ```bash
-# Start local dev server for an app
+# Preview LWC components in isolation
+sf lightning dev component --target-org <alias>
+
+# Preview a Lightning Experience app locally
 sf lightning dev app --target-org <alias>
 
-# Start local dev server for Experience Cloud sites
+# Preview an Experience Cloud site locally
 sf lightning dev site --target-org <alias>
 ```
 
-These are long-running processes that open a browser with live preview. Changes to `.js`, `.html`, and `.css` files auto-reload instantly. Requires an active org connection for data and Apex callouts.
+In current SF CLI releases, these Local Dev commands are installed just-in-time the first time you run them. They are long-running processes that open a browser with live preview. Changes to `.js`, `.html`, and `.css` files auto-reload instantly. Requires an active org connection for data and Apex callouts.
 
 ---
 

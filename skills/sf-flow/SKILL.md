@@ -141,17 +141,17 @@ Next step: <dry-run deploy, activate, or test>
 Run Flow tests from the command line without VS Code:
 
 ```bash
-# Create a flow test definition
-sf flow test create --flow-api-name MyFlow --target-org <alias> --json
-
-# Run flow tests
-sf flow test run --test-id <id> --target-org <alias> --json
-
 # Run all flow tests
-sf flow test run --target-org <alias> --json
+sf flow run test --target-org <alias> --json
+
+# Run tests for a specific flow
+sf flow run test --class-names MyFlow --target-org <alias> --json
+
+# Get results for an asynchronous run
+sf flow get test --test-run-id <id> --target-org <alias> --json
 ```
 
-Flow tests execute in the org and can take 1-5 minutes. Always run with `--json` and use background execution for longer runs.
+Flow tests execute in the org and can take 1-5 minutes. `sf flow run test` returns a test run ID for asynchronous runs; use `sf flow get test` to retrieve results later. Always run with `--json` and use background execution for longer runs.
 
 ---
 

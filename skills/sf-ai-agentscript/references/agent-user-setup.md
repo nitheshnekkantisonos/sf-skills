@@ -96,9 +96,16 @@ sf agent publish authoring-bundle \
   --api-name <AgentName> \
   -o TARGET_ORG --json
 
+# Manual activation
 sf agent activate \
   --api-name <AgentName> \
   -o TARGET_ORG
+
+# CI / deterministic activation of a known BotVersion
+sf agent activate \
+  --api-name <AgentName> \
+  --version <n> \
+  -o TARGET_ORG --json
 ```
 
 **Critical Notes:**
@@ -348,12 +355,20 @@ sf agent publish authoring-bundle \
 #### 6.4: Activate Agent
 
 ```bash
+# Manual activation
 sf agent activate \
   --api-name <AgentName> \
   -o TARGET_ORG
+
+# CI / deterministic activation of a known BotVersion
+sf agent activate \
+  --api-name <AgentName> \
+  --version <n> \
+  -o TARGET_ORG --json
 ```
 
-> `sf agent activate` does NOT support `--json`. It prints a plain-text confirmation.
+> `sf agent activate` now supports `--json`.
+> If you use `--json` without `--version`, the CLI activates the latest agent version. Prefer `--version` for CI/CD and reproducible rollouts.
 
 #### 6.5: Verify Activation
 

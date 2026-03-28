@@ -17,7 +17,7 @@ echo "════════════════════════�
 # Step 0: Pre-flight checks
 echo "📋 Pre-flight checks..."
 sf --version || { echo "❌ sf CLI not found"; exit 1; }
-sf org display --target-org "$TARGET_ORG" || { echo "❌ Cannot connect to org"; exit 1; }
+sf org display --target-org "$TARGET_ORG" --json || { echo "❌ Cannot connect to org"; exit 1; }
 
 # Step 0.5: Dry-run validation first
 echo "🧪 Step 0.5: Running dry-run validation..."
@@ -25,21 +25,24 @@ sf project deploy start \
     --dry-run \
     --source-dir "$PROJECT_DIR/force-app/main/default" \
     --target-org "$TARGET_ORG" \
-    --wait 30
+    --wait 30 \
+    --json
 
 # Step 1: Deploy Custom Objects/Fields
 echo "📦 Step 1: Deploying objects and fields..."
 sf project deploy start \
     --source-dir "$PROJECT_DIR/force-app/main/default/objects" \
     --target-org "$TARGET_ORG" \
-    --wait 10
+    --wait 10 \
+    --json
 
 # Step 2: Deploy Permission Sets
 echo "📦 Step 2: Deploying permission sets..."
 sf project deploy start \
     --source-dir "$PROJECT_DIR/force-app/main/default/permissionsets" \
     --target-org "$TARGET_ORG" \
-    --wait 10
+    --wait 10 \
+    --json
 
 # Step 3: Deploy Apex (with tests)
 echo "📦 Step 3: Deploying Apex..."
@@ -48,14 +51,16 @@ sf project deploy start \
     --source-dir "$PROJECT_DIR/force-app/main/default/triggers" \
     --target-org "$TARGET_ORG" \
     --test-level RunLocalTests \
-    --wait 30
+    --wait 30 \
+    --json
 
 # Step 4: Deploy Flows (Draft)
 echo "📦 Step 4: Deploying flows..."
 sf project deploy start \
     --source-dir "$PROJECT_DIR/force-app/main/default/flows" \
     --target-org "$TARGET_ORG" \
-    --wait 10
+    --wait 10 \
+    --json
 
 echo "═══════════════════════════════════════════════════════════════════"
 echo "  ✅ DEPLOYMENT COMPLETE"
