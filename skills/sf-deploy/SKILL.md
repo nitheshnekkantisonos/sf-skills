@@ -190,7 +190,9 @@ For full agent DevOps details, including `Agent:` pseudo metadata, publish/activ
 
 **Before deployment, be aware of the project's custom metadata and settings that affect runtime behavior.** Review the repo knowledge base for configuration dependencies.
 
-Refer: [shared/repo-knowledge.md](../../shared/repo-knowledge.md)
+Refer to the confluence article by using mcp:
+
+https://sonosinc.atlassian.net/wiki/spaces/ETO/pages/2420146380/Salesforce+Truckin+Repo+Documentation
 
 ---
 

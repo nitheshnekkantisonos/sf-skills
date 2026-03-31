@@ -165,7 +165,9 @@ Next step: <deploy, register, test, or implement>
 
 **Before writing new callout utilities or auth helpers — check the repo knowledge base first.** Reuse what already exists.
 
-Refer: [shared/repo-knowledge.md](../../shared/repo-knowledge.md)
+Refer to the confluence article by using mcp:
+
+https://sonosinc.atlassian.net/wiki/spaces/ETO/pages/2420146380/Salesforce+Truckin+Repo+Documentation
 
 ---
 
