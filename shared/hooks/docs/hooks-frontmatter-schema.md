@@ -21,13 +21,13 @@ metadata:
 hooks:
   SessionStart:
     - type: command
-      command: "${SHARED_HOOKS}/check-env-weekly.sh"
+      command: "${SHARED_HOOKS}/scripts/session-init.py"
       timeout: 5000
   PreToolUse:
     - matcher: Bash
       hooks:
         - type: command
-          command: "${SHARED_HOOKS}/scripts/guardrails.py"
+          command: "${SHARED_HOOKS}/scripts/validator-dispatcher.py"
           timeout: 5000
   PostToolUse:
     - matcher: "Write|Edit"
@@ -73,7 +73,7 @@ For events that don't need tool matching (SessionStart):
 hooks:
   SessionStart:
     - type: command
-      command: "${SHARED_HOOKS}/check-env-weekly.sh"
+      command: "${SHARED_HOOKS}/scripts/session-init.py"
       timeout: 5000
 ```
 
@@ -118,7 +118,7 @@ hooks:
 hooks:
   SessionStart:
     - type: command
-      command: "${SHARED_HOOKS}/check-env-weekly.sh"
+      command: "${SHARED_HOOKS}/scripts/session-init.py"
       timeout: 5000
 ```
 
@@ -130,7 +130,7 @@ hooks:
     - matcher: Bash
       hooks:
         - type: command
-          command: "python3 ${SHARED_HOOKS}/scripts/guardrails.py"
+          command: "python3 ${SHARED_HOOKS}/scripts/validator-dispatcher.py"
           timeout: 5000
 ```
 
@@ -180,13 +180,13 @@ metadata:
 hooks:
   SessionStart:
     - type: command
-      command: "${SHARED_HOOKS}/check-env-weekly.sh"
+      command: "${SHARED_HOOKS}/scripts/session-init.py"
       timeout: 5000
   PreToolUse:
     - matcher: Bash
       hooks:
         - type: command
-          command: "python3 ${SHARED_HOOKS}/scripts/guardrails.py"
+          command: "python3 ${SHARED_HOOKS}/scripts/validator-dispatcher.py"
           timeout: 5000
   PostToolUse:
     - matcher: "Write|Edit"

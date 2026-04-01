@@ -2,18 +2,19 @@
 """
 Apex Validator for sf-skills plugin.
 
-Validates Salesforce Apex code (.cls, .trigger) for common anti-patterns
-and best practice violations.
+Validates Salesforce Apex code (.cls, .trigger) for patterns that
+Code Analyzer (PMD) does not cover.
 
-Scoring Categories (150 points total):
-1. Bulkification (25 pts): SOQL/DML in loops
-2. Security (25 pts): sharing settings, FLS, SOQL injection
-3. Testing (25 pts): test methods, assertions, coverage
-4. Architecture (20 pts): separation of concerns, patterns
-5. Clean Code (20 pts): naming, complexity, comments
-6. Error Handling (15 pts): try-catch, custom exceptions
-7. Performance (10 pts): limits, caching, async
-8. Documentation (10 pts): ApexDoc, inline comments
+Scoring Categories (90 points total):
+1. Testing (25 pts): test methods, assertions, coverage
+2. Architecture (20 pts): separation of concerns, patterns
+3. Clean Code (20 pts): naming, complexity, comments
+4. Error Handling (15 pts): try-catch, custom exceptions
+5. Performance (10 pts): limits, caching, async
+
+NOTE: Bulkification, security, documentation, and hardcoded IDs are
+handled by sf code-analyzer (PMD rules) which runs as a separate
+validation phase. This avoids duplicate checking with less accuracy.
 """
 
 import re
@@ -37,14 +38,11 @@ class ApexValidator:
         self.lines = []
         self.issues = []
         self.scores = {
-            'bulkification': 25,
-            'security': 25,
             'testing': 25,
             'architecture': 20,
             'clean_code': 20,
             'error_handling': 15,
             'performance': 10,
-            'documentation': 10
         }
 
         # Read file content
@@ -76,26 +74,23 @@ class ApexValidator:
                 'issues': self.issues
             }
 
-        # Run all checks
-        self._check_soql_in_loops()
-        self._check_dml_in_loops()
-        self._check_security_patterns()
+        # Run checks (bulkification, security, documentation handled by Code Analyzer PMD)
         self._check_null_checks()
         self._check_naming_conventions()
         self._check_error_handling()
-        self._check_documentation()
 
         # Calculate total score
         total_score = sum(self.scores.values())
+        max_score = 90
 
         # Determine rating
-        if total_score >= 135:
+        if total_score >= 81:
             rating = '⭐⭐⭐⭐⭐ Excellent'
-        elif total_score >= 112:
+        elif total_score >= 68:
             rating = '⭐⭐⭐⭐ Very Good'
-        elif total_score >= 90:
+        elif total_score >= 54:
             rating = '⭐⭐⭐ Good'
-        elif total_score >= 67:
+        elif total_score >= 40:
             rating = '⭐⭐ Needs Work'
         else:
             rating = '⭐ Critical Issues'
@@ -103,135 +98,11 @@ class ApexValidator:
         return {
             'file': os.path.basename(self.file_path),
             'score': total_score,
-            'max_score': 150,
+            'max_score': max_score,
             'rating': rating,
             'scores': self.scores.copy(),
             'issues': self.issues
         }
-
-    def _check_soql_in_loops(self):
-        """Check for SOQL queries inside loops (critical anti-pattern)."""
-        loop_stack = []  # list of {'start': line_num, 'depth': brace_depth}
-
-        loop_patterns = [
-            r'\bfor\s*\(',
-            r'\bwhile\s*\(',
-            r'\bdo\s*\{'
-        ]
-        soql_pattern = r'\[\s*SELECT\s+'
-
-        for i, line in enumerate(self.lines, 1):
-            for pattern in loop_patterns:
-                if re.search(pattern, line, re.IGNORECASE):
-                    loop_stack.append({'start': i, 'depth': 0})
-
-            open_braces = line.count('{')
-            close_braces = line.count('}')
-            for scope in loop_stack:
-                scope['depth'] += open_braces - close_braces
-            loop_stack = [s for s in loop_stack if s['depth'] > 0]
-
-            if loop_stack and re.search(soql_pattern, line, re.IGNORECASE):
-                self.issues.append({
-                    'severity': 'CRITICAL',
-                    'category': 'bulkification',
-                    'message': f'SOQL query inside loop (loop started line {loop_stack[0]["start"]})',
-                    'line': i,
-                    'fix': 'Move SOQL before loop, query all needed records, filter in loop'
-                })
-                self.scores['bulkification'] -= 10
-
-    def _check_dml_in_loops(self):
-        """Check for DML operations inside loops (critical anti-pattern)."""
-        loop_stack = []  # list of {'start': line_num, 'depth': brace_depth}
-
-        loop_patterns = [
-            r'\bfor\s*\(',
-            r'\bwhile\s*\(',
-            r'\bdo\s*\{'
-        ]
-
-        dml_patterns = [
-            r'\binsert\s+',
-            r'\bupdate\s+',
-            r'\bdelete\s+',
-            r'\bupsert\s+',
-            r'\bundelete\s+',
-            r'Database\.(insert|update|delete|upsert)'
-        ]
-
-        for i, line in enumerate(self.lines, 1):
-            for pattern in loop_patterns:
-                if re.search(pattern, line, re.IGNORECASE):
-                    loop_stack.append({'start': i, 'depth': 0})
-
-            open_braces = line.count('{')
-            close_braces = line.count('}')
-            for scope in loop_stack:
-                scope['depth'] += open_braces - close_braces
-            loop_stack = [s for s in loop_stack if s['depth'] > 0]
-
-            if loop_stack:
-                for dml_pattern in dml_patterns:
-                    if re.search(dml_pattern, line, re.IGNORECASE):
-                        self.issues.append({
-                            'severity': 'CRITICAL',
-                            'category': 'bulkification',
-                            'message': f'DML inside loop (loop started line {loop_stack[0]["start"]})',
-                            'line': i,
-                            'fix': 'Collect records in loop, perform single DML after loop'
-                        })
-                        self.scores['bulkification'] -= 10
-
-    def _check_security_patterns(self):
-        """Check for security-related patterns."""
-        # Check class-level sharing
-        class_pattern = r'(public|private|global)\s+(class|interface)\s+\w+'
-        sharing_pattern = r'(with sharing|without sharing|inherited sharing)'
-
-        has_class = False
-        has_sharing = False
-
-        for i, line in enumerate(self.lines, 1):
-            if re.search(class_pattern, line, re.IGNORECASE):
-                has_class = True
-                if re.search(sharing_pattern, line, re.IGNORECASE):
-                    has_sharing = True
-                    # Check for without sharing (warning)
-                    if 'without sharing' in line.lower():
-                        self.issues.append({
-                            'severity': 'WARNING',
-                            'category': 'security',
-                            'message': 'Class uses "without sharing" - ensure this is intentional',
-                            'line': i,
-                            'fix': 'Use "with sharing" by default, "inherited sharing" for utilities'
-                        })
-                        self.scores['security'] -= 5
-
-        if has_class and not has_sharing:
-            self.issues.append({
-                'severity': 'WARNING',
-                'category': 'security',
-                'message': 'Class missing explicit sharing declaration',
-                'line': 1,
-                'fix': 'Add "with sharing" (recommended) or "inherited sharing" to class declaration'
-            })
-            self.scores['security'] -= 5
-
-        # Check for SOQL injection vulnerability
-        dynamic_soql_pattern = r"Database\.query\s*\("
-        for i, line in enumerate(self.lines, 1):
-            if re.search(dynamic_soql_pattern, line):
-                # Check if using String.escapeSingleQuotes
-                if 'escapeSingleQuotes' not in self.content:
-                    self.issues.append({
-                        'severity': 'WARNING',
-                        'category': 'security',
-                        'message': 'Dynamic SOQL without evident escape - potential injection risk',
-                        'line': i,
-                        'fix': 'Use String.escapeSingleQuotes() or bind variables'
-                    })
-                    self.scores['security'] -= 5
 
     def _check_null_checks(self):
         """Check for missing null checks before method calls."""
@@ -311,31 +182,6 @@ class ApexValidator:
             # This is OK as a fallback, but should have specific catches first
             pass
 
-    def _check_documentation(self):
-        """Check for documentation/comments."""
-        # Check for ApexDoc on public methods
-        public_method_pattern = r'public\s+(\w+)\s+(\w+)\s*\('
-
-        for i, line in enumerate(self.lines, 1):
-            if re.search(public_method_pattern, line):
-                # Check if there's a comment/ApexDoc before this line
-                has_doc = False
-                if i > 1:
-                    prev_lines = '\n'.join(self.lines[max(0, i-5):i-1])
-                    if '/**' in prev_lines or '//' in prev_lines:
-                        has_doc = True
-
-                if not has_doc:
-                    self.issues.append({
-                        'severity': 'INFO',
-                        'category': 'documentation',
-                        'message': 'Public method missing documentation',
-                        'line': i,
-                        'fix': 'Add ApexDoc comment: /** @description ... */'
-                    })
-                    self.scores['documentation'] -= 2
-
-
 def main():
     """Command-line interface for Apex validation."""
     if len(sys.argv) < 2:
@@ -352,8 +198,8 @@ def main():
     results = validator.validate()
 
     # Print results
-    print(f"\n🔍 Apex Validation: {results['file']}")
-    print(f"Score: {results['score']}/{results['max_score']} {results['rating']}")
+    print(f"\n🔍 Apex Validation (patterns): {results['file']}")
+    print(f"Score: {results['score']}/{results['max_score']} {results['rating']}  (PMD handles bulkification, security, docs)")
     print()
 
     if results['issues']:

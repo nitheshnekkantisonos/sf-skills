@@ -564,11 +564,11 @@ For CI/CD and automation, use the non-interactive preview subcommands:
 # Start a preview session (returns session ID)
 sf agent preview start --api-name My_Agent -o ORG --json
 
-# Send a message to the session
-sf agent preview send --session-id SESSION_ID --message "Hello" -o ORG --json
+# Send an utterance to the session
+sf agent preview send --session-id SESSION_ID --utterance "Hello" -o ORG --json
 
-# Send a follow-up message (same session for multi-turn)
-sf agent preview send --session-id SESSION_ID --message "Check order 12345" -o ORG --json
+# Send a follow-up utterance (same session for multi-turn)
+sf agent preview send --session-id SESSION_ID --utterance "Check order 12345" -o ORG --json
 
 # End the session
 sf agent preview end --session-id SESSION_ID -o ORG --json

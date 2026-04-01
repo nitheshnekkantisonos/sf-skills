@@ -15,8 +15,7 @@ flowchart TB
     end
 
     subgraph hooks_session["📌 SessionStart Hooks"]
-        H_ORG["🔌 org-preflight.py"]
-        H_LSP["⚡ lsp-prewarm.py"]
+        H_INIT["🏗️ session-init.py"]
     end
 
     subgraph agentic["⚙️ AGENTIC LOOP"]
@@ -30,8 +29,7 @@ flowchart TB
     end
 
     subgraph hooks_pre["📌 PreToolUse Hooks"]
-        H_GUARD["🛡️ guardrails.py"]
-        H_API["📊 api-version-check.py"]
+        H_GUARD["🛡️ guardrails (prompt hook)"]
     end
 
     subgraph hooks_post["📌 PostToolUse Hooks"]
@@ -49,8 +47,7 @@ flowchart TB
     S1 --> S2 --> LLM
 
     %% SessionStart hooks
-    S1 -.-> H_ORG
-    S1 -.-> H_LSP
+    S1 -.-> H_INIT
 
     %% Agentic Loop
     LLM --> S3 --> S4 --> EXEC
@@ -59,7 +56,6 @@ flowchart TB
 
     %% PreToolUse hooks
     S3 -.-> H_GUARD
-    S3 -.-> H_API
 
     %% PostToolUse hooks
     S5 -.-> H_VALID
@@ -93,8 +89,7 @@ flowchart TB
     style MORE_Q fill:#fde68a,stroke:#b45309,color:#1f2937
 
     %% Node Styling - SessionStart hooks (Teal-200)
-    style H_ORG fill:#99f6e4,stroke:#0f766e,color:#1f2937
-    style H_LSP fill:#99f6e4,stroke:#0f766e,color:#1f2937
+    style H_INIT fill:#99f6e4,stroke:#0f766e,color:#1f2937
 
     %% Node Styling - PreToolUse hooks (Orange-200)
     style H_GUARD fill:#fed7aa,stroke:#c2410c,color:#1f2937
@@ -133,16 +128,14 @@ For terminals and viewers that don't render Mermaid:
 │           │                      │                                              │
 │           ▼                      │                                              │
 │  ┌─────────────────────────┐     │                                              │
-│  │ 🔌 org-preflight.py     │     │                                              │
-│  │ ⚡ lsp-prewarm.py       │     │                                              │
 │  └─────────────────────────┘     │                                              │
 └──────────────────────────────────│──────────────────────────────────────────────┘
                                    │
                                    ▼
 ┌─────────────────────────────────────────────────────────────────────────────────┐
 │  ⚙️ AGENTIC LOOP                              ┌───────────────────────────────┐ │
-│  ┌─────────────────────────────┐              │ 🛡️ guardrails.py             │ │
-│  │   CLAUDE CODE / LLM        │◀─────┐       │ 📊 api-version-check.py      │ │
+│  ┌─────────────────────────────┐              │ 🛡️ guardrails (prompt hook)  │ │
+│  │   CLAUDE CODE / LLM        │◀─────┐       │                               │ │
 │  └──────────────┬──────────────┘      │       └───────────────────────────────┘ │
 │                 │                     │                      ▲                  │
 │                 ▼                     │       ┌──────────────┘                  │
@@ -198,10 +191,8 @@ For terminals and viewers that don't render Mermaid:
 
 | Event | Hook Script | Purpose | Action Type |
 |-------|-------------|---------|-------------|
-| **SessionStart** | `org-preflight.py` | Validate SF org connectivity | State file |
-| **SessionStart** | `lsp-prewarm.py` | Spawn LSP servers in background | Background |
-| **PreToolUse** | `guardrails.py` | Block dangerous operations | BLOCK/MODIFY |
-| **PreToolUse** | `api-version-check.py` | Check API version compatibility | WARN |
+| **SessionStart** | `session-init.py` | Session directory lifecycle | State file |
+| **PreToolUse** | Prompt hook (Haiku) | Advisory CLI warnings | ALLOW |
 | **PostToolUse** | `validator-dispatcher.py` | Route to skill-specific validators | Feedback |
 
 ---
@@ -214,7 +205,7 @@ For terminals and viewers that don't render Mermaid:
 |---|-------|------|-------------|
 | 1 | **SessionStart** | Claude Code session begins | State files, background tasks |
 | 2 | **Setup** | Configuration loaded | (no hooks) |
-| 3 | **PreToolUse** | Before tool executes | ALLOW, BLOCK, MODIFY |
+| 3 | **PreToolUse** | Before tool executes | ALLOW (+ optional warning context) |
 | 4 | **PermissionRequest** | Tool needs approval | APPROVE, DENY, defer to user |
 | 5 | **PostToolUse (success)** | Tool completed successfully | Feedback |
 | 6 | **PostToolUse (failure)** | Tool failed | Error analysis |
@@ -230,8 +221,8 @@ For terminals and viewers that don't render Mermaid:
 | Color | Hex | Meaning | Nodes |
 |-------|-----|---------|-------|
 | 🟦 Cyan-200 | `#a5f3fc` | Lifecycle event nodes | S1-S10 |
-| 🟩 Teal-200 | `#99f6e4` | SessionStart hooks | org-preflight, lsp-prewarm |
-| 🟧 Orange-200 | `#fed7aa` | Guards/Pre-checks | guardrails, api-version-check |
+| 🟩 Teal-200 | `#99f6e4` | SessionStart hooks | session-init |
+| 🟧 Orange-200 | `#fed7aa` | Guards/Pre-checks | guardrails |
 | 🟣 Violet-200 | `#ddd6fe` | Validation | validator-dispatcher |
 | 🔵 Indigo-200 | `#c7d2fe` | Execution | LLM, EXEC |
 | 🟡 Amber-200 | `#fde68a` | Decision points | MORE WORK? |
@@ -240,13 +231,12 @@ For terminals and viewers that don't render Mermaid:
 
 ## Hook Interaction Patterns
 
-### Pattern 1: Blocking Flow
+### Pattern 1: Advisory Flow
 
 ```
-PreToolUse → guardrails.py
-         ├─ Allow: Continue to Permission Request
-         └─ Block: Return error message to LLM
-                   (tool never executes)
+PreToolUse → guardrails prompt hook (Haiku)
+         └─ Allow: Continue to Permission Request
+            + optional warning context
 ```
 
 ### Pattern 2: Feedback Loop
@@ -259,9 +249,8 @@ PostToolUse → validator-dispatcher.py → Validates file
 ### Pattern 3: Workflow Tracking
 
 ```
-SessionStart → org-preflight.py → Writes ~/.claude/.sf-org-state.json
-           → lsp-prewarm.py → Writes ~/.claude/.lsp-prewarm-state.json
-                            → Status line reads these files
+SessionStart → session-init.py → Creates ~/.claude/sessions/{PID}/
+                                → Cleans dead session directories
 ```
 
 ---

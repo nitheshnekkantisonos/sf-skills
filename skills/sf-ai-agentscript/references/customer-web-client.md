@@ -18,14 +18,16 @@ sf project retrieve start --metadata "GenAiPlannerBundle:AgentName_vNN" -o TARGE
 # Step 3: Add CustomerWebClient plannerSurface to the XML (see template below)
 
 # Step 4: Deactivate agent (deploy fails while active)
-sf agent deactivate --api-name AgentName -o TARGET_ORG
+sf agent deactivate --api-name AgentName -o TARGET_ORG --json
 
 # Step 5: Deploy patched bundle
 sf project deploy start --metadata "GenAiPlannerBundle:AgentName_vNN" -o TARGET_ORG --json
 
-# Step 6: Reactivate agent
-sf agent activate --api-name AgentName -o TARGET_ORG
+# Step 6: Reactivate the same BotVersion created in Step 1
+sf agent activate --api-name AgentName --version NN -o TARGET_ORG --json
 ```
+
+> Use the same `NN` value from the `GenAiPlannerBundle:AgentName_vNN` version you just patched so the reactivation is deterministic.
 
 ## Step 3 — XML patch template
 

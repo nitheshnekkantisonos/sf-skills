@@ -98,6 +98,12 @@ sf project retrieve start --metadata Agent:Support_Agent,Agent:Sales_Agent --tar
 # Retrieve just the bot definition
 sf project retrieve start --metadata Bot:Customer_Support_Agent --target-org myorg
 
+# Retrieve a specific BotVersion along with the bot definition
+sf project retrieve start \
+  --metadata Bot:Customer_Support_Agent \
+  --metadata BotVersion:Customer_Support_Agent.v3 \
+  --target-org myorg
+
 # Retrieve just the planner bundle
 sf project retrieve start --metadata GenAiPlannerBundle:Customer_Support_Agent_Planner --target-org myorg
 
@@ -107,6 +113,8 @@ sf project retrieve start --metadata GenAiPlugin --target-org myorg
 # Retrieve all functions (actions)
 sf project retrieve start --metadata GenAiFunction --target-org myorg
 ```
+
+> **Versioned retrieve note:** Current SF CLI releases correctly retrieve the specific `BotVersion` you request instead of always pulling only the latest version.
 
 ### Deploying Agents to Org
 
@@ -130,13 +138,23 @@ sf project deploy start --metadata Agent:Support_Agent,Agent:Sales_Agent --targe
 Makes an agent available to users.
 
 ```bash
+# Manual activation
 sf agent activate --api-name [AgentName] --target-org [alias]
+
+# CI / deterministic activation of a known BotVersion
+sf agent activate --api-name [AgentName] --version [N] --target-org [alias] --json
 ```
 
 **Requirements:**
 - Agent must be published first (`sf agent publish authoring-bundle`)
 - All Apex classes and Flows must be deployed
 - `default_agent_user` must be a valid org user with Agentforce permissions
+
+**Activation notes:**
+- `--version [N]` maps to the `vN` suffix in `BotVersion` metadata
+- Omitting `--version` triggers interactive version selection
+- Using `--json` without `--version` activates the latest agent version
+- For CI/CD and reproducible rollouts, prefer `--version [N] --json`
 
 **Post-Activation:**
 - Agent is immediately available to users
@@ -148,7 +166,11 @@ sf agent activate --api-name [AgentName] --target-org [alias]
 Deactivates an agent for modifications. **Required before making changes.**
 
 ```bash
+# Manual deactivation
 sf agent deactivate --api-name [AgentName] --target-org [alias]
+
+# Script-friendly deactivation
+sf agent deactivate --api-name [AgentName] --target-org [alias] --json
 ```
 
 **When Deactivation is Required:**
@@ -299,41 +321,44 @@ set -e  # Exit on error
 
 ORG_ALIAS=$1
 AGENT_NAME=$2
+AGENT_VERSION=$3
 
-echo "🚀 Deploying agent: $AGENT_NAME to $ORG_ALIAS"
+echo "🚀 Deploying agent: $AGENT_NAME to $ORG_ALIAS (version: $AGENT_VERSION)"
 
 # Step 1: Deploy dependencies
 echo "📦 Deploying Apex classes..."
-sf project deploy start --metadata ApexClass --target-org $ORG_ALIAS --wait 10
+sf project deploy start --metadata ApexClass --target-org $ORG_ALIAS --wait 10 --json
 
 echo "📦 Deploying Flows..."
-sf project deploy start --metadata Flow --target-org $ORG_ALIAS --wait 10
+sf project deploy start --metadata Flow --target-org $ORG_ALIAS --wait 10 --json
 
 # Step 2: Validate agent script
 echo "✅ Validating Agent Script..."
-sf agent validate authoring-bundle --api-name $AGENT_NAME --target-org $ORG_ALIAS
+sf agent validate authoring-bundle --api-name $AGENT_NAME --target-org $ORG_ALIAS --json
 
 # Step 3: Check if agent exists (deactivate if needed)
 echo "🔍 Checking agent status..."
-if sf agent deactivate --api-name $AGENT_NAME --target-org $ORG_ALIAS 2>/dev/null; then
+if sf agent deactivate --api-name $AGENT_NAME --target-org $ORG_ALIAS --json 2>/dev/null; then
     echo "⏸️ Agent deactivated for update"
 fi
 
 # Step 4: Publish agent (--skip-retrieve skips metadata retrieval, faster in CI)
 echo "📤 Publishing agent..."
-sf agent publish authoring-bundle --api-name $AGENT_NAME --target-org $ORG_ALIAS --skip-retrieve
+sf agent publish authoring-bundle --api-name $AGENT_NAME --target-org $ORG_ALIAS --skip-retrieve --json
 
-# Step 5: Activate agent
+# Step 5: Activate agent deterministically
 echo "▶️ Activating agent..."
-sf agent activate --api-name $AGENT_NAME --target-org $ORG_ALIAS
+sf agent activate --api-name $AGENT_NAME --version $AGENT_VERSION --target-org $ORG_ALIAS --json
 
 echo "✅ Agent deployment complete: $AGENT_NAME"
 ```
 
 Usage:
 ```bash
-./deploy-agent.sh myorg Customer_Support_Agent
+./deploy-agent.sh myorg Customer_Support_Agent 4
 ```
+
+Pass the BotVersion number you intend to activate as the third argument.
 
 ---
 
@@ -427,10 +452,12 @@ If the agent is active, you must deactivate before deploying:
 
 ```bash
 # Deactivate → Deploy → Activate
-sf agent deactivate --api-name AgentName -o TARGET_ORG
+sf agent deactivate --api-name AgentName -o TARGET_ORG --json
 sf project deploy start --metadata "GenAiPlannerBundle:AgentName_vNN" -o TARGET_ORG --json
-sf agent activate --api-name AgentName -o TARGET_ORG
+sf agent activate --api-name AgentName --version NN -o TARGET_ORG --json
 ```
+
+Use the same `NN` value from the planner bundle version you just patched so activation is deterministic.
 
 ### Fix: Enable surfacesEnabled on BotVersion
 
@@ -459,8 +486,13 @@ Use `sf agent generate template` to package an agent for distribution via manage
 ```bash
 sf agent generate template \
     --agent-file force-app/main/default/bots/My_Agent/My_Agent.bot-meta.xml \
-    --agent-version 1
+    --agent-version 1 \
+    --output-dir my-package \
+    --source-org my-scratch-org \
+    --json
 ```
+
+> **Important:** This command packages Bot / BotVersion-based agents. It does **not** package Agent Script `.agent` authoring bundles.
 
 ### What Gets Generated
 
@@ -483,6 +515,8 @@ The command generates a `BotTemplate` metadata type that wraps:
 - Subscribers can modify topics, actions, and instructions after installation
 - The `--agent-version` flag specifies which BotVersion to template (typically `1` for new agents)
 - The `--agent-file` must point to the `.bot-meta.xml` file in your local project
+- `--source-org` must be a namespaced scratch org that contains the source agent
+- Agent Script `.agent` bundles currently need a different rollout path; use source-driven publish workflows instead of `sf agent generate template`
 
 ---
 
@@ -561,8 +595,8 @@ sf agent activate --api-name My_Agent --target-org myorg
 |---------|-------------|
 | `sf agent publish authoring-bundle --api-name X` | Publish authoring bundle |
 | `sf agent publish authoring-bundle --api-name X --skip-retrieve` | Publish without retrieving from org (CI/CD) |
-| `sf agent activate --api-name X` | Activate published agent |
-| `sf agent deactivate --api-name X` | Deactivate agent for changes |
+| `sf agent activate --api-name X --version N --json` | Activate a specific published BotVersion deterministically |
+| `sf agent deactivate --api-name X --json` | Deactivate agent for changes |
 | `sf agent preview --api-name X` | Preview agent behavior |
 | `sf agent validate authoring-bundle --api-name X` | Validate Agent Script syntax |
 
@@ -573,6 +607,7 @@ sf agent activate --api-name My_Agent --target-org myorg
 | `sf project retrieve start --metadata Agent:X` | Retrieve agent + components |
 | `sf project deploy start --metadata Agent:X` | Deploy agent metadata |
 | `sf project retrieve start --metadata Bot:X` | Retrieve bot definition only |
+| `sf project retrieve start --metadata Bot:X --metadata BotVersion:X.vN` | Retrieve a specific BotVersion |
 | `sf project retrieve start --metadata GenAiPlannerBundle:X` | Retrieve planner bundle |
 | `sf project retrieve start --metadata GenAiPlugin` | Retrieve all plugins |
 | `sf project retrieve start --metadata GenAiFunction` | Retrieve all functions |

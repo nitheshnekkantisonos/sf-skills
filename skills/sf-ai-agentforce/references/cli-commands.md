@@ -20,39 +20,50 @@ This document covers all `sf agent` CLI commands relevant to the Agentforce plat
 Makes a published agent available to users.
 
 ```bash
+# Manual / interactive activation
 sf agent activate --api-name <AgentApiName> --target-org <alias>
+
+# CI / deterministic activation of a known BotVersion
+sf agent activate --api-name <AgentApiName> --version <n> --target-org <alias> --json
 ```
 
 | Flag | Required | Description |
 |------|----------|-------------|
-| `--api-name` | Yes | API name of the agent to activate |
+| `--api-name` | No | API name of the agent to activate; if omitted, the CLI prompts you to choose |
 | `--target-org` | Yes | Alias or username of the target org |
 | `--api-version` | No | Override the API version used for the request |
-| `--json` | No | ⚠️ Not supported — outputs nothing. Omit this flag. |
+| `--version` | No | BotVersion number to activate (`vX` in metadata corresponds to `--version X`) |
+| `--json` | No | Format output as JSON |
 
 **Prerequisites:** Agent must be published first via `sf agent publish authoring-bundle`.
+
+> **Automation note:** If you omit `--version`, the CLI prompts you to choose a version interactively. If you use `--json` without `--version`, the CLI activates the latest agent version. Prefer `--version` for CI/CD and reproducible rollout scripts.
 
 ### sf agent deactivate
 
 Deactivates an active agent. Required before making changes to topics, actions, or system instructions.
 
 ```bash
+# Manual / interactive deactivation
 sf agent deactivate --api-name <AgentApiName> --target-org <alias>
+
+# Script-friendly deactivation
+sf agent deactivate --api-name <AgentApiName> --target-org <alias> --json
 ```
 
 | Flag | Required | Description |
 |------|----------|-------------|
-| `--api-name` | Yes | API name of the agent to deactivate |
+| `--api-name` | No | API name of the agent to deactivate; if omitted, the CLI prompts you to choose |
 | `--target-org` | Yes | Alias or username of the target org |
 | `--api-version` | No | Override the API version used for the request |
-| `--json` | No | ⚠️ Not supported — outputs nothing. Omit this flag. |
+| `--json` | No | Format output as JSON |
 
 ### sf agent create
 
 Creates a new agent from a spec file.
 
 ```bash
-sf agent create --spec <path-to-spec.yaml> --target-org <alias> --json
+sf agent create --name "My Agent" --api-name My_Agent --spec <path-to-spec.yaml> --target-org <alias> --json
 ```
 
 > **Not recommended.** Agents created via `sf agent create` do not use Agent Script and are less flexible than the authoring-bundle workflow. Prefer `sf agent generate authoring-bundle` + `sf agent publish authoring-bundle` instead.
@@ -127,16 +138,24 @@ Generates a BotTemplate for ISV packaging via managed packages on AppExchange.
 ```bash
 sf agent generate template \
     --agent-file force-app/main/default/bots/My_Agent/My_Agent.bot-meta.xml \
-    --agent-version 1
+    --agent-version 1 \
+    --output-dir my-package \
+    --source-org my-scratch-org \
+    --json
 ```
 
 | Flag | Required | Description |
 |------|----------|-------------|
 | `--agent-file` | Yes | Path to the `.bot-meta.xml` file |
 | `--agent-version` | Yes | BotVersion number to template |
+| `--output-dir` | No | Directory where generated `BotTemplate` and `GenAiPlannerBundle` files are saved |
+| `--source-org` | Yes | Namespaced scratch org that contains the source agent |
+| `--json` | No | Return output as JSON |
 
 The generated BotTemplate wraps Bot, BotVersion, and GenAiPlannerBundle metadata for distribution. Package the template in a managed package for sharing between orgs or publishing on AppExchange.
 
+> **Important:** This command works with Bot / BotVersion metadata and **does not** package agents created from Agent Script files.
+>
 > **Full ISV workflow**: See [../../sf-deploy/references/agent-deployment-guide.md](../../sf-deploy/references/agent-deployment-guide.md) for the complete packaging workflow.
 
 ---

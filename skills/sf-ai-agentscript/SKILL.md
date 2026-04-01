@@ -159,10 +159,16 @@ Full loop: [references/preview-test-loop.md](references/preview-test-loop.md)
 ### Phase 5 — publish and activate
 ```bash
 sf agent publish authoring-bundle --api-name MyAgent -o TARGET_ORG --json
+
+# Manual activation
 sf agent activate --api-name MyAgent -o TARGET_ORG
+
+# CI / deterministic activation of a known BotVersion
+sf agent activate --api-name MyAgent --version <n> -o TARGET_ORG --json
 ```
 
 Publishing does **not** activate the agent.
+For automation, prefer `--version <n> --json` so activation is deterministic and machine-readable.
 
 ---
 

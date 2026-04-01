@@ -1,7 +1,15 @@
 {
   "version": "5.0.0",
-  "description": "Unified skills registry - single source of truth for skill discovery, relationships, guardrails, auto-approval policies, and background operation rules",
+  "description": "Skills registry for skill discovery keywords, background operation rules, and advisory metadata. Validator routing is handled by validator-dispatcher.py.",
   "background_operations": {
+    "sf-flow": {
+      "commands": [
+        "sf flow test run"
+      ],
+      "typical_duration": "1-5 minutes",
+      "always_background": true,
+      "reason": "Flow tests execute in the org and can take several minutes"
+    },
     "sf-testing": {
       "commands": [
         "sf apex run test"
@@ -64,50 +72,6 @@
       "reason": "Large Data Cloud query jobs are better handled asynchronously"
     }
   },
-  "guardrails": {
-    "dangerous_dml": {
-      "patterns": [
-        "DELETE FROM \\w+ (;|$)",
-        "UPDATE \\w+ SET .* (?<!WHERE.*)$"
-      ],
-      "severity": "CRITICAL",
-      "action": "block",
-      "message": "Destructive DML without WHERE clause detected"
-    },
-    "unbounded_soql": {
-      "patterns": [
-        "SELECT .* FROM \\w+ (?!.*LIMIT)"
-      ],
-      "severity": "HIGH",
-      "action": "auto_fix",
-      "fix": "append LIMIT 200",
-      "message": "Unbounded SOQL query - adding LIMIT 200"
-    },
-    "hardcoded_credentials": {
-      "patterns": [
-        "(password|api_key|secret|token)\\s*=\\s*['\"][^'\"]+['\"]"
-      ],
-      "severity": "CRITICAL",
-      "action": "block",
-      "message": "Hardcoded credentials detected - use Named Credentials"
-    },
-    "missing_sharing_keyword": {
-      "patterns": [
-        "public class \\w+(?! (with|without|inherited) sharing)"
-      ],
-      "severity": "MEDIUM",
-      "action": "warn",
-      "message": "Consider adding explicit sharing keyword (with sharing recommended)"
-    },
-    "hardcoded_salesforce_ids": {
-      "patterns": [
-        "['\"][a-zA-Z0-9]{15}['\"]|['\"][a-zA-Z0-9]{18}['\"]"
-      ],
-      "severity": "MEDIUM",
-      "action": "warn",
-      "message": "Hardcoded Salesforce ID detected - consider using Custom Metadata"
-    }
-  },
   "skills": {
     "sf-apex": {
       "keywords": [
@@ -140,11 +104,6 @@
         "debug.*apex",
         "refactor.*apex",
         "optimize.*apex"
-      ],
-      "filePatterns": [
-        "\\.cls$",
-        "\\.trigger$",
-        "\\.cls-meta\\.xml$"
       ],
       "priority": "high",
       "description": "Apex code development with validation and best practices",
@@ -184,10 +143,6 @@
         "fix.*flow",
         "debug.*flow"
       ],
-      "filePatterns": [
-        "\\.flow-meta\\.xml$",
-        "\\.flow$"
-      ],
       "priority": "high",
       "description": "Flow Builder automation with validation",
       "triggerWhen": "user builds or edits record-triggered, screen, autolaunched, or scheduled flows, or touches .flow-meta.xml files",
@@ -224,10 +179,6 @@
         "style.*component",
         "fix.*lwc"
       ],
-      "filePatterns": [
-        "lwc/[^/]+/[^/]+\\.(js|html|css)$",
-        "\\.js-meta\\.xml$"
-      ],
       "priority": "high",
       "description": "Lightning Web Components with SLDS compliance",
       "triggerWhen": "user creates/edits LWC components, touches lwc/**/*.js, .html, .css, .js-meta.xml files, or asks about wire service, SLDS, or Jest LWC tests",
@@ -261,11 +212,6 @@
         "agent.*tone",
         "agent.*personality"
       ],
-      "filePatterns": [
-        "persona.*\\.md$",
-        "persona-framework.*\\.md$",
-        "persona-encoding.*\\.md$"
-      ],
       "priority": "high",
       "description": "Deep persona design for Agentforce -- 12-attribute framework, brand input, archetype presets, Agent Builder & Agent Script encoding",
       "triggerWhen": "user designs agent personas, defines agent personality/identity, creates persona documents, encodes persona into Agent Builder fields or Agent Script, translates brand guidelines to agent voice, or asks about agent tone/voice/register",
@@ -291,12 +237,6 @@
         "prompt.*template",
         "models.*api",
         "genai.*function"
-      ],
-      "filePatterns": [
-        "\\.genAiFunction-meta\\.xml$",
-        "\\.genAiPlugin-meta\\.xml$",
-        "\\.promptTemplate-meta\\.xml$",
-        "\\.lightningTypeBundle-meta\\.xml$"
       ],
       "priority": "medium",
       "description": "Standard Agentforce platform skill for Setup UI agent building, PromptTemplate, Models API, and GenAi metadata",
@@ -332,12 +272,6 @@
         "create.*master.*detail",
         "setup.*layout"
       ],
-      "filePatterns": [
-        "\\.object-meta\\.xml$",
-        "\\.field-meta\\.xml$",
-        "\\.permissionset-meta\\.xml$",
-        "\\.profile-meta\\.xml$"
-      ],
       "priority": "medium",
       "description": "Salesforce metadata configuration",
       "triggerWhen": "user creates custom objects, fields, validation rules, or touches .object-meta.xml, .field-meta.xml, .profile-meta.xml files",
@@ -372,7 +306,6 @@
         "validate.*deployment",
         "quick.*deploy"
       ],
-      "filePatterns": [],
       "priority": "medium",
       "description": "CI/CD deployment automation",
       "triggerWhen": "user deploys metadata, creates/manages scratch orgs or sandboxes, sets up CI/CD pipelines, or troubleshoots deployment errors with sf project deploy",
@@ -404,10 +337,6 @@
         "mock.*data",
         "create.*test.*method",
         "test.*trigger"
-      ],
-      "filePatterns": [
-        ".*Test\\.cls$",
-        ".*_Test\\.cls$"
       ],
       "priority": "medium",
       "description": "Test execution and coverage analysis",
@@ -444,9 +373,6 @@
         "debug.*soql",
         "create.*subquery"
       ],
-      "filePatterns": [
-        "\\.soql$"
-      ],
       "priority": "medium",
       "description": "SOQL query optimization and analysis",
       "triggerWhen": "user writes, optimizes, or debugs SOQL/SOSL queries, touches .soql files, or asks about relationship queries, aggregates, or query performance",
@@ -478,7 +404,6 @@
         "create.*251",
         "bulk.*test"
       ],
-      "filePatterns": [],
       "priority": "medium",
       "description": "Test data generation and management",
       "triggerWhen": "user creates test data, performs bulk import/export, uses sf data CLI commands, or needs data factory patterns for Apex tests",
@@ -505,7 +430,6 @@
         "data360.*doctor",
         "debug.*data.*cloud.*pipeline"
       ],
-      "filePatterns": [],
       "priority": "high",
       "description": "Cross-phase Salesforce Data Cloud orchestration using the external community sf data360 runtime",
       "triggerWhen": "user needs a multi-phase Data Cloud workflow, manages data spaces or data kits, troubleshoots Data Cloud across phases, or explicitly references `sf data360` at a broad product level",
@@ -534,10 +458,6 @@
         "create.*heroku.*connection",
         "create.*redshift.*connection"
       ],
-      "filePatterns": [
-        ".*connection.*\\.json$",
-        ".*examples/connections/.*\\.json$"
-      ],
       "priority": "medium",
       "description": "Data Cloud connections, connectors, and source discovery",
       "triggerWhen": "user manages Data Cloud connections, connectors, source metadata, or tests a connection",
@@ -561,10 +481,6 @@
         "create.*transform",
         "run.*transform",
         "generate.*docai"
-      ],
-      "filePatterns": [
-        "data-stream.*\\.json$",
-        ".*dlo.*\\.json$"
       ],
       "priority": "medium",
       "description": "Data Cloud ingestion, streams, DLOs, transforms, and Document AI",
@@ -590,11 +506,6 @@
         "build.*data.*graph",
         "inspect.*unified.*profile"
       ],
-      "filePatterns": [
-        ".*identity-resolution.*\\.json$",
-        ".*mapping.*\\.json$",
-        ".*data-graph.*\\.json$"
-      ],
       "priority": "high",
       "description": "Data Cloud DMOs, mappings, identity resolution, unified profiles, and data graphs",
       "triggerWhen": "user works with Data Cloud DMOs, mappings, identity resolution, unified profiles, data graphs, or universal ID lookup",
@@ -618,11 +529,6 @@
         "troubleshoot.*segment",
         "inspect.*calculated.*insight"
       ],
-      "filePatterns": [
-        ".*segment.*\\.json$",
-        ".*calculated-insight.*\\.json$",
-        ".*ci.*\\.json$"
-      ],
       "priority": "medium",
       "description": "Data Cloud segments, calculated insights, and audience troubleshooting",
       "triggerWhen": "user creates or publishes Data Cloud segments, manages calculated insights, or troubleshoots audience logic",
@@ -644,10 +550,6 @@
         "create.*data.*action",
         "inspect.*activation",
         "update.*activation.*target"
-      ],
-      "filePatterns": [
-        ".*activation.*\\.json$",
-        ".*data-action.*\\.json$"
       ],
       "priority": "medium",
       "description": "Data Cloud activations, activation targets, and data actions",
@@ -677,9 +579,6 @@
         "run.*hybrid.*search",
         "run.*async.*query",
         "inspect.*search.*index"
-      ],
-      "filePatterns": [
-        ".*search-index.*\\.json$"
       ],
       "priority": "high",
       "description": "Data Cloud SQL, async query, search-index, vector-search, hybrid-search, and metadata introspection workflows",
@@ -713,7 +612,6 @@
         "look.*up.*agentforce",
         "research.*official.*docs"
       ],
-      "filePatterns": [],
       "priority": "high",
       "description": "Official Salesforce documentation retrieval guidance for hard-to-fetch online docs such as developer.salesforce.com and help.salesforce.com"
     },
@@ -747,11 +645,6 @@
         "change.*data.*capture",
         "webhook"
       ],
-      "filePatterns": [
-        "\\.namedCredential-meta\\.xml$",
-        "\\.externalCredential-meta\\.xml$",
-        "\\.externalServiceRegistration-meta\\.xml$"
-      ],
       "priority": "medium",
       "description": "External system integrations",
       "triggerWhen": "user sets up Named Credentials, External Services, REST/SOAP callouts, Platform Events, CDC, or touches .namedCredential-meta.xml files",
@@ -783,10 +676,6 @@
         "oauth.*flow",
         "named.*credential",
         "external.*credential"
-      ],
-      "filePatterns": [
-        "\\.connectedApp-meta\\.xml$",
-        "\\.eca-meta\\.xml$"
       ],
       "priority": "low",
       "description": "OAuth and authentication configuration",
@@ -822,10 +711,6 @@
         "enable.*debug",
         "check.*exception",
         "find.*error"
-      ],
-      "filePatterns": [
-        "\\.log$",
-        "debug.*\\.txt$"
       ],
       "priority": "low",
       "description": "Debug log analysis and troubleshooting",
@@ -878,12 +763,6 @@
         "create.*flowchart",
         "create.*erd"
       ],
-      "filePatterns": [
-        "diagrams?/.*\\.md$",
-        ".*-erd\\.md$",
-        ".*-sequence\\.md$",
-        ".*-diagram\\.md$"
-      ],
       "priority": "low",
       "description": "Mermaid diagram generation",
       "triggerWhen": "user says 'diagram', 'visualize', 'ERD', or asks for sequence diagrams, flowcharts, class diagrams, or architecture visualizations in Mermaid",
@@ -931,11 +810,6 @@
         "export.*png",
         "export.*svg"
       ],
-      "filePatterns": [
-        "\\.png$",
-        "\\.svg$",
-        "\\.jpg$"
-      ],
       "priority": "low",
       "description": "Visual mockups and image generation",
       "triggerWhen": "user asks for PNG/SVG output, UI mockups, wireframes, visual ERDs, or says 'generate image' / 'create mockup'",
@@ -963,10 +837,6 @@
         "test.*topic.*routing",
         "verify.*agent",
         "run.*agent.*test"
-      ],
-      "filePatterns": [
-        ".*-test-spec\\.yaml$",
-        ".*-test-spec\\.yml$"
       ],
       "priority": "low",
       "description": "Agentforce agent test automation",
@@ -998,11 +868,6 @@
         "deterministic.*agent",
         "fsm.*agent"
       ],
-      "filePatterns": [
-        "\\.agent$",
-        "\\.agentDefinition-meta\\.xml$",
-        "GenAi.*\\.xml$"
-      ],
       "priority": "high",
       "description": "Agent Script DSL for deterministic Agentforce agents",
       "triggerWhen": "user writes or edits .agent files, builds FSM-based agents, uses Agent Script CLI (sf agent generate/publish), or asks about deterministic agent patterns",
@@ -1030,10 +895,6 @@
         "permission.*hierarchy",
         "visualize.*permissions",
         "export.*permissions"
-      ],
-      "filePatterns": [
-        "\\.permissionset-meta\\.xml$",
-        "\\.permissionsetgroup-meta\\.xml$"
       ],
       "priority": "medium",
       "description": "Permission Set analysis and hierarchy visualization",
@@ -1065,10 +926,6 @@
         "session.*data",
         "agent.*telemetry"
       ],
-      "filePatterns": [
-        "\\.parquet$",
-        "stdm_data/"
-      ],
       "priority": "medium",
       "description": "Extract and analyze Agentforce session tracing data from Data Cloud",
       "triggerWhen": "user extracts STDM data from Data Cloud, analyzes agent session traces, debugs agent conversations via telemetry, or works with .parquet files from Agentforce",
@@ -1099,7 +956,6 @@
         "omnistudio.*migration",
         "vlocity.*core"
       ],
-      "filePatterns": [],
       "priority": "high",
       "description": "Cross-cutting OmniStudio analysis for namespace detection, dependency mapping, and impact analysis",
       "triggerWhen": "user asks about OmniStudio dependencies, wants namespace detection (Core vs vlocity_cmt vs vlocity_ins), needs impact analysis across OmniStudio components, or requests dependency diagrams",
@@ -1130,9 +986,6 @@
         "review.*data.*mapper",
         "fix.*dataraptor"
       ],
-      "filePatterns": [
-        "OmniDataTransform.*"
-      ],
       "priority": "medium",
       "description": "OmniStudio Data Mapper (formerly DataRaptor) creation and validation with 100-point scoring",
       "triggerWhen": "user creates Data Mappers, configures field mappings, works with OmniDataTransform metadata, or asks about DataRaptor/Data Mapper patterns",
@@ -1161,9 +1014,6 @@
         "add.*remote.*action",
         "review.*integration.*procedure",
         "fix.*ip"
-      ],
-      "filePatterns": [
-        "OmniIntegrationProcedure.*"
       ],
       "priority": "medium",
       "description": "OmniStudio Integration Procedure creation and validation with 110-point scoring",
@@ -1195,7 +1045,6 @@
         "callable.*integration procedure",
         "callable.*omniscript"
       ],
-      "filePatterns": [],
       "priority": "medium",
       "description": "Salesforce Industries Common Core callable Apex generation and review for System.Callable and legacy Open Interface migrations",
       "triggerWhen": "user creates or reviews System.Callable classes, migrates VlocityOpenInterface / VlocityOpenInterface2, or builds Industries callable extensions used by OmniStudio, Integration Procedures, or DataRaptors",
@@ -1224,9 +1073,6 @@
         "review.*omniscript",
         "fix.*omniscript"
       ],
-      "filePatterns": [
-        "OmniScript.*"
-      ],
       "priority": "medium",
       "description": "OmniStudio OmniScript creation and validation with 120-point scoring",
       "triggerWhen": "user creates OmniScripts, designs step flows, configures element types, or reviews existing OmniScript configurations",
@@ -1254,9 +1100,6 @@
         "add.*action.*button",
         "review.*flexcard",
         "fix.*flexcard"
-      ],
-      "filePatterns": [
-        "OmniUiCard.*"
       ],
       "priority": "medium",
       "description": "OmniStudio FlexCard creation and validation with 130-point scoring",

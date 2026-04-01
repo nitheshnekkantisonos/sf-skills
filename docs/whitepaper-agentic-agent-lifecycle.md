@@ -551,10 +551,15 @@ sf agent publish authoring-bundle \
 **Activate command:**
 
 ```bash
+# Manual activation
 sf agent activate --api-name OrderSupport -o dev
+
+# CI / deterministic activation of a known BotVersion
+sf agent activate --api-name OrderSupport --version <n> -o dev --json
 ```
 
-> **Note:** `sf agent activate` does not support `--json`. It prints a plain-text confirmation.
+> **Note:** `sf agent activate` now supports `--json`.
+> If you use `--json` without `--version`, the CLI activates the latest agent version. Prefer `--version` for CI/CD and reproducible rollouts.
 
 **Important:** Publishing does NOT activate. The new BotVersion is created as `Inactive`. Tests, preview, and end users continue hitting the previously active version until you explicitly activate.
 
@@ -851,13 +856,15 @@ python3 scripts/cli.py extract \
 ```bash
 # Staging
 sf agent publish authoring-bundle --api-name OrderSupport -o staging --json
-sf agent activate --api-name OrderSupport -o staging
+sf agent activate --api-name OrderSupport --version <n> -o staging --json
 sf agent test run --api-name OrderSupportTest --wait 10 --result-format json --json -o staging
 
 # Production (after staging passes)
 sf agent publish authoring-bundle --api-name OrderSupport -o prod --json
-sf agent activate --api-name OrderSupport -o prod
+sf agent activate --api-name OrderSupport --version <n> -o prod --json
 ```
+
+Use the explicit BotVersion number you intend to activate in each environment so pipeline activation stays deterministic.
 
 **CI/CD integration (GitHub Actions):**
 
@@ -874,10 +881,12 @@ jobs:
       - name: Publish to Staging
         run: sf agent publish authoring-bundle --api-name OrderSupport -o staging --json
       - name: Activate
-        run: sf agent activate --api-name OrderSupport -o staging
+        run: sf agent activate --api-name OrderSupport --version "$AGENT_VERSION" -o staging --json
       - name: Run Tests
         run: sf agent test run --api-name OrderSupportTest --wait 10 --result-format json --json -o staging
 ```
+
+Set `AGENT_VERSION` in the workflow environment to the BotVersion number you intend to activate.
 
 ---
 

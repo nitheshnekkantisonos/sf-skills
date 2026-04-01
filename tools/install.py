@@ -42,6 +42,7 @@ import os
 import re
 import shutil
 import ssl
+import stat
 import subprocess
 import sys
 import tempfile
@@ -65,6 +66,7 @@ CLAUDE_DIR = Path.home() / ".claude"
 SKILLS_DIR = CLAUDE_DIR / "skills"
 HOOKS_DIR = CLAUDE_DIR / "hooks"
 LSP_DIR = CLAUDE_DIR / "lsp-engine"
+CODE_ANALYZER_DIR = CLAUDE_DIR / "code_analyzer"
 META_FILE = CLAUDE_DIR / ".sf-skills.json"
 INSTALLER_FILE = CLAUDE_DIR / "sf-skills-install.py"
 SETTINGS_FILE = CLAUDE_DIR / "settings.json"
@@ -110,7 +112,7 @@ SF_DOCS_RUNTIME_VENV = SF_DOCS_RUNTIME_DIR / "venv"
 SF_DOCS_PLAYWRIGHT_BROWSERS_DIR = SF_DOCS_RUNTIME_DIR / "ms-playwright"
 
 # Optional Data Cloud runtime (community-managed, not vendored into sf-skills)
-DATACLOUD_RUNTIME_REPO = "https://github.com/gthoppae/sf-cli-plugin-data360.git"
+DATACLOUD_RUNTIME_REPO = "https://github.com/Jaganpro/sf-cli-plugin-data360.git"
 DATACLOUD_RUNTIME_BASE_DIR = Path.home() / ".sf-community-tools" / "datacloud"
 DATACLOUD_RUNTIME_PLUGIN_DIR = DATACLOUD_RUNTIME_BASE_DIR / "sf-cli-plugin-data360"
 DATACLOUD_RUNTIME_COMMANDS = ("git", "node", "yarn", "npx", "sf")
@@ -410,18 +412,44 @@ def detect_environment() -> Tuple[str, Dict[str, Any]]:
     return env_type, details
 
 
+def _chmod_tree_writable(path: Path) -> None:
+    """Recursively add owner rwx permissions so rmtree can proceed.
+
+    Fixes the root first so os.walk can enter it, then walks top-down
+    to fix subdirectories before os.walk tries to descend into them.
+    """
+    try:
+        os.chmod(str(path), stat.S_IRWXU)
+    except OSError:
+        pass
+    for root, dirs, files in os.walk(str(path)):
+        for name in dirs + files:
+            try:
+                os.chmod(os.path.join(root, name), stat.S_IRWXU)
+            except OSError:
+                pass
+
+
 def safe_rmtree(path: Path) -> None:
-    """Remove a directory tree, handling symlinks gracefully.
+    """Remove a directory tree, handling symlinks and permission errors gracefully.
 
     Python 3.12+ shutil.rmtree() refuses to operate on symbolic links.
     This helper detects symlinks and unlinks them instead, preventing
     OSError("Cannot call rmtree on a symbolic link").
+
+    On macOS, files may have restrictive permissions from quarantine
+    attributes or Finder locks. On PermissionError, this walks the tree
+    to add owner-rwx permissions and retries the removal.
     """
     p = Path(path)
     if p.is_symlink():
         p.unlink()
     elif p.exists():
-        shutil.rmtree(p)
+        try:
+            shutil.rmtree(p)
+        except PermissionError:
+            _chmod_tree_writable(p)
+            shutil.rmtree(p)
 
 
 def write_metadata(version: str, commit_sha: Optional[str] = None):
@@ -641,6 +669,41 @@ def update_metadata_fields(**updates: Any) -> None:
     META_FILE.write_text(json.dumps(data, indent=2))
 
 
+def _installer_binary_changed(running_installer_bytes: Optional[bytes]) -> bool:
+    """Return True when INSTALLER_FILE differs from the running installer bytes."""
+    if running_installer_bytes is None or not INSTALLER_FILE.exists():
+        return False
+    try:
+        return running_installer_bytes != INSTALLER_FILE.read_bytes()
+    except (IOError, OSError):
+        return False
+
+
+def _build_finalize_install_args(version: str, commit_sha: Optional[str] = None,
+                                 dry_run: bool = False, force: bool = False,
+                                 called_from_bash: bool = False,
+                                 with_datacloud_runtime: bool = False) -> List[str]:
+    """Build argv for the internal finalize-install handoff."""
+    args = [
+        sys.executable,
+        str(INSTALLER_FILE),
+        "--_finalize-install",
+        "--_version",
+        version,
+    ]
+    if commit_sha:
+        args.extend(["--_commit-sha", commit_sha])
+    if dry_run:
+        args.append("--dry-run")
+    if force:
+        args.append("--force")
+    if called_from_bash:
+        args.append("--called-from-bash")
+    if with_datacloud_runtime:
+        args.append("--with-datacloud-runtime")
+    return args
+
+
 def _command_exists(command: str) -> bool:
     """Return True when a command is available on PATH."""
     return shutil.which(command) is not None
@@ -650,6 +713,10 @@ def _run_command(cmd: List[str], cwd: Optional[Path] = None,
                  timeout: int = 300) -> Tuple[bool, str]:
     """Run an external command and capture stderr/stdout for troubleshooting."""
     try:
+        # Suppress interactive prompts (e.g., git credential helper) by
+        # detaching stdin.  GIT_TERMINAL_PROMPT=0 prevents git-specific
+        # credential popups on macOS/Windows.
+        env = {**os.environ, "GIT_TERMINAL_PROMPT": "0"} if cmd and cmd[0] == "git" else None
         result = subprocess.run(
             cmd,
             cwd=str(cwd) if cwd else None,
@@ -657,6 +724,8 @@ def _run_command(cmd: List[str], cwd: Optional[Path] = None,
             text=True,
             timeout=timeout,
             check=False,
+            stdin=subprocess.DEVNULL,
+            env=env,
         )
     except subprocess.TimeoutExpired:
         return False, f"Timed out after {timeout}s: {' '.join(cmd)}"
@@ -726,6 +795,18 @@ def install_datacloud_runtime(dry_run: bool = False) -> Tuple[bool, List[str]]:
     DATACLOUD_RUNTIME_BASE_DIR.mkdir(parents=True, exist_ok=True)
 
     if status_before["managedGitCheckout"]:
+        # Ensure origin points to the correct (public) fork — earlier installs
+        # may have cloned from the private upstream repo.
+        _run_command(
+            ["git", "remote", "set-url", "origin", DATACLOUD_RUNTIME_REPO],
+            cwd=DATACLOUD_RUNTIME_PLUGIN_DIR, timeout=30,
+        )
+        # Discard lockfile / package.json drift from yarn install so that
+        # git pull --ff-only can fast-forward cleanly.
+        _run_command(
+            ["git", "checkout", "--", "."],
+            cwd=DATACLOUD_RUNTIME_PLUGIN_DIR, timeout=30,
+        )
         ok, msg = _run_command(["git", "pull", "--ff-only"], cwd=DATACLOUD_RUNTIME_PLUGIN_DIR, timeout=300)
         notes.append(f"{'Updated' if ok else 'Failed to update'} managed checkout: {msg or DATACLOUD_RUNTIME_PLUGIN_DIR}")
         if not ok:
@@ -737,23 +818,97 @@ def install_datacloud_runtime(dry_run: bool = False) -> Tuple[bool, List[str]]:
             ["git", "clone", DATACLOUD_RUNTIME_REPO, str(DATACLOUD_RUNTIME_PLUGIN_DIR)],
             timeout=600,
         )
-        notes.append(f"{'Cloned' if ok else 'Failed to clone'} runtime checkout: {msg or DATACLOUD_RUNTIME_PLUGIN_DIR}")
         if not ok:
+            msg_lower = msg.lower() if msg else ""
+            if "Authentication failed" in msg or "could not read Username" in msg:
+                notes.append(
+                    f"Failed to clone runtime checkout: Authentication failed for {DATACLOUD_RUNTIME_REPO}\n"
+                    "  This is a community repo that may require GitHub access.\n"
+                    "  The Data Cloud runtime is optional — sf-skills works fine without it."
+                )
+            elif "repository" in msg_lower and "not found" in msg_lower:
+                notes.append(f"Failed to clone runtime checkout: {msg or DATACLOUD_RUNTIME_PLUGIN_DIR}")
+                notes.append(
+                    "If that error references an unexpected GitHub repo, your local "
+                    "installer copy may be outdated. Refresh the installer first "
+                    "(`python3 ~/.claude/sf-skills-install.py --force-update`) or rerun "
+                    "the latest installer from GitHub, then retry `--with-datacloud-runtime`."
+                )
+            else:
+                notes.append(f"Failed to clone runtime checkout: {msg or DATACLOUD_RUNTIME_PLUGIN_DIR}")
             return False, notes
+        notes.append(f"Cloned runtime checkout: {DATACLOUD_RUNTIME_PLUGIN_DIR}")
 
+    # Remove node_modules before yarn install to avoid EACCES errors when
+    # a previous install ran as root and left root-owned files in .bin/.
+    node_modules = DATACLOUD_RUNTIME_PLUGIN_DIR / "node_modules"
+    if node_modules.exists():
+        try:
+            safe_rmtree(node_modules)
+        except Exception:
+            pass  # yarn install will report a clearer error if this matters
+
+    manifest_script = SKILLS_DIR / "sf-datacloud" / "scripts" / "generate-manifest.mjs"
     for cmd, label, timeout in [
         (["yarn", "install"], "Installed runtime dependencies", 1200),
         (["npx", "tsc"], "Compiled runtime", 1200),
-        (["sf", "plugins", "link", "."], "Linked runtime into sf", 300),
+        (["node", str(manifest_script), str(DATACLOUD_RUNTIME_PLUGIN_DIR)], "Generated oclif command manifest", 60),
     ]:
         ok, msg = _run_command(cmd, cwd=DATACLOUD_RUNTIME_PLUGIN_DIR, timeout=timeout)
         notes.append(f"{label if ok else 'Failed: ' + label.lower()}: {msg or ''}".rstrip())
         if not ok:
             return False, notes
 
-    ok, msg = _run_command(["sf", "data360", "man"], timeout=30)
-    notes.append(f"{'Verified' if ok else 'Failed to verify'} Data Cloud runtime: {msg or 'sf data360 man'}")
-    return ok, notes
+    # Link the plugin into sf CLI.
+    # When sf was installed globally (sudo/root), sf's data directory may be
+    # root-owned, causing EACCES on `sf plugins link`. We preemptively set
+    # SF_DATA_DIR to a user-writable path so the link always succeeds.
+    sf_data_dir = Path.home() / ".local" / "share" / "sf"
+    sf_data_dir.mkdir(parents=True, exist_ok=True)
+    sf_env = {**os.environ, "SF_DATA_DIR": str(sf_data_dir)}
+
+    try:
+        result = subprocess.run(
+            ["sf", "plugins", "link", "."],
+            cwd=str(DATACLOUD_RUNTIME_PLUGIN_DIR),
+            capture_output=True,
+            text=True,
+            timeout=300,
+            check=False,
+            stdin=subprocess.DEVNULL,
+            env=sf_env,
+        )
+        if result.returncode == 0:
+            notes.append("Linked runtime into sf")
+        else:
+            err = (result.stderr or result.stdout or "").strip().splitlines()[-1] if (result.stderr or result.stdout) else ""
+            notes.append(f"Failed: linked runtime into sf: {err}")
+            return False, notes
+    except subprocess.TimeoutExpired:
+        notes.append("Failed: linked runtime into sf: timed out after 300s")
+        return False, notes
+    except OSError as exc:
+        notes.append(f"Failed: linked runtime into sf: {exc}")
+        return False, notes
+
+    # Verify using the same SF_DATA_DIR so sf can find the linked plugin
+    try:
+        verify = subprocess.run(
+            ["sf", "data360", "man"],
+            capture_output=True, text=True, timeout=30, check=False,
+            stdin=subprocess.DEVNULL, env=sf_env,
+        )
+        if verify.returncode == 0:
+            notes.append("Verified Data Cloud runtime: sf data360 man")
+        else:
+            err = (verify.stderr or verify.stdout or "").strip().splitlines()[-1] if (verify.stderr or verify.stdout) else "sf data360 man"
+            notes.append(f"Failed to verify Data Cloud runtime: {err}")
+            return False, notes
+    except (subprocess.TimeoutExpired, OSError) as exc:
+        notes.append(f"Failed to verify Data Cloud runtime: {exc}")
+        return False, notes
+
+    return True, notes
 
 
 # ============================================================================
@@ -1312,12 +1467,37 @@ def is_sf_skills_hook(hook: Dict[str, Any]) -> bool:
     if hook.get("_sf_skills"):
         return True
 
-    # Check command path contains sf-skills indicators (forward + backslash variants)
-    command = hook.get("command", "")
-    if any(indicator in command for indicator in (
+    SF_SKILLS_INDICATORS = (
         "sf-skills", "shared/hooks", ".claude/hooks",
         "shared\\hooks", ".claude\\hooks",
+    )
+
+    # Check command path contains sf-skills indicators (forward + backslash variants)
+    command = hook.get("command", "")
+    if any(indicator in command for indicator in SF_SKILLS_INDICATORS):
+        return True
+
+    # Check prompt field for sf-skills content (type: "prompt" and type: "agent" hooks
+    # use prompt instead of command — without this check, upsert_hooks misclassifies
+    # them as user hooks, causing duplicates on re-install)
+    prompt = hook.get("prompt", "")
+    if prompt and any(keyword in prompt for keyword in (
+        "Salesforce CLI safety guardrail",
+        "sf apex get log",
+        "sf apex tail log",
+        "SOQL_QUERIES",
+        "governor limit",
+        "sfdx",
     )):
+        return True
+
+    # Catch zombie agent hooks left by older sf-skills installs.
+    # These have type:"agent" but the prompt field was stripped by Claude Code's
+    # schema normalization, leaving a broken hook that blocks startup.
+    # A type:"agent" hook with no prompt and no command is always broken and
+    # almost certainly ours — safe to claim for cleanup.
+    hook_type = hook.get("type", "")
+    if hook_type == "agent" and not hook.get("prompt") and not hook.get("command"):
         return True
 
     # Check nested hooks
@@ -1641,22 +1821,6 @@ def get_hooks_config() -> Dict[str, Any]:
                     "command": f"{python_cmd} {scripts_path}/session-init.py",
                     "timeout": 3000
                 }],
-            },
-            {
-                "hooks": [{
-                    "type": "command",
-                    "command": f"{python_cmd} {scripts_path}/org-preflight.py",
-                    "timeout": 30000,
-                    "async": True
-                }],
-            },
-            {
-                "hooks": [{
-                    "type": "command",
-                    "command": f"{python_cmd} {scripts_path}/lsp-prewarm.py",
-                    "timeout": 60000,
-                    "async": True
-                }],
             }
         ],
         "PreToolUse": [
@@ -1664,14 +1828,31 @@ def get_hooks_config() -> Dict[str, Any]:
                 "matcher": "Bash|mcp__salesforce",
                 "hooks": [
                     {
-                        "type": "command",
-                        "command": f"{python_cmd} {scripts_path}/guardrails.py",
-                        "timeout": 5000
-                    },
+                        "type": "prompt",
+                        "prompt": (
+                            "You are a Salesforce CLI safety guardrail. This hook is advisory-only and must never deny, block, or stop continuation. "
+                            "Always ALLOW the command. Evaluate for these issues and include warnings as additional context if found:\n\n"
+                            "(1) WARN if: the command uses 'sfdx' instead of 'sf'. The sfdx CLI is deprecated — always use 'sf' equivalents "
+                            "(e.g., 'sf org list' not 'sfdx force:org:list'). "
+                            "Warning: '⚠️ Deprecated sfdx command — use the sf equivalent instead.'\n\n"
+                            "(2) WARN if: API version below v56 is specified via --api-version flag. "
+                            "Warning: '⚠️ API version below v56 — consider upgrading to a supported version.'\n\n"
+                            "Context rules: Do NOT flag patterns inside echo, printf, cat heredocs, git commit messages, or comments. "
+                            "These are output/documentation, not execution.\n\n"
+                            "Response: Always respond ALLOW. Never block, deny, or stop continuation. "
+                            "If any warnings apply, include all matching warning messages as advisory context only."
+                        ),
+                        "timeout": 30
+                    }
+                ],
+            },
+            {
+                "matcher": "Bash",
+                "hooks": [
                     {
                         "type": "command",
-                        "command": f"{python_cmd} {scripts_path}/api-version-check.py",
-                        "timeout": 10000
+                        "command": f"{python_cmd} {scripts_path}/soql-schema-check.py",
+                        "timeout": 8000
                     }
                 ],
             },
@@ -1684,6 +1865,16 @@ def get_hooks_config() -> Dict[str, Any]:
                         "type": "command",
                         "command": f"{python_cmd} {scripts_path}/validator-dispatcher.py",
                         "timeout": 70000
+                    }
+                ],
+            },
+            {
+                "matcher": "Bash",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": f"{python_cmd} {scripts_path}/debug-log-analyzer.py",
+                        "timeout": 30000
                     }
                 ],
             }
@@ -2162,6 +2353,110 @@ def copy_lsp_engine(source_dir: Path, target_dir: Path) -> int:
     return sum(1 for _ in target_dir.rglob("*") if _.is_file())
 
 
+def copy_code_analyzer(source_dir: Path, target_dir: Path) -> int:
+    """
+    Copy code_analyzer Python package for PostToolUse validators.
+
+    The code_analyzer wraps `sf code-analyzer run` (PMD/CPD/SFGE) and provides
+    score merging, result formatting, and live query plan analysis.
+
+    Args:
+        source_dir: Source code_analyzer directory
+        target_dir: Target code-analyzer directory
+
+    Returns:
+        Number of files copied
+    """
+    if not source_dir.exists():
+        return 0
+
+    if target_dir.exists() or target_dir.is_symlink():
+        safe_rmtree(target_dir)
+
+    shutil.copytree(source_dir, target_dir)
+
+    return sum(1 for _ in target_dir.rglob("*") if _.is_file())
+
+
+def ensure_code_analyzer_plugin() -> bool:
+    """
+    Check if the sf code-analyzer plugin is installed, and install it if missing.
+
+    Returns:
+        True if code-analyzer is available after this call.
+    """
+    try:
+        result = subprocess.run(
+            ["sf", "plugins", "inspect", "@salesforce/plugin-code-analyzer", "--json"],
+            capture_output=True, text=True, timeout=15
+        )
+        if result.returncode == 0:
+            return True
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
+
+    # Not installed — install it
+    print_substep("Installing sf code-analyzer plugin (PMD/CPD engine)...")
+    try:
+        result = subprocess.run(
+            ["sf", "plugins", "install", "@salesforce/plugin-code-analyzer"],
+            capture_output=True, text=True, timeout=120
+        )
+        if result.returncode == 0:
+            print_substep("sf code-analyzer plugin installed successfully")
+            return True
+        else:
+            print_warning(f"Could not install code-analyzer: {result.stderr.strip()[:100]}")
+            return False
+    except (FileNotFoundError, subprocess.TimeoutExpired) as e:
+        print_warning(f"Could not install code-analyzer: {e}")
+        return False
+
+
+def ensure_prettier_apex() -> bool:
+    """
+    Ensure prettier + prettier-plugin-apex are installed in ~/.claude/prettier/.
+
+    Uses a local npm install (not global) so the plugin is always resolvable
+    from the prettier runtime directory. This avoids the npx plugin resolution
+    issues that occur with global installs.
+
+    Returns:
+        True if prettier with Apex support is available after this call.
+    """
+    prettier_dir = CLAUDE_DIR / "prettier"
+    prettier_bin = prettier_dir / "node_modules" / ".bin" / "prettier"
+
+    # Check if already installed
+    if prettier_bin.exists():
+        return True
+
+    # Create runtime directory and install
+    print_substep("Installing prettier + prettier-plugin-apex (code formatting)...")
+    try:
+        prettier_dir.mkdir(parents=True, exist_ok=True)
+
+        # Initialize package.json if needed
+        pkg_json = prettier_dir / "package.json"
+        if not pkg_json.exists():
+            pkg_json.write_text('{"private": true}\n')
+
+        result = subprocess.run(
+            ["npm", "install", "prettier", "prettier-plugin-apex"],
+            capture_output=True, text=True, timeout=60,
+            cwd=str(prettier_dir)
+        )
+        if result.returncode == 0:
+            print_substep("prettier + prettier-plugin-apex installed successfully")
+            return True
+        else:
+            print_warning(f"Could not install prettier: {result.stderr.strip()[:100]}")
+            return False
+    except (FileNotFoundError, subprocess.TimeoutExpired) as e:
+        print_warning(f"Could not install prettier: {e}")
+        return False
+
+
 def touch_all_files(directory: Path):
     """Update mtime on all files to force cache refresh."""
     now = time.time()
@@ -2300,7 +2595,6 @@ def verify_installation() -> Tuple[bool, List[str]]:
     else:
         # Check key hook scripts
         required_scripts = [
-            "scripts/guardrails.py",
             "scripts/session-init.py",
             "skills-registry.json"
         ]
@@ -2505,7 +2799,7 @@ def cmd_install(dry_run: bool = False, force: bool = False,
      • Salesforce skills (sf-apex, sf-flow, sf-datacloud, ...)
      • 10 hook scripts (guardrails, validation)
      • LSP engine (Apex, LWC, AgentScript language servers)
-     • Automatic validation, guardrails, and org preflight checks
+     • Automatic validation and guardrails
      • Optional Data Cloud runtime on request (--with-datacloud-runtime)
 
   📍 INSTALL LOCATIONS:
@@ -2522,15 +2816,17 @@ def cmd_install(dry_run: bool = False, force: bool = False,
     state, current_version = detect_state()
 
     if state == InstallState.UNIFIED and not force:
-        print_info(f"sf-skills already installed (v{current_version})")
         if with_datacloud_runtime:
-            print_info("Installing optional Data Cloud runtime as requested...")
-            ok, notes = install_datacloud_runtime(dry_run=dry_run)
-            for note in notes:
-                print_substep(note)
-            return 0 if ok else 1
-        print_info("Use --update to check for updates")
-        return 0
+            # Data Cloud runtime install requires up-to-date installer code
+            # (e.g., repo URL changes). Fall through to the full install path
+            # with force=True so the installer self-updates first.
+            print_info(f"sf-skills already installed (v{current_version})")
+            print_info("Running full install to ensure latest Data Cloud runtime config...")
+            force = True
+        else:
+            print_info(f"sf-skills already installed (v{current_version})")
+            print_info("Use --update to check for updates")
+            return 0
 
     if state == InstallState.UNIFIED and force:
         print_info(f"Reinstalling sf-skills (current: v{current_version})")
@@ -2552,6 +2848,7 @@ def cmd_install(dry_run: bool = False, force: bool = False,
 
     install_datacloud_runtime_requested = with_datacloud_runtime
     datacloud_runtime_failure = False
+    installer_updated_on_disk = False
 
     should_offer_datacloud_runtime = (
         state != InstallState.UNIFIED
@@ -2623,6 +2920,14 @@ def cmd_install(dry_run: bool = False, force: bool = False,
         if state == InstallState.NPX:
             cleanups.append(("npx skills", lambda: cleanup_npx(dry_run)))
 
+        # Always clean up stale npx artifacts — a previous npx install may have
+        # left ~/.agents/.skill-lock.json and canonical copies behind even after
+        # migrating to UNIFIED state. cleanup_npx() no-ops when nothing to clean.
+        if state != InstallState.NPX:
+            npx_cleaned = cleanup_npx(dry_run)
+            if npx_cleaned > 0:
+                cleanups.append((f"{npx_cleaned} stale npx entries", lambda: True))
+
         # Remove old hooks from settings.json
         hooks_removed = cleanup_settings_hooks(dry_run)
         if hooks_removed > 0:
@@ -2658,13 +2963,24 @@ def cmd_install(dry_run: bool = False, force: bool = False,
             lsp_source = source_dir / "shared" / "lsp-engine"
             lsp_count = copy_lsp_engine(lsp_source, LSP_DIR)
 
+            # Copy code_analyzer (Python wrapper for sf code-analyzer CLI)
+            ca_source = source_dir / "shared" / "code_analyzer"
+            ca_count = copy_code_analyzer(ca_source, CODE_ANALYZER_DIR)
+
             # Auto-acquire LSP servers if no VS Code and no cached servers
             _auto_acquire_lsp_servers(LSP_DIR)
+
+            # Ensure sf code-analyzer plugin is installed (PMD/CPD engine)
+            ensure_code_analyzer_plugin()
+
+            # Ensure prettier + prettier-plugin-apex are installed (auto-formatting)
+            ensure_prettier_apex()
 
             # Copy installer for self-updates
             installer_source = source_dir / "tools" / "install.py"
             if installer_source.exists():
                 shutil.copy2(installer_source, INSTALLER_FILE)
+                installer_updated_on_disk = _installer_binary_changed(_running_installer_bytes)
 
             sf_docs_runtime_ok, sf_docs_runtime_notes = install_sf_docs_runtime(source_dir)
             for note in sf_docs_runtime_notes:
@@ -2673,49 +2989,53 @@ def cmd_install(dry_run: bool = False, force: bool = False,
                 print_warning("sf-docs browser runtime setup was incomplete; extraction helpers may need manual setup")
 
             if install_datacloud_runtime_requested:
-                print_substep("Installing optional Data Cloud runtime...")
-                datacloud_runtime_ok, datacloud_runtime_notes = install_datacloud_runtime()
-                for note in datacloud_runtime_notes:
-                    print_substep(note)
-                if not datacloud_runtime_ok:
-                    datacloud_runtime_failure = True
-                    print_warning("Optional Data Cloud runtime setup did not complete successfully")
+                if installer_updated_on_disk:
+                    print_substep(
+                        "Installer updated — deferring optional Data Cloud runtime setup "
+                        "until the new installer restarts..."
+                    )
+                else:
+                    print_substep("Installing optional Data Cloud runtime...")
+                    datacloud_runtime_ok, datacloud_runtime_notes = install_datacloud_runtime()
+                    for note in datacloud_runtime_notes:
+                        print_substep(note)
+                    if not datacloud_runtime_ok:
+                        datacloud_runtime_failure = True
+                        print_warning("Optional Data Cloud runtime setup did not complete successfully")
 
-            # Re-exec detection: if the installer binary changed, hand off to the
-            # new version for Steps 4-5. This solves the bootstrapping problem where
-            # the OLD process's get_hooks_config() references deleted hooks.
-            if _running_installer_bytes is not None and INSTALLER_FILE.exists():
-                try:
-                    _new_installer_bytes = INSTALLER_FILE.read_bytes()
-                    if _running_installer_bytes != _new_installer_bytes:
-                        print_substep("Installer updated — restarting with new version...")
-                        _exec_args = [
-                            sys.executable, str(INSTALLER_FILE),
-                            "--_finalize-install",
-                            "--_version", version,
-                        ]
-                        if commit_sha:
-                            _exec_args.extend(["--_commit-sha", commit_sha])
-                        if dry_run:
-                            _exec_args.append("--dry-run")
-                        if force:
-                            _exec_args.append("--force")
-                        if called_from_bash:
-                            _exec_args.append("--called-from-bash")
-                        if install_datacloud_runtime_requested:
-                            _exec_args.append("--with-datacloud-runtime")
-                        os.execv(sys.executable, _exec_args)
-                        # os.execv replaces the process; unreachable below
-                except (IOError, OSError) as e:
-                    print_warning(f"Re-exec check failed ({e}), continuing with current process")
-
-            # Write metadata (version + commit SHA for update detection)
+            # Write metadata (version + commit SHA for update detection) before any
+            # re-exec handoff so upgraded installs still refresh version tracking.
             write_metadata(version, commit_sha=commit_sha)
 
             # Touch all files for cache refresh
             for d in [SKILLS_DIR, HOOKS_DIR, LSP_DIR]:
                 if d.exists():
                     touch_all_files(d)
+
+            # Re-exec detection: if the installer binary changed, hand off to the
+            # new version for Steps 4-5. This solves the bootstrapping problem where
+            # the OLD process's get_hooks_config() references deleted hooks. When the
+            # optional Data Cloud runtime was requested, defer it to the NEW installer
+            # so stale local installer copies never attempt an outdated runtime repo.
+            if installer_updated_on_disk:
+                print_substep("Installer updated — restarting with new version...")
+                _exec_args = _build_finalize_install_args(
+                    version,
+                    commit_sha=commit_sha,
+                    dry_run=dry_run,
+                    force=force,
+                    called_from_bash=called_from_bash,
+                    with_datacloud_runtime=install_datacloud_runtime_requested,
+                )
+                try:
+                    os.execv(sys.executable, _exec_args)
+                    # os.execv replaces the process; unreachable below
+                except OSError as e:
+                    print_warning(
+                        f"Re-exec failed ({e}); running finalization with the updated installer instead"
+                    )
+                    child = subprocess.run(_exec_args, check=False)
+                    return child.returncode
 
             print_step(3, 5, "Skills, hooks, and LSP engine installed", "done")
             print_substep(f"{skill_count} skills installed")
@@ -2949,9 +3269,18 @@ def cmd_finalize_install(version: str, commit_sha: Optional[str] = None,
                 location = DATACLOUD_RUNTIME_PLUGIN_DIR if datacloud_status["managedGitCheckout"] else "already available in sf CLI"
                 print_info(f"Optional Data Cloud runtime ready ({location})")
             else:
-                print_warning("sf-skills installed, but the optional Data Cloud runtime was not installed successfully")
-                print_info("Retry with: python3 ~/.claude/sf-skills-install.py --with-datacloud-runtime")
-                return 1
+                # The OLD installer's install_datacloud_runtime() may have
+                # failed (e.g., dirty working tree or stale origin URL).
+                # Retry with the NEW code — this is the whole point of re-exec.
+                print_info("Data Cloud runtime not ready — retrying with updated installer...")
+                ok, notes = install_datacloud_runtime(dry_run=dry_run)
+                for note in notes:
+                    print_substep(note)
+                if not ok:
+                    print_warning("sf-skills installed, but the optional Data Cloud runtime was not installed successfully")
+                    print_info("Retry with: python3 ~/.claude/sf-skills-install.py --with-datacloud-runtime")
+                    return 1
+                print_info("Optional Data Cloud runtime installed successfully")
     else:
         print(f"\n{c('DRY RUN complete - no changes made', Colors.YELLOW)}\n")
 

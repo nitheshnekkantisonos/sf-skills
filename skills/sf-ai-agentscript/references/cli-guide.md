@@ -13,12 +13,11 @@
 | `sf agent validate authoring-bundle` | Check syntax before deploy | `sf agent validate authoring-bundle --api-name MyAgent -o TARGET_ORG` |
 | `sf agent publish authoring-bundle` | Publish agent to org | `sf agent publish authoring-bundle --api-name MyAgent -o TARGET_ORG --json` |
 | `sf agent test run` | Run batch tests | `sf agent test run --api-name MyTestDef --wait 10 -o TARGET_ORG --json` |
-| `sf agent create` | Create agent from spec file | `sf agent create --api-name MyAgent --spec agent-spec.yaml -o TARGET_ORG --json` |
+| `sf agent create` | Create agent from spec file | `sf agent create --name "My Agent" --api-name MyAgent --spec agent-spec.yaml -o TARGET_ORG --json` |
 | `sf agent generate agent-spec` | Generate agent specification | `sf agent generate agent-spec --type customer --role "Service Rep" --output-file agent-spec.yaml` |
 | `sf agent generate authoring-bundle` | Scaffold authoring bundle | `sf agent generate authoring-bundle --no-spec --name "My Agent" -o TARGET_ORG --json` |
-| `sf agent generate template` | Generate agent template (ISV packaging) | `sf agent generate template --agent-file MyAgent.agent --agent-version 1.0 --json` |
-| `sf agent activate` | Activate agent (make live) | `sf agent activate --api-name MyAgent -o TARGET_ORG` |
-| `sf agent deactivate` | Deactivate agent (take offline) | `sf agent deactivate --api-name MyAgent -o TARGET_ORG` |
+| `sf agent activate` | Activate agent (make live) | `sf agent activate --api-name MyAgent --version <n> -o TARGET_ORG --json` |
+| `sf agent deactivate` | Deactivate agent (take offline) | `sf agent deactivate --api-name MyAgent -o TARGET_ORG --json` |
 | `sf agent preview start` | Start programmatic preview session | `sf agent preview start --api-name MyAgent -o TARGET_ORG --json` (or `--authoring-bundle`) |
 | `sf agent preview send` | Send utterance to preview session | `sf agent preview send --session-id <id> --utterance "Hello" --json` |
 | `sf agent preview end` | End preview session | `sf agent preview end --session-id <id> --json` |
@@ -26,6 +25,8 @@
 | `sf org open authoring-bundle` | Open Agentforce Studio list view | `sf org open authoring-bundle -o TARGET_ORG` |
 
 > ⚠️ **CRITICAL**: Use `sf agent publish authoring-bundle` for Agent Script deployment, NOT `sf project deploy start`. The metadata API deploy will fail with "Required fields are missing: [BundleType]".
+>
+> ℹ️ **Managed packaging note:** `sf agent generate template` targets Bot / BotVersion metadata and is **not** a packaging path for Agent Script `.agent` bundles. See [known-issues.md](known-issues.md) for the current Agent Script packaging limitation.
 
 ---
 
@@ -141,14 +142,18 @@ sf agent publish authoring-bundle --api-name ProntoRefund -o TARGET_ORG --skip-r
 > ⚠️ **Publishing does NOT activate.** The new BotVersion is created as `Inactive`. Tests, preview, and end users continue hitting the previously active version until you explicitly activate.
 
 ```bash
-# Activate the latest published version
+# Manual activation (choose interactively if you omit --version)
 sf agent activate --api-name ProntoRefund -o TARGET_ORG
+
+# CI / deterministic activation of a known BotVersion
+sf agent activate --api-name ProntoRefund --version <n> -o TARGET_ORG --json
 
 # Verify activation (optional)
 sf data query --query "SELECT DeveloperName, VersionNumber, Status FROM BotVersion WHERE BotDefinition.DeveloperName = 'ProntoRefund' AND Status = 'Active' LIMIT 1" -o TARGET_ORG --json
 ```
 
-> ℹ️ `sf agent activate` and `sf agent deactivate` do **not** support `--json`. The command prints a plain-text confirmation message on success.
+> ℹ️ `sf agent activate` and `sf agent deactivate` now support `--json`.
+> If you use `--json` without `--version`, the CLI activates the latest agent version. Prefer `--version` for CI/CD and reproducible rollouts.
 
 ---
 
@@ -333,12 +338,14 @@ jobs:
 
       # Step 4: Activate the published version
       - name: Activate Agent
-        run: sf agent activate --api-name My_Agent -o TARGET_ORG
+        run: sf agent activate --api-name My_Agent --version "$AGENT_VERSION" -o TARGET_ORG --json
 
       # Optional: Run agent tests after activation
       - name: Run Agent Tests
         run: sf agent test run --api-name MyTestDef --wait 10 -o TARGET_ORG --json
 ```
+
+Set `AGENT_VERSION` in the workflow environment to the BotVersion number you intend to activate.
 
 ### SF Agent CLI Exit Codes
 
@@ -385,20 +392,21 @@ sf agent generate agent-spec \
 
 # Create the agent from the spec
 sf agent create \
+  --name "My Service Agent" \
   --api-name MyServiceAgent \
   --spec agent-spec.yaml \
   -o TARGET_ORG --json
 ```
 
-### Generate Agent Template (ISV Packaging)
+### Managed Packaging Status
 
-```bash
-# Generate template for managed package distribution
-sf agent generate template \
-  --agent-file force-app/main/default/aiAuthoringBundles/MyAgent/MyAgent.agent \
-  --agent-version 1.0 \
-  --json
-```
+`sf agent generate template` is **not** an Agent Script packaging workflow.
+The current CLI command targets Bot / BotVersion metadata, requires a `.bot-meta.xml` file plus `--source-org`, and doesn't package `.agent` authoring bundles.
+
+For Agent Script agents today:
+- use source-driven deployment (`sf agent publish authoring-bundle`) for org rollout
+- treat managed-package templating as unsupported for `.agent` bundles
+- see [known-issues.md](known-issues.md) for the current packaging limitation
 
 ---
 
@@ -454,15 +462,23 @@ sf agent preview end --session-id $SESSION_ID --json
 
 After publishing, activate the agent to make it live. Deactivate before re-publishing updates.
 
-> ⚠️ **`--json` is NOT supported** on `sf agent activate` / `sf agent deactivate`. These commands output plain text only.
-
 ```bash
-# Activate agent (makes it live for end users)
+# Activate agent manually (interactive version selection if omitted)
 sf agent activate --api-name MyAgent -o TARGET_ORG
 
+# Activate a specific BotVersion in CI / automation
+sf agent activate --api-name MyAgent --version <n> -o TARGET_ORG --json
+
 # Deactivate agent (takes it offline — required before re-publishing)
-sf agent deactivate --api-name MyAgent -o TARGET_ORG
+sf agent deactivate --api-name MyAgent -o TARGET_ORG --json
 ```
+
+### Deterministic activation in CI
+
+- `--version <n>` maps to the `vN` suffix of the agent's `BotVersion` metadata.
+- If you omit `--version`, the CLI prompts you to choose a version interactively.
+- If you use `--json` without `--version`, the CLI activates the latest agent version.
+- For reproducible pipelines, pass the exact `--version` you intend to activate.
 
 **Verify activation status**:
 ```bash
@@ -473,9 +489,9 @@ sf data query --query "SELECT DeveloperName, VersionNumber, Status FROM BotVersi
 
 ```bash
 # Update an already-active agent:
-sf agent deactivate --api-name MyAgent -o TARGET_ORG
+sf agent deactivate --api-name MyAgent -o TARGET_ORG --json
 sf agent publish authoring-bundle --api-name MyAgent -o TARGET_ORG --json
-sf agent activate --api-name MyAgent -o TARGET_ORG
+sf agent activate --api-name MyAgent --version <n> -o TARGET_ORG --json
 ```
 
 ---

@@ -70,8 +70,6 @@ flowchart TB
 
     subgraph hooks_session["📌 SessionStart Hooks"]
         H_INIT["🏗️ session-init.py"]
-        H_ORG["🔌 org-preflight.py"]
-        H_LSP["⚡ lsp-prewarm.py"]
     end
 
     subgraph agentic["⚙️ AGENTIC LOOP"]
@@ -84,8 +82,7 @@ flowchart TB
     end
 
     subgraph hooks_pre["📌 PreToolUse Hooks"]
-        H_GUARD["🛡️ guardrails.py"]
-        H_API["📊 api-version-check.py"]
+        H_GUARD["🛡️ guardrails (prompt hook)"]
     end
 
     subgraph hooks_post["📌 PostToolUse Hooks"]
@@ -112,8 +109,6 @@ flowchart TB
 
     %% SessionStart hooks
     S1 -.-> H_INIT
-    S1 -.-> H_ORG
-    S1 -.-> H_LSP
 
     %% Agentic Loop
     LLM --> S4 --> S5 --> EXEC
@@ -122,7 +117,6 @@ flowchart TB
 
     %% PreToolUse hooks
     S4 -.-> H_GUARD
-    S4 -.-> H_API
 
     %% PostToolUse hooks
     S6 -.-> H_VALID
@@ -168,12 +162,9 @@ flowchart TB
 
     %% Node Styling - SessionStart hooks (Teal-200)
     style H_INIT fill:#99f6e4,stroke:#0f766e,color:#1f2937
-    style H_ORG fill:#99f6e4,stroke:#0f766e,color:#1f2937
-    style H_LSP fill:#99f6e4,stroke:#0f766e,color:#1f2937
 
     %% Node Styling - PreToolUse hooks (Orange-200)
     style H_GUARD fill:#fed7aa,stroke:#c2410c,color:#1f2937
-    style H_API fill:#fed7aa,stroke:#c2410c,color:#1f2937
 
     %% Node Styling - PostToolUse hooks (Violet-200)
     style H_VALID fill:#ddd6fe,stroke:#6d28d9,color:#1f2937

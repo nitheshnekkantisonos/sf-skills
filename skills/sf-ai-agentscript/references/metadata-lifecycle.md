@@ -30,6 +30,19 @@ sf agent publish authoring-bundle
 
 Old bundle versions remain in the org. They are inactive but retain references to Apex/Flow targets via GenAiFunction definitions.
 
+### Retrieve a Specific BotVersion
+
+When you need to inspect or patch a specific published version, retrieve the exact `BotVersion` explicitly:
+
+```bash
+sf project retrieve start \
+  --metadata Bot:MyAgent \
+  --metadata BotVersion:MyAgent.v3 \
+  --target-org TARGET_ORG
+```
+
+Current SF CLI releases correctly retrieve the requested `BotVersion` rather than always falling back to only the latest version.
+
 ---
 
 ## Flow Version Drift

@@ -71,6 +71,22 @@ VALIDATOR_REGISTRY: List[tuple] = [
         DEFAULT_TIMEOUT,
     ),
 
+    # Apex class files (.cls) - auto-format (runs BEFORE validation)
+    (
+        r"\.cls$",
+        "sf-apex",
+        "sf-apex/hooks/scripts/prettier-format.py",
+        DEFAULT_TIMEOUT,
+    ),
+
+    # Apex trigger files (.trigger) - auto-format (runs BEFORE validation)
+    (
+        r"\.trigger$",
+        "sf-apex",
+        "sf-apex/hooks/scripts/prettier-format.py",
+        DEFAULT_TIMEOUT,
+    ),
+
     # Apex class files (.cls) - LSP syntax validation
     (
         r"\.cls$",
@@ -111,12 +127,12 @@ VALIDATOR_REGISTRY: List[tuple] = [
         DEFAULT_TIMEOUT,
     ),
 
-    # Flow metadata files (.flow-meta.xml)
+    # Flow metadata files (.flow-meta.xml) - imports validate_flow + Code Analyzer
     (
         r"\.flow-meta\.xml$",
         "sf-flow",
         "sf-flow/hooks/scripts/post-tool-validate.py",
-        DEFAULT_TIMEOUT,
+        HEAVY_TIMEOUT,
     ),
 
     # LWC JavaScript files - LSP syntax validation (in lwc/ folders)
@@ -172,6 +188,30 @@ VALIDATOR_REGISTRY: List[tuple] = [
         r"\.(namedCredential|externalServiceRegistration)-meta\.xml$",
         "sf-integration",
         "sf-integration/hooks/scripts/validate_integration.py",
+        DEFAULT_TIMEOUT,
+    ),
+
+    # LWC CSS files - SLDS 2 scoring (in lwc/ folders)
+    (
+        r"/lwc/[^/]+/[^/]+\.css$",
+        "sf-lwc",
+        "sf-lwc/hooks/scripts/post-tool-validate.py",
+        HEAVY_TIMEOUT,
+    ),
+
+    # Profile metadata
+    (
+        r"\.profile-meta\.xml$",
+        "sf-metadata",
+        "sf-metadata/hooks/scripts/validate_metadata.py",
+        DEFAULT_TIMEOUT,
+    ),
+
+    # Validation Rule metadata
+    (
+        r"\.validationRule-meta\.xml$",
+        "sf-metadata",
+        "sf-metadata/hooks/scripts/validate_metadata.py",
         DEFAULT_TIMEOUT,
     ),
 

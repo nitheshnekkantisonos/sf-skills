@@ -57,7 +57,7 @@ cd sf-skills
 bash ./tools/install.sh
 ```
 
-This installs 33 skills, 7 specialist agents, a shared hook system, and the local LSP engine. It also configures guardrails, auto-validation on Write/Edit, org preflight checks, and background LSP prewarm.
+This installs 33 skills, 7 specialist agents, a shared hook system, and the local LSP engine. It also configures LLM-powered guardrails (Haiku prompt hook), SOQL schema validation, Prettier auto-formatting, Code Analyzer (PMD/ESLint), and debug log analysis (Haiku agent hook).
 
 > **Data Cloud note:** the installer brings in the `sf-datacloud-*` skills, but the external community `sf data360` CLI runtime is still a separate prerequisite. On first-time install the installer can prompt for it, or you can request it explicitly with `--with-datacloud-runtime`.
 
@@ -99,6 +99,8 @@ bash ./tools/install.sh            # or: python3 ./tools/install.py
 > After sf-skills is installed, use the installed copy at `~/.claude/sf-skills-install.py` for normal updates. Use `tools/install.py` only when developing or testing from a cloned repo checkout.
 >
 > **Data Cloud:** the `sf-datacloud-*` family ships with sf-skills, but live Data Cloud execution also needs the optional community `sf data360` runtime. Install it during setup when prompted, or later with `python3 ~/.claude/sf-skills-install.py --with-datacloud-runtime`.
+>
+> **Troubleshooting:** if a Data Cloud runtime clone error mentions `gthoppae/sf-cli-plugin-data360`, your local installer copy is stale. First refresh it with `python3 ~/.claude/sf-skills-install.py --force-update`, then rerun `python3 ~/.claude/sf-skills-install.py --with-datacloud-runtime`.
 
 ```bash
 python3 ~/.claude/sf-skills-install.py --status                  # Check version and install state
@@ -144,11 +146,13 @@ python3 ~/.claude/sf-skills-install.py --profile delete old
 
 **Active hook lifecycle:**
 
-| Event | What it does |
-|------|----------|
-| **SessionStart** | Session init, org preflight, LSP prewarm |
-| **PreToolUse** | Guardrails + API version checks before Bash / Salesforce tool usage |
-| **PostToolUse** | Validator dispatcher for file-aware checks after Write/Edit |
+| Event | Matcher | Hook Type | What it does |
+|------|---------|-----------|----------|
+| **SessionStart** | — | command | Session directory lifecycle (session-init.py) |
+| **PreToolUse** | Bash\|MCP | prompt (Haiku) | Advisory guardrails: sfdx deprecation, old API versions |
+| **PreToolUse** | Bash | command | SOQL schema validator: JIT sf sobject describe before queries |
+| **PostToolUse** | Write\|Edit | command | Validator dispatcher → Prettier + LSP + Scorer + Code Analyzer |
+| **PostToolUse** | Bash | agent (Haiku) | Debug log analysis: exceptions, governor limits, hotspots |
 
 For deeper install and hook internals, see [tools/README.md](tools/README.md) and [shared/hooks/README.md](shared/hooks/README.md).
 
@@ -168,20 +172,14 @@ Each skill includes validation hooks that run automatically on **Write** and **E
 
 | | Skill | File Type | Validation |
 |--|-------|-----------|------------|
-| ⚡ | sf-apex | `*.cls`, `*.trigger` | 150-pt scoring + Code Analyzer + LSP |
-| 🔄 | sf-flow | `*.flow-meta.xml` | 110-pt scoring + Flow Scanner |
-| ⚡ | sf-lwc | `*.js` (LWC) | 140-pt scoring + LSP syntax validation |
-| ⚡ | sf-lwc | `*.html` (LWC) | Template validation (directives, expressions) |
+| ⚡ | sf-apex | `*.cls`, `*.trigger` | Prettier auto-format + LSP compilation + 90-pt scorer + Code Analyzer PMD |
+| 🔄 | sf-flow | `*.flow-meta.xml` | 110-pt scoring + Code Analyzer Flow Scanner |
+| ⚡ | sf-lwc | `*.js` (LWC) | LWC LSP + 165-pt SLDS scorer + Code Analyzer ESLint + retire-js |
+| ⚡ | sf-lwc | `*.html` (LWC) | Template anti-pattern validation (directives, expressions, LLM mistakes) |
 | 🔍 | sf-soql | `*.soql` | 100-pt scoring + Live Query Plan API |
-| 🧪 | sf-testing | `*Test.cls` | 100-pt scoring + coverage analysis |
-| 🐛 | sf-debug | Debug logs | 90-pt scoring + governor analysis |
 | 📋 | sf-metadata | `*.object-meta.xml`, `*.field-meta.xml`, `*.permissionset-meta.xml` | Metadata best practices |
-| 💾 | sf-data | `*.apex`, `*.soql` | SOQL patterns + Live Query Plan |
-| 🤖 | sf-ai-agentscript | `*.agent` | Agent Script syntax, `ASV-*` rule checks, org-aware validation + LSP auto-fix |
-| 🧪 | sf-ai-agentforce-testing | Test spec YAML | 100-pt scoring + fix loops |
-| 🔐 | sf-connected-apps | `*.connectedApp-meta.xml` | OAuth security validation |
-| 🔗 | sf-integration | `*.namedCredential-meta.xml` | 120-pt scoring + callout patterns |
-| 📸 | sf-diagram-nanobananapro | Generated images | Prerequisites check |
+| 🤖 | sf-ai-agentscript | `*.agent` | Agent Script syntax + LSP auto-fix loop |
+| 🔗 | sf-integration | `*.namedCredential-meta.xml` | Integration pattern validation |
 
 
 <details>
@@ -191,19 +189,20 @@ All PostToolUse validations are routed through a central dispatcher (`shared/hoo
 
 **Routing Table:**
 
-| Pattern | Skill | Validators |
-|---------|-------|------------|
-| `*.agent` | sf-ai-agentscript | agentscript-syntax-validator.py |
-| `*.cls`, `*.trigger` | sf-apex | apex-lsp-validate.py + post-tool-validate.py |
-| `*.flow-meta.xml` | sf-flow | post-tool-validate.py |
-| `/lwc/**/*.js` | sf-lwc | lwc-lsp-validate.py + post-tool-validate.py |
-| `/lwc/**/*.html` | sf-lwc | template_validator.py |
-| `*.object-meta.xml` | sf-metadata | validate_metadata.py |
-| `*.field-meta.xml` | sf-metadata | validate_metadata.py |
-| `*.permissionset-meta.xml` | sf-metadata | validate_metadata.py |
-| `*.namedCredential-meta.xml` | sf-integration | validate_integration.py |
-| `*.soql` | sf-soql | post-tool-validate.py |
-| `SKILL.md` | (removed) | — |
+| Pattern | Skill | Validators | Timeout |
+|---------|-------|------------|---------|
+| `*.cls`, `*.trigger` | sf-apex | prettier-format.py (auto-format) | 10s |
+| `*.cls`, `*.trigger` | sf-apex | apex-lsp-validate.py (LSP compilation) | 30s |
+| `*.cls`, `*.trigger` | sf-apex | post-tool-validate.py (90-pt scorer + PMD) | 30s |
+| `*.agent` | sf-ai-agentscript | agentscript-syntax-validator.py | 10s |
+| `*.soql` | sf-soql | post-tool-validate.py | 10s |
+| `*.flow-meta.xml` | sf-flow | post-tool-validate.py (110-pt + Flow Scanner) | 10s |
+| `/lwc/**/*.js` | sf-lwc | lwc-lsp-validate.py + post-tool-validate.py | 30s |
+| `/lwc/**/*.html` | sf-lwc | template_validator.py | 10s |
+| `*.object-meta.xml` | sf-metadata | validate_metadata.py | 10s |
+| `*.field-meta.xml` | sf-metadata | validate_metadata.py | 10s |
+| `*.permissionset-meta.xml` | sf-metadata | validate_metadata.py | 10s |
+| `*.namedCredential-meta.xml` | sf-integration | validate_integration.py | 10s |
 
 </details>
 
@@ -220,12 +219,12 @@ Hooks integrate [Salesforce Code Analyzer V5](https://developer.salesforce.com/d
 | **ESLint** | JavaScript/LWC linting | Node.js |
 | **Flow Scanner** | Flow best practices | Python 3.10+ |
 
-**Custom Validation Coverage:**
-| Validator | Total Checks | Categories |
-|-----------|--------------|------------|
-| **Apex** (150-pt) | PMD 55 rules + Python 8 checks | Security (100%), Bulkification, Testing, Architecture, Clean Code, Error Handling, Performance, Documentation |
-| **Flow** (110-pt) | 32+ checks (21/24 LFS rules) | Design/Naming, Logic/Structure, Error Handling, Architecture, Security, Performance |
-| **LWC** (140-pt) | ESLint + retire-js + SLDS Linter | SLDS 2 Compliance, Naming, Accessibility, Component Patterns, Lightning Message Service, Security |
+**Custom Validation Coverage (no overlap with Code Analyzer):**
+| Validator | Score | Categories (what PMD/ESLint doesn't cover) |
+|-----------|-------|---------------------------------------------|
+| **Apex** (90-pt) | 5 categories | Testing (25), Architecture (20), Clean Code (20), Error Handling (15), Performance (10) |
+| **Flow** (110-pt) | 6 categories | Design/Naming, Logic/Structure, Error Handling, Architecture, Security, Performance |
+| **LWC** (165-pt) | 9 categories | SLDS 2 Class Usage, Accessibility, Dark Mode, SLDS Migration, Styling Hooks, Component Structure, Performance, GraphQL Patterns, Focus Management |
 
 **Graceful Degradation:** If dependencies are missing, hooks run custom validation only and show which engines were skipped.
 

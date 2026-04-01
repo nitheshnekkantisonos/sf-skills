@@ -150,14 +150,16 @@ For agent deployments, use the specialized commands:
 sf project deploy start --metadata ApexClass,Flow --target-org alias
 
 # Validate agent syntax
-sf agent validate authoring-bundle --api-name AgentName --target-org alias
+sf agent validate authoring-bundle --api-name AgentName --target-org alias --json
 
 # Publish agent
-sf agent publish authoring-bundle --api-name AgentName --target-org alias
+sf agent publish authoring-bundle --api-name AgentName --target-org alias --json
 
-# Activate agent
-sf agent activate --api-name AgentName --target-org alias
+# Activate a specific BotVersion deterministically in automation
+sf agent activate --api-name AgentName --version N --target-org alias --json
 ```
+
+> If you omit `--version`, activation is interactive. For CI/CD and scripted orchestration, prefer `--version N --json`.
 
 ---
 
