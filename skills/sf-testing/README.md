@@ -11,6 +11,10 @@ Comprehensive Salesforce testing skill with test execution, code coverage analys
 - **120-Point Scoring**: Validation across 6 categories
 - **Bulk Testing**: Validate with 251+ records for governor limits
 
+## Sonos Users
+
+For best results, connect to the **[Sonos Confluence MCP](https://sonosinc.atlassian.net/wiki/spaces/~712020f442e71d81b046e2a180f87fddcec655/pages/2087256414/Claude+Code+Confluence+Jira+Setup)**, which will fetch Centralized Truckin Repo knowledge. This provides additional context and best practices tailored to the Sonos environment.
+
 ## Installation
 
 ```bash
